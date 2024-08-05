@@ -8,19 +8,26 @@
 
 namespace cblt::geom {
 
-struct AxisAlignedBoundingBox3f {
+struct CoAxisAlignedBoundingBox {
         simd::vec4f min;
         simd::vec4f max;
 
-        static simd::vec4f center(const AxisAlignedBoundingBox3f &aabb) {
+        static simd::vec4f Center(const CoAxisAlignedBoundingBox &aabb) {
             return 0.5f * (aabb.min + aabb.max);
         };
 
-        static simd::vec4f scales(const AxisAlignedBoundingBox3f &aabb) {
+        static simd::vec4f Scales(const CoAxisAlignedBoundingBox &aabb) {
             return aabb.max - aabb.min;
         }
 
-        static bool intersect(const Ray &ray, const AxisAlignedBoundingBox3f &aabb, float &timeMin, float &timeMax) {
+        static CoAxisAlignedBoundingBox Union(const CoAxisAlignedBoundingBox& lhs, const CoAxisAlignedBoundingBox &rhs) {
+            return {
+                .min = simd::min(lhs.min, rhs.min),
+                .max = simd::max(lhs.max, rhs.max),
+            };
+        }
+
+        static bool intersect(const CoRay &ray, const CoAxisAlignedBoundingBox &aabb, float &timeMin, float &timeMax) {
             const simd::vec4f minIntersectTimes = (aabb.min - ray.pos) * ray.invDir;
             const simd::vec4f maxIntersectTimes = (aabb.max - ray.pos) * ray.invDir;
 
@@ -38,6 +45,7 @@ struct AxisAlignedBoundingBox3f {
             }
             return timeMax > 0.f && timeMin < ray.maxDist && timeMax >= timeMin;
         }
+
 };
 } // namespace cblt::geom
 

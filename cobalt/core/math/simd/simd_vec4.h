@@ -1,6 +1,8 @@
 #ifndef CBLT_SIMD_VEC4_H
 #define CBLT_SIMD_VEC4_H
 
+#include <array>
+#include <cassert>
 #include <immintrin.h>
 
 namespace cblt::simd {
@@ -29,6 +31,12 @@ struct vec4f {
 
         vec4f(float x, float y, float z, float w) {
             xyzw = _mm_setr_ps(x, y, z, w);
+        }
+
+        float operator[](const size_t idx) const {
+            assert(idx < 4);
+            const std::array<float, 4> vals = asArray();
+            return vals[idx];
         }
 
         vec4f &operator+=(const vec4f &rhs) {
@@ -97,30 +105,36 @@ struct vec4f {
         friend float reduceMin(const vec4f &lhs);
 
         friend float reduceMax(const vec4f &lhs);
+
+        std::array<float, 4> asArray() const {
+            std::array<float, 4> arrayType;
+            _mm_store_ps(arrayType.data(), xyzw);
+            return arrayType;
+        }
 };
 
 inline vec4f min(const vec4f &lhs, const vec4f &rhs) {
-    return { _mm_min_ps(lhs.xyzw, rhs.xyzw) };
+    return {_mm_min_ps(lhs.xyzw, rhs.xyzw)};
 }
 
 inline vec4f max(const vec4f &lhs, const vec4f &rhs) {
-    return { _mm_max_ps(lhs.xyzw, rhs.xyzw) };
+    return {_mm_max_ps(lhs.xyzw, rhs.xyzw)};
 }
 
 inline float reduceMin(const vec4f &lhs) {
-            const __m128 shuffleLeft1 = _mm_shuffle_ps(lhs.xyzw, lhs.xyzw, _MM_SHUFFLE(2, 1, 0, 3));
-            const __m128 shuffleMin1 = _mm_min_ps(lhs.xyzw, shuffleLeft1);
-            const __m128 shuffleLeft2 = _mm_shuffle_ps(shuffleMin1, shuffleMin1, _MM_SHUFFLE(1, 0, 3, 2)); 
-            const __m128 shuffleMin2 = _mm_min_ps(shuffleMin1, shuffleLeft2);
-            return _mm_cvtss_f32(shuffleMin2);
+    const __m128 shuffleLeft1 = _mm_shuffle_ps(lhs.xyzw, lhs.xyzw, _MM_SHUFFLE(2, 1, 0, 3));
+    const __m128 shuffleMin1 = _mm_min_ps(lhs.xyzw, shuffleLeft1);
+    const __m128 shuffleLeft2 = _mm_shuffle_ps(shuffleMin1, shuffleMin1, _MM_SHUFFLE(1, 0, 3, 2));
+    const __m128 shuffleMin2 = _mm_min_ps(shuffleMin1, shuffleLeft2);
+    return _mm_cvtss_f32(shuffleMin2);
 }
 
 inline float reduceMax(const vec4f &lhs) {
-            const __m128 shuffleLeft1 = _mm_shuffle_ps(lhs.xyzw, lhs.xyzw, _MM_SHUFFLE(2, 1, 0, 3));
-            const __m128 shuffleMax1 = _mm_max_ps(lhs.xyzw, shuffleLeft1);
-            const __m128 shuffleLeft2 = _mm_shuffle_ps(shuffleMax1, shuffleMax1, _MM_SHUFFLE(1, 0, 3, 2)); 
-            const __m128 shuffleMax2 = _mm_max_ps(shuffleMax1, shuffleLeft2);
-            return _mm_cvtss_f32(shuffleMax2);
+    const __m128 shuffleLeft1 = _mm_shuffle_ps(lhs.xyzw, lhs.xyzw, _MM_SHUFFLE(2, 1, 0, 3));
+    const __m128 shuffleMax1 = _mm_max_ps(lhs.xyzw, shuffleLeft1);
+    const __m128 shuffleLeft2 = _mm_shuffle_ps(shuffleMax1, shuffleMax1, _MM_SHUFFLE(1, 0, 3, 2));
+    const __m128 shuffleMax2 = _mm_max_ps(shuffleMax1, shuffleLeft2);
+    return _mm_cvtss_f32(shuffleMax2);
 }
 
 } // namespace cblt::simd

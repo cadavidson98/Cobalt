@@ -10,9 +10,9 @@ namespace {
 
 namespace cblt::geom {
 
-struct Ray {
+struct CoRay {
 
-Ray(const simd::vec4f &_pos, const simd::vec4f &_dir, float _maxDist) 
+CoRay(const simd::vec4f &_pos, const simd::vec4f &_dir, float _maxDist) 
     : pos{ _pos.xyzw }, dir{ _dir.xyzw }, invDir{ one / simd::max(dir, zero) }, maxDist{ _maxDist } {
 }
 
