@@ -1,0 +1,25 @@
+set(GEOMETRY_HEADERS
+	boundable.h
+	bounding_box.h
+	bounding_volume.h
+	camera.h
+	geometry.h
+	hit_info.h
+	light_prim.h
+	ray.h
+	scene.h
+	scene_prim.h
+	triangle.h
+	triangle_mesh.h)
+
+set(GEOMETRY_SOURCE
+	bounding_box.cpp
+	bounding_volume.cpp
+	camera.cpp
+	hit_info.cpp
+	light_prim.cpp
+	scene.cpp
+	triangle.cpp
+	triangle_mesh.cpp)
+
+target_sources(Cobalt PUBLIC ${GEOMETRY_HEADERS} PRIVATE ${GEOMETRY_SOURCE})

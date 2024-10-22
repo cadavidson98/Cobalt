@@ -1,0 +1,7 @@
+set(UTILS_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/logging.h)
+
+set(UTILS_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/logging.cpp)
+
+target_sources(Cobalt PUBLIC ${UTILS_HEADERS} PRIVATE ${UTILS_SOURCES})
