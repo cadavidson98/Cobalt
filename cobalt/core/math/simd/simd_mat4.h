@@ -1,7 +1,7 @@
 #ifndef CBLT_SIMD_MATH_MAT4_H
 #define CBLT_SIMD_MATH_MAT4_H
 
-#include "simd/simd_vec4.h"
+#include "simd_vec4.h"
 
 namespace cblt::simd {
 
@@ -82,11 +82,8 @@ struct mat4f {
         }
 
         friend bool operator==(const mat4f &a, const mat4f &b) {
-            return
-                a.columns[0] == b.columns[0] &&
-                a.columns[1] == b.columns[1] &&
-                a.columns[2] == b.columns[2] &&
-                a.columns[3] == b.columns[3];
+            return a.columns[0] == b.columns[0] && a.columns[1] == b.columns[1] && a.columns[2] == b.columns[2] &&
+                   a.columns[3] == b.columns[3];
         }
 };
 

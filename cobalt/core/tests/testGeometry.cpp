@@ -1,6 +1,6 @@
-#include "bounding_box.h"
-#include "bounding_volume.h"
-#include "ray.h"
+#include "geometry/bounding_box.h"
+#include "geometry/bounding_volume.h"
+#include "geometry/ray.h"
 
 #include <chrono>
 #include <gtest/gtest.h>

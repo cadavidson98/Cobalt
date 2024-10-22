@@ -1,11 +1,10 @@
-#include "simd/simd_mat3.h"
-#include "simd/simd_mat4.h"
-#include "simd/simd_vec3.h"
-#include "simd/simd_vec4.h"
+#include "math/simd/simd_mat3.h"
+#include "math/simd/simd_mat4.h"
+#include "math/simd/simd_vec3.h"
+#include "math/simd/simd_vec4.h"
 
 #include <cstring>
 #include <gtest/gtest.h>
-#include <iostream>
 
 TEST(CobaltCoreMathTests, TestSimdVec3f) {
     static const cblt::simd::vec3f x(1.f, 0.f, 0.f);

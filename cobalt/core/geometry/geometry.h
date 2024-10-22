@@ -4,8 +4,8 @@
 namespace cblt {
 
 class Geometry {
-  public:
-  private:
+    public:
+    private:
 };
 
 } // namespace cblt

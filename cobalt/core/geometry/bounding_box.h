@@ -1,8 +1,8 @@
 #ifndef CBLT_GEOM_BOUNDING_BOX_H
 #define CBLT_GEOM_BOUNDING_BOX_H
 
+#include "math/simd/simd_vec4.h"
 #include "ray.h"
-#include "simd/simd_vec4.h"
 
 #include <limits>
 
@@ -20,7 +20,8 @@ struct CoAxisAlignedBoundingBox {
             return aabb.max - aabb.min;
         }
 
-        static CoAxisAlignedBoundingBox Union(const CoAxisAlignedBoundingBox& lhs, const CoAxisAlignedBoundingBox &rhs) {
+        static CoAxisAlignedBoundingBox
+        Union(const CoAxisAlignedBoundingBox &lhs, const CoAxisAlignedBoundingBox &rhs) {
             return {
                 .min = simd::min(lhs.min, rhs.min),
                 .max = simd::max(lhs.max, rhs.max),
@@ -45,7 +46,6 @@ struct CoAxisAlignedBoundingBox {
             }
             return timeMax > 0.f && timeMin < ray.maxDist && timeMax >= timeMin;
         }
-
 };
 } // namespace cblt::geom
 

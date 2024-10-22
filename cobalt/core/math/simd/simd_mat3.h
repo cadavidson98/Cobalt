@@ -64,10 +64,7 @@ struct mat3f {
         }
 
         friend bool operator==(const mat3f &a, const mat3f &b) {
-            return
-                a.columns[0] == b.columns[0] &&
-                a.columns[1] == b.columns[1] &&
-                a.columns[2] == b.columns[2];
+            return a.columns[0] == b.columns[0] && a.columns[1] == b.columns[1] && a.columns[2] == b.columns[2];
         }
 };
 

@@ -90,17 +90,17 @@ struct vec3f {
 };
 
 inline vec3f min(const vec3f &lhs, const vec3f &rhs) {
-    return { _mm_min_ps(lhs.xyz, rhs.xyz) };
+    return {_mm_min_ps(lhs.xyz, rhs.xyz)};
 }
 
 inline vec3f max(const vec3f &lhs, const vec3f &rhs) {
-    return { _mm_max_ps(lhs.xyz, rhs.xyz) };
+    return {_mm_max_ps(lhs.xyz, rhs.xyz)};
 }
 
 inline float reduceMin(const vec3f &lhs) {
     __m128 shuffleLeft = _mm_shuffle_ps(lhs.xyz, lhs.xyz, _MM_SHUFFLE(2, 1, 0, 0));
     __m128 shuffleMin = _mm_min_ps(lhs.xyz, shuffleLeft);
-    shuffleLeft = _mm_shuffle_ps(shuffleMin, shuffleMin, _MM_SHUFFLE(1, 0, 2, 2)); 
+    shuffleLeft = _mm_shuffle_ps(shuffleMin, shuffleMin, _MM_SHUFFLE(1, 0, 2, 2));
     shuffleMin = _mm_min_ps(shuffleMin, shuffleLeft);
     return _mm_cvtss_f32(shuffleMin);
 }
@@ -108,7 +108,7 @@ inline float reduceMin(const vec3f &lhs) {
 inline float reduceMax(const vec3f &lhs) {
     __m128 shuffleLeft = _mm_shuffle_ps(lhs.xyz, lhs.xyz, _MM_SHUFFLE(2, 1, 0, 0));
     __m128 shuffleMax = _mm_max_ps(lhs.xyz, shuffleLeft);
-    shuffleLeft = _mm_shuffle_ps(shuffleMax, shuffleMax, _MM_SHUFFLE(1, 0, 2, 2)); 
+    shuffleLeft = _mm_shuffle_ps(shuffleMax, shuffleMax, _MM_SHUFFLE(1, 0, 2, 2));
     shuffleMax = _mm_max_ps(shuffleMax, shuffleLeft);
     return _mm_cvtss_f32(shuffleMax);
 }

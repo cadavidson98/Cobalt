@@ -38,7 +38,7 @@
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_C_COMPILER": "D:/Program Files (x86)/Intel/oneAPI/compiler/2022.2.1/windows/bin/icx.exe",
                 "CMAKE_CXX_COMPILER": "D:/Program Files (x86)/Intel/oneAPI/compiler/2022.2.1/windows/bin/icx.exe",
-                "CMAKE_CXX_FLAGS": "/Oi"
+                "CMAKE_CXX_FLAGS": "/Oi /EHsc"
             }
         },
         {
