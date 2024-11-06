@@ -1,14 +1,14 @@
-#ifndef CBLT_SIMD_MATH_MAT4_H
-#define CBLT_SIMD_MATH_MAT4_H
+#ifndef CBLT_MATH_MAT4_H
+#define CBLT_MATH_MAT4_H
 
-#include "simd_vec4.h"
+#include "vec4.h"
 
-namespace cblt::simd {
+namespace cblt {
 
 struct mat4f {
         vec4f columns[4];
 
-        mat4f(float diagonal)
+        mat4f(float diagonal = 1.f)
             : columns{
                   {diagonal, 0.f, 0.f, 0.f},
                   {0.f, diagonal, 0.f, 0.f},
@@ -84,13 +84,8 @@ struct mat4f {
         friend mat4f operator*(float a, const mat4f &b) {
             return b * a;
         }
-
-        friend bool operator==(const mat4f &a, const mat4f &b) {
-            return a.columns[0] == b.columns[0] && a.columns[1] == b.columns[1] && a.columns[2] == b.columns[2] &&
-                   a.columns[3] == b.columns[3];
-        }
 };
 
-} // namespace cblt::simd
+} // namespace cblt
 
-#endif // CBLT_SIMD_MATH_MAT4_H
+#endif // CBLT_MATH_MAT4_H

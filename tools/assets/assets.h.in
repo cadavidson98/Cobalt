@@ -1,0 +1,13 @@
+#ifndef CBLT_TOOLS_ASSETS_H
+#define CBLT_TOOLS_ASSETS_H
+
+#include <string>
+
+namespace cblt::tools::asset {
+
+static const std::string kAssetsBaseDir = "${CobaltToolsResourcesBaseDir}/";
+static const std::string kAssetsTexturesDir = "${CobaltToolsResourcesBaseDir}/textures/";
+
+}  // namespace cblt::tools::asset
+
+#endif  // CBLT_RENDER_TESTS_RESOURCES_H

@@ -12,9 +12,7 @@
 
 namespace cblt::cli {
 
-Image::Image(const CreateInfo &createInfo)
-: _renderTarget{createInfo.renderTarget} {
-
+Image::Image(const CreateInfo &createInfo): _renderTarget{createInfo.renderTarget} {
 }
 
 bool Image::write(const WriteInfo &writeInfo) {
@@ -24,7 +22,12 @@ bool Image::write(const WriteInfo &writeInfo) {
 
     const auto floatToUchar = [](const vec4f &vec) {
         static constexpr float kFloatToUChar = 255.f;
-        return vec4u8(uint8_t(kFloatToUChar * vec.x), uint8_t(kFloatToUChar * vec.y), uint8_t(kFloatToUChar * vec.z), uint8_t(kFloatToUChar * vec.w));
+        return vec4u8(
+            uint8_t(kFloatToUChar * vec.x),
+            uint8_t(kFloatToUChar * vec.y),
+            uint8_t(kFloatToUChar * vec.z),
+            uint8_t(kFloatToUChar * vec.w)
+        );
     };
 
     if (writeInfo.extension == "png") {
@@ -40,7 +43,13 @@ bool Image::write(const WriteInfo &writeInfo) {
         return stbi_write_png(writeInfo.filePath.c_str(), imageSize.x, imageSize.y, 4, imageBytes.data(), 0);
     } else if (writeInfo.extension == "hdr") {
         const vec2u imageSize = _renderTarget->size();
-        return stbi_write_hdr(writeInfo.filePath.c_str(), imageSize.x, imageSize.y, 4, reinterpret_cast<float*>(_renderTarget->data()));
+        return stbi_write_hdr(
+            writeInfo.filePath.c_str(),
+            imageSize.x,
+            imageSize.y,
+            4,
+            reinterpret_cast<float *>(_renderTarget->data())
+        );
     }
 
     return true;
@@ -63,7 +72,8 @@ bool Image::checkWriteInfo(const WriteInfo &writeInfo) {
         return std::strcmp(writeInfo.extension.c_str(), extension) == 0;
     };
 
-    if (std::find_if(kValidFileExtensions.begin(), kValidFileExtensions.end(), isValidExtension) == kValidFileExtensions.end()) {
+    if (std::find_if(kValidFileExtensions.begin(), kValidFileExtensions.end(), isValidExtension) ==
+        kValidFileExtensions.end()) {
         return false;
     }
 
@@ -71,11 +81,11 @@ bool Image::checkWriteInfo(const WriteInfo &writeInfo) {
 }
 
 std::unique_ptr<Image> Image::create(const CreateInfo &createInfo) {
-    if(!checkCreateInfo(createInfo)) {
+    if (!checkCreateInfo(createInfo)) {
         return nullptr;
     }
 
     return std::unique_ptr<Image>(new Image(createInfo));
 }
 
-}  // namespace cblt::cli
+} // namespace cblt::cli

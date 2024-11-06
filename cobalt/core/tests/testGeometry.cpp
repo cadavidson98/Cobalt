@@ -1,6 +1,8 @@
 #include "geometry/bounding_box.h"
 #include "geometry/bounding_volume.h"
+#include "geometry/intersection.h"
 #include "geometry/ray.h"
+#include "geometry/sphere.h"
 
 #include <chrono>
 #include <gtest/gtest.h>
@@ -8,14 +10,14 @@
 #include <vector>
 
 TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
-    static const cblt::simd::vec4f origin(0.f, 0.f, 0.f, 1.f);
-    static const cblt::simd::vec4f xDir(1.f, 0.f, 0.f, 0.f);
+    static const cblt::simd::vec3f origin(0.f, 0.f, 0.f);
+    static const cblt::simd::vec3f xDir(1.f, 0.f, 0.f);
     static const cblt::geom::CoRay xRay(origin, xDir, 10.f);
 
     {
         // hit (in front)
-        static const cblt::simd::vec4f boxMin(2.f, -1.f, -1.f, 1.f);
-        static const cblt::simd::vec4f boxMax(4.f, 1.f, 1.f, 1.f);
+        static const cblt::simd::vec3f boxMin(2.f, -1.f, -1.f);
+        static const cblt::simd::vec3f boxMax(4.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
@@ -26,8 +28,8 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
     }
     {
         // hit (inside)
-        static const cblt::simd::vec4f boxMin(-1.f, -1.f, -1.f, 1.f);
-        static const cblt::simd::vec4f boxMax(1.f, 1.f, 1.f, 1.f);
+        static const cblt::simd::vec3f boxMin(-1.f, -1.f, -1.f);
+        static const cblt::simd::vec3f boxMax(1.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
@@ -37,8 +39,8 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
     }
     {
         // miss (behind)
-        static const cblt::simd::vec4f boxMin(-4.f, -1.f, -1.f, 1.f);
-        static const cblt::simd::vec4f boxMax(-2.f, 1.f, 1.f, 1.f);
+        static const cblt::simd::vec3f boxMin(-4.f, -1.f, -1.f);
+        static const cblt::simd::vec3f boxMax(-2.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
@@ -47,8 +49,8 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
     }
     {
         // miss
-        static const cblt::simd::vec4f boxMin(-1.f, 4.f, -1.f, 1.f);
-        static const cblt::simd::vec4f boxMax(1.f, 6.f, 1.f, 1.f);
+        static const cblt::simd::vec3f boxMin(-1.f, 4.f, -1.f);
+        static const cblt::simd::vec3f boxMax(1.f, 6.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
@@ -57,8 +59,8 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
     }
     {
         // miss (beyond terminal dist)
-        static const cblt::simd::vec4f boxMin(12.f, -1.f, -1.f, 1.f);
-        static const cblt::simd::vec4f boxMax(14.f, 1.f, 1.f, 1.f);
+        static const cblt::simd::vec3f boxMin(12.f, -1.f, -1.f);
+        static const cblt::simd::vec3f boxMax(14.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
@@ -67,9 +69,66 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
     }
 }
 
+TEST(CobaltCoreGeometryTests, TestSphereIntersect) {
+    {
+        static const cblt::geom::CoSphere sphere{
+            .center = cblt::simd::vec3f(0.f, 0.f, 0.f),
+            .radius = 1.f,
+        };
+
+        static const cblt::geom::CoRay ray(cblt::simd::vec3f(0.f, 0.f, -5.f), cblt::simd::vec3f(0.f, 0.f, 1.f), 10.f);
+
+        float tMin, tMax;
+        EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, tMin, tMax));
+        EXPECT_EQ(tMin, 4.f);
+        EXPECT_EQ(tMax, 6.f);
+    }
+    {
+        static const cblt::geom::CoSphere sphere{
+            .center = cblt::simd::vec3f(0.f, 0.f, 0.f),
+            .radius = 4.f,
+        };
+
+        static const cblt::geom::CoRay ray(cblt::simd::vec3f(0.f, 0.f, 0.f), cblt::simd::vec3f(1.f, 0.f, 0.f), 10.f);
+
+        float tMin, tMax;
+        EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, tMin, tMax));
+        EXPECT_EQ(tMin, -4.f);
+        EXPECT_EQ(tMax, 4.f);
+    }
+    {
+        static const cblt::geom::CoSphere sphere{
+            .center = cblt::simd::vec3f(5.f, 5.f, 5.f),
+            .radius = 5.f,
+        };
+
+        static const cblt::geom::CoRay ray(cblt::simd::vec3f(0.f, 10.f, 0.f), cblt::simd::vec3f(0.f, -1.f, 0.f), 10.f);
+
+        float tMin, tMax;
+        EXPECT_FALSE(cblt::geom::raySphereIntersection(ray, sphere, tMin, tMax));
+    }
+    {
+        static const cblt::geom::CoSphere sphere{
+            .center = cblt::simd::vec3f(3.f, 0.f, 3.f),
+            .radius = 3.f,
+        };
+
+        static const cblt::geom::CoRay ray(
+            cblt::simd::vec3f(0.f, 0.f, 6.f),
+            cblt::simd::vec3f(0.7071f, 0, -.7071f),
+            10.f
+        );
+
+        float tMin, tMax;
+        EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, tMin, tMax));
+        EXPECT_NEAR(tMin, 1.24264f, 1e-4f);
+        EXPECT_NEAR(tMax, 7.24264f, 1e-4f);
+    }
+}
+
 TEST(CobaltCoreGeometryTests, TestBoundingBoxPerformance) {
-    static const cblt::simd::vec4f origin(0.f, 0.f, 0.f, 1.f);
-    static const cblt::simd::vec4f xDir(1.f, 0.f, 0.f, 0.f);
+    static const cblt::simd::vec3f origin(0.f, 0.f, 0.f);
+    static const cblt::simd::vec3f xDir(1.f, 0.f, 0.f);
     static const cblt::geom::CoRay xRay(origin, xDir, 10.f);
 
     // make a bunch of BBoxes
@@ -77,8 +136,8 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxPerformance) {
     std::vector<cblt::geom::CoAxisAlignedBoundingBox> boxes;
     boxes.reserve(numBoxes);
     for (size_t idx = 0; idx < numBoxes; ++idx) {
-        cblt::simd::vec4f boxMin(idx, idx, idx, 1);
-        cblt::simd::vec4f boxMax(idx + 1, idx + 1, idx + 1, 1);
+        cblt::simd::vec3f boxMin(idx, idx, idx);
+        cblt::simd::vec3f boxMax(idx + 1, idx + 1, idx + 1);
         boxes.emplace_back(boxMin, boxMax);
     }
 
@@ -97,8 +156,8 @@ TEST(CobaltCoreGeometryTests, TestCreateBoundingVolume) {
     boxes.reserve(numBoxes);
 
     for (size_t idx = 0; idx < numBoxes; ++idx) {
-        cblt::simd::vec4f boxMin(idx, idx, idx, 1);
-        cblt::simd::vec4f boxMax(idx + 1, idx + 1, idx + 1, 1);
+        cblt::simd::vec3f boxMin(idx, idx, idx);
+        cblt::simd::vec3f boxMax(idx + 1, idx + 1, idx + 1);
         boxes.emplace_back(boxMin, boxMax);
     }
 
@@ -111,7 +170,7 @@ TEST(CobaltCoreGeometryTests, TestCreateBoundingVolume) {
     cblt::geom::CoBoundingVolume boundingVolume(createInfo);
 
     {
-        cblt::geom::CoRay hitRay({5.f, 5.f, 0.f, 1.f}, {0.f, 0.f, 1.f, 0.f}, 10.f);
+        cblt::geom::CoRay hitRay({5.f, 5.f, 0.f}, {0.f, 0.f, 1.f}, 10.f);
         EXPECT_TRUE(boundingVolume.IntersectClosest(hitRay));
     }
 }

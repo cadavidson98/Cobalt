@@ -55,8 +55,8 @@ void CoBoundingVolume::BuildBoundingVolumeTree(size_t startIdx, size_t endIdx) {
     static constexpr float minFloat = std::numeric_limits<float>::lowest();
     static constexpr float maxFloat = std::numeric_limits<float>::max();
     CoAxisAlignedBoundingBox regionBounds = {
-        .min = simd::vec4f(maxFloat, maxFloat, maxFloat, 1.f),
-        .max = simd::vec4f(minFloat, minFloat, minFloat, 1.f),
+        .min = simd::vec3f(maxFloat, maxFloat, maxFloat),
+        .max = simd::vec3f(minFloat, minFloat, minFloat),
     };
 
     for (size_t idx = startIdx; idx < endIdx; ++idx) {
@@ -75,10 +75,10 @@ void CoBoundingVolume::BuildBoundingVolumeTree(size_t startIdx, size_t endIdx) {
     }
 
     // split on largest axis
-    const simd::vec4f boundingDimensions = CoAxisAlignedBoundingBox::Scales(regionBounds);
-    const simd::vec4f boundingCenter = CoAxisAlignedBoundingBox::Center(regionBounds);
+    const simd::vec3f boundingDimensions = CoAxisAlignedBoundingBox::Scales(regionBounds);
+    const simd::vec3f boundingCenter = CoAxisAlignedBoundingBox::Center(regionBounds);
     // need to get largest axis
-    const std::array<float, 4> dimsArray = boundingDimensions.asArray();
+    const std::array<float, 3> dimsArray = {boundingDimensions.x, boundingDimensions.y, boundingDimensions.z};
     size_t maxIndex = 0;
     float maxDimension = dimsArray[0];
     for (size_t idx = 1; idx < 3; ++idx) {
@@ -98,7 +98,7 @@ void CoBoundingVolume::BuildBoundingVolumeTree(size_t startIdx, size_t endIdx) {
         const float splitValue = boundingCenter[maxIndex];
         const auto primitiveSplit =
             std::partition(primitiveStart, primitiveEnd, [splitValue, maxIndex](const CoAxisAlignedBoundingBox &aabb) {
-                const simd::vec4f aabbCenter = CoAxisAlignedBoundingBox::Center(aabb);
+                const simd::vec3f aabbCenter = CoAxisAlignedBoundingBox::Center(aabb);
                 return aabbCenter[maxIndex] < splitValue;
             });
         splitIdx = std::distance(primitives.begin(), primitiveSplit);

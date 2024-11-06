@@ -1,6 +1,7 @@
 #ifndef CBLT_SIMD_VEC3_H
 #define CBLT_SIMD_VEC3_H
 
+#include <cassert>
 #include <immintrin.h>
 
 namespace cblt::simd {
@@ -21,6 +22,11 @@ struct vec3f {
 
         vec3f(float x, float y, float z) {
             xyz = _mm_setr_ps(x, y, z, 0.f);
+        }
+
+        float operator[](const size_t idx) const {
+            assert(idx < 3);
+            return *(&x + idx);
         }
 
         vec3f &operator+=(const vec3f &b) {
@@ -82,12 +88,21 @@ struct vec3f {
             return a.x == b.x && a.y == b.y && a.z == b.z;
         }
 
+        friend float dot(const vec3f &lhs, const vec3f &rhs);
+
         friend vec3f min(const vec3f &lhs, const vec3f &rhs);
         friend vec3f max(const vec3f &lhs, const vec3f &rhs);
 
         friend float reduceMin(const vec3f &lhs);
         friend float reduceMax(const vec3f &lhs);
 };
+
+inline float dot(const vec3f &lhs, const vec3f &rhs) {
+    __m128 product = _mm_mul_ps(lhs.xyz, rhs.xyz);
+    product = _mm_hadd_ps(product, product);
+    product = _mm_hadd_ps(product, product);
+    return _mm_cvtss_f32(product);
+}
 
 inline vec3f min(const vec3f &lhs, const vec3f &rhs) {
     return {_mm_min_ps(lhs.xyz, rhs.xyz)};

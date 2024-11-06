@@ -8,46 +8,41 @@
 namespace cblt {
 
 namespace render {
-    class CoRenderTarget;
-}  // namespace render
+class CoRenderTarget;
+} // namespace render
 
 namespace cli {
 
 class Image {
-public:
+    public:
+        struct CreateInfo {
+                std::shared_ptr<render::CoRenderTarget> renderTarget;
+        };
 
-struct CreateInfo {
-    std::shared_ptr<render::CoRenderTarget> renderTarget;
+        struct WriteInfo {
+                std::string filePath;
+                std::string extension;
+                // TODO: hdr, compression, etc.
+        };
+
+        bool write(const WriteInfo &writeInfo);
+
+        static std::unique_ptr<Image> create(const CreateInfo &createInfo);
+
+    private:
+        static constexpr std::array<const char *, 4> kValidFileExtensions = {"png", "jpg", "jpeg", "hdr"};
+
+        std::shared_ptr<render::CoRenderTarget> _renderTarget;
+
+        Image() = delete;
+        Image(const CreateInfo &createInfo);
+
+        static bool checkCreateInfo(const CreateInfo &createInfo);
+        static bool checkWriteInfo(const WriteInfo &writeInfo);
 };
 
-struct WriteInfo {
-    std::string filePath;
-    std::string extension;
-    // TODO: hdr, compression, etc.
-};
+} // namespace cli
 
-bool write(const WriteInfo &writeInfo);
+} // namespace cblt
 
-static std::unique_ptr<Image> create(const CreateInfo &createInfo);
-
-private:
-
-    static constexpr std::array<const char *, 4> kValidFileExtensions = {
-        "png", "jpg", "jpeg", "hdr"
-    };
-
-    std::shared_ptr<render::CoRenderTarget> _renderTarget;
-
-    Image() = delete;
-    Image(const CreateInfo &createInfo);
-
-    static bool checkCreateInfo(const CreateInfo &createInfo);
-    static bool checkWriteInfo(const WriteInfo &writeInfo);
-
-};
-
-}  // namespace cli
-
-}  // namespace cblt
-
-#endif  // COBALT_CLI_IMAGE_H
+#endif // COBALT_CLI_IMAGE_H

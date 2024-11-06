@@ -9,14 +9,14 @@
 namespace cblt::geom {
 
 struct CoAxisAlignedBoundingBox {
-        simd::vec4f min;
-        simd::vec4f max;
+        simd::vec3f min;
+        simd::vec3f max;
 
-        static simd::vec4f Center(const CoAxisAlignedBoundingBox &aabb) {
+        static simd::vec3f Center(const CoAxisAlignedBoundingBox &aabb) {
             return 0.5f * (aabb.min + aabb.max);
         };
 
-        static simd::vec4f Scales(const CoAxisAlignedBoundingBox &aabb) {
+        static simd::vec3f Scales(const CoAxisAlignedBoundingBox &aabb) {
             return aabb.max - aabb.min;
         }
 
@@ -29,14 +29,14 @@ struct CoAxisAlignedBoundingBox {
         }
 
         static bool intersect(const CoRay &ray, const CoAxisAlignedBoundingBox &aabb, float &timeMin, float &timeMax) {
-            const simd::vec4f minIntersectTimes = (aabb.min - ray.pos) * ray.invDir;
-            const simd::vec4f maxIntersectTimes = (aabb.max - ray.pos) * ray.invDir;
+            const simd::vec3f minIntersectTimes = (aabb.min - ray.pos) * ray.invDir;
+            const simd::vec3f maxIntersectTimes = (aabb.max - ray.pos) * ray.invDir;
 
-            simd::vec4f closestTimes = simd::min(minIntersectTimes, maxIntersectTimes);
-            simd::vec4f farthestTimes = simd::max(minIntersectTimes, maxIntersectTimes);
+            simd::vec3f closestTimes = simd::min(minIntersectTimes, maxIntersectTimes);
+            simd::vec3f farthestTimes = simd::max(minIntersectTimes, maxIntersectTimes);
             // make sure the .w component doesn't screw up the reduction!
-            closestTimes.w = std::numeric_limits<float>::lowest();
-            farthestTimes.w = std::numeric_limits<float>::max();
+            // closestTimes.w = std::numeric_limits<float>::lowest();
+            // farthestTimes.w = std::numeric_limits<float>::max();
 
             timeMin = simd::reduceMax(closestTimes);
             timeMax = simd::reduceMin(farthestTimes);

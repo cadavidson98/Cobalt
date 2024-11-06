@@ -11,7 +11,11 @@ struct vec3f {
 
         friend vec3f operator+(const vec3f &lhs, const vec3f &rhs) {
             return {lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z};
-        };
+        }
+
+        friend vec3f operator-(const vec3f &lhs, const vec3f &rhs) {
+            return {lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z};
+        }
 
         friend vec3f operator/(const vec3f &lhs, float rhs) {
             return {lhs.x / rhs, lhs.y / rhs, lhs.z / rhs};
@@ -27,7 +31,7 @@ inline float absDot(const vec3f &lhs, const vec3f &rhs) {
 }
 
 inline float length(const vec3f &vector) {
-    return vector.x * vector.x + vector.y * vector.y + vector.z * vector.z;
+    return std::sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
 }
 
 inline vec3f normalize(const vec3f &vector) {

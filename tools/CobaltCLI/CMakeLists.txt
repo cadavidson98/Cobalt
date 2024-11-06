@@ -7,4 +7,4 @@ set(COBALT_CLI_SOURCES
 
 add_executable(CobaltCLI ${COBALT_CLI_SOURCES})
 
-target_link_libraries(CobaltCLI PRIVATE CobaltCore CobaltRender stbimage)
+target_link_libraries(CobaltCLI PRIVATE CobaltCore CobaltRender CobaltToolsAssets stbimage)

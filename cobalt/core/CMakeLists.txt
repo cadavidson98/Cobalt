@@ -8,4 +8,4 @@ add_subdirectory(tests)
 add_subdirectory(utilities)
 
 target_include_directories(CobaltCore BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(CobaltCore PRIVATE pugixml)
+target_link_libraries(CobaltCore PRIVATE)
