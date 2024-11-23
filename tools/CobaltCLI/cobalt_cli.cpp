@@ -25,21 +25,21 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    static constexpr uint32_t kWidth = 400;
-    static constexpr uint32_t kHeight = 400;
-    std::shared_ptr<cblt::render::CoRenderTarget> renderTarget = cblt::render::CoRenderTarget::create({
-        .size = {kWidth, kHeight},
-    });
-
     static const cblt::render::CoCamera kDefaultCamera(cblt::render::CoCamera::CreateFromProjectionInfo{
         .hFov = cblt::toRadians(40.f),
         .vFov = cblt::toRadians(40.f),
         .filmSize = cblt::CoSize(2.2f, 2.2f),
-        .cameraToWorld = cblt::mat4f(1.f),
+        .cameraToWorld =
+            cblt::mat4f{
+                {1.f, 0.f, 0.f, 0.f},
+                {0.f, 1.f, 0.f, 0.f},
+                {0.f, 0.f, 1.f, 0.f},
+                {0.f, 0.f, 0.f, 1.f},
+            },
     });
 
-    std::shared_ptr<cblt::render::CoTexture> envMap = cblt::render::CoTexture::Create({
-        .fileName = cblt::tools::asset::kAssetsTexturesDir + "sky.exr",
+    std::shared_ptr<cblt::render::CoTexture> envMap = cblt::render::CoTexture::create({
+        .fileName = cblt::tools::asset::kAssetsTexturesDir + "arches.exr",
         .fileExtension = "exr",
     });
 
@@ -55,9 +55,27 @@ int main(int argc, char *argv[]) {
         .radius = 2.f,
     };
 
+    static constexpr uint32_t kWidth = 800;
+    static constexpr uint32_t kHeight = 800;
+    std::shared_ptr<cblt::render::CoRenderTarget> renderTarget = cblt::render::CoRenderTarget::create({
+        .size =
+            {
+                kWidth,
+                kHeight,
+            },
+    });
+
     static const cblt::CoRect viewport = cblt::CoRect{
-        .offset = {0.f, 0.f},
-        .size = cblt::CoSize(kWidth, kHeight),
+        .offset =
+            {
+                0.f,
+                0.f,
+            },
+        .size =
+            {
+                kWidth,
+                kHeight,
+            },
     };
 
     const cblt::vec2f viewportDimensions = {
@@ -69,12 +87,25 @@ int main(int argc, char *argv[]) {
         return ((pixelPos / viewportDimensions) * cblt::vec2f{2.f, -2.f} + cblt::vec2f{-1.f, 1.f});
     };
 
-    for (uint32_t pixelX = 0; pixelX < kWidth; ++pixelX) {
-        for (uint32_t pixelY = 0; pixelY < kHeight; ++pixelY) {
+    for (uint32_t pixelY = 0; pixelY < kHeight; ++pixelY) {
+        for (uint32_t pixelX = 0; pixelX < kWidth; ++pixelX) {
             float tMin{0.f}, tMax{0.f};
             const cblt::geom::CoRay ray = kDefaultCamera.CreateRay(viewportToNDC({float(pixelX), float(pixelY)}));
             const bool hit = cblt::geom::raySphereIntersection(ray, testSphere, tMin, tMax);
-            renderTarget->Write({pixelX, pixelY}, {float(hit), 0.f, float(hit), 1.f});
+
+            if (hit) {
+                renderTarget->Write({pixelX, pixelY}, {1.f, 0.f, 0.f, 1.f});
+            } else {
+                const float phi = std::acos(ray.dir.y);
+                // TODO: make sure camera is using an rhs csys
+                float theta = std::atan2(-ray.dir.z, ray.dir.x);
+                theta = (theta < 0.f) ? theta + cblt::kPI : theta;
+                const float u = ((theta) / (2.f * cblt::kPI));
+                const float v = phi / cblt::kPI;
+
+                const cblt::render::CoColor envColor = envMap->sample({u, v});
+                renderTarget->Write({pixelX, pixelY}, {envColor.r, envColor.g, envColor.b, envColor.a});
+            }
         }
     }
 

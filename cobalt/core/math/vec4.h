@@ -1,6 +1,7 @@
 #ifndef CBLT_VEC4_H
 #define CBLT_VEC4_H
 
+#include <algorithm>
 #include <cstdint>
 
 namespace cblt {
@@ -61,36 +62,79 @@ struct vec4 {
         friend vec4<T> operator/(vec4<T> lhs, T rhs);
         template<typename T>
         friend vec4<T> operator*(vec4<T> lhs, T rhs);
+
+        template<typename T>
+        friend vec4<T> clamp(vec4<T> lhs, T min, T max);
 };
 
 template<typename T>
 inline vec4<T> operator+(vec4<T> lhs, vec4<T> rhs) {
-    return vec4<T>{lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z, lhs.w + rhs.w};
+    return vec4<T>{
+        lhs.x + rhs.x,
+        lhs.y + rhs.y,
+        lhs.z + rhs.z,
+        lhs.w + rhs.w,
+    };
 }
 
 template<typename T>
 inline vec4<T> operator-(vec4<T> lhs, vec4<T> rhs) {
-    return vec4<T>{lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z, lhs.w - rhs.w};
+    return vec4<T>{
+        lhs.x - rhs.x,
+        lhs.y - rhs.y,
+        lhs.z - rhs.z,
+        lhs.w - rhs.w,
+    };
 }
 
 template<typename T>
 inline vec4<T> operator*(vec4<T> lhs, vec4<T> rhs) {
-    return vec4<T>{lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z, lhs.w * rhs.w};
+    return vec4<T>{
+        lhs.x * rhs.x,
+        lhs.y * rhs.y,
+        lhs.z * rhs.z,
+        lhs.w * rhs.w,
+    };
 }
 
 template<typename T>
 inline vec4<T> operator/(vec4<T> lhs, vec4<T> rhs) {
-    return vec4<T>{lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z, lhs.w / rhs.w};
+    return vec4<T>{
+        lhs.x / rhs.x,
+        lhs.y / rhs.y,
+        lhs.z / rhs.z,
+        lhs.w / rhs.w,
+    };
 }
 
 template<typename T>
 inline vec4<T> operator/(vec4<T> lhs, T rhs) {
-    return vec4<T>{lhs.x / rhs, lhs.y / rhs, lhs.z / rhs, lhs.w / rhs};
+    return vec4<T>{
+        lhs.x / rhs,
+        lhs.y / rhs,
+        lhs.z / rhs,
+        lhs.w / rhs,
+    };
 }
 
 template<typename T>
 inline vec4<T> operator*(vec4<T> lhs, T rhs) {
-    return vec4<T>{lhs.x * rhs, lhs.y * rhs, lhs.z * rhs, lhs.w * rhs};
+    return vec4<T>{
+        lhs.x * rhs,
+        lhs.y * rhs,
+        lhs.z * rhs,
+        lhs.w * rhs,
+    };
+}
+
+template<typename T>
+vec4<T> clamp(vec4<T> lhs, T min, T max) {
+    return vec4<T>{
+        std::clamp(lhs.x, min, max),
+        std::clamp(lhs.y, min, max),
+        std::clamp(lhs.z, min, max),
+        std::clamp(lhs.w, min, max),
+    };
 }
 
 using vec4u = vec4<unsigned int>;

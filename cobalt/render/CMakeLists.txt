@@ -7,4 +7,5 @@ target_include_directories(CobaltRender PRIVATE ${OpenEXR_includedir})
 target_link_libraries(CobaltRender PUBLIC CobaltCore OpenEXR::OpenEXR)
 
 add_subdirectory(data)
+add_subdirectory(utilities)
 add_subdirectory(tests)
