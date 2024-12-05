@@ -21,6 +21,8 @@ struct vec4 {
         friend vec4<T> operator*(vec4<T> lhs, vec4<T> rhs);
         template<typename T>
         friend vec4<T> operator/(vec4<T> lhs, vec4<T> rhs);
+        template<typename T>
+        friend bool operator==(vec4<T> lhs, vec4<T> rhs);
 
         template<typename T>
         vec4<T> &operator+=(const vec4<T> &rhs) {
@@ -62,6 +64,9 @@ struct vec4 {
         friend vec4<T> operator/(vec4<T> lhs, T rhs);
         template<typename T>
         friend vec4<T> operator*(vec4<T> lhs, T rhs);
+
+        template<typename T>
+        friend vec4<T> operator*(T lhs, vec4<T> rhs);
 
         template<typename T>
         friend vec4<T> clamp(vec4<T> lhs, T min, T max);
@@ -108,6 +113,11 @@ inline vec4<T> operator/(vec4<T> lhs, vec4<T> rhs) {
 }
 
 template<typename T>
+inline bool operator==(vec4<T> lhs, vec4<T> rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y && lhs.z == rhs.z && lhs.w == rhs.w;
+}
+
+template<typename T>
 inline vec4<T> operator/(vec4<T> lhs, T rhs) {
     return vec4<T>{
         lhs.x / rhs,
@@ -125,6 +135,11 @@ inline vec4<T> operator*(vec4<T> lhs, T rhs) {
         lhs.z * rhs,
         lhs.w * rhs,
     };
+}
+
+template<typename T>
+inline vec4<T> operator*(T lhs, vec4<T> rhs) {
+    return rhs * lhs;
 }
 
 template<typename T>

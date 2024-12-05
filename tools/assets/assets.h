@@ -7,6 +7,7 @@ namespace cblt::tools::asset {
 
 static const std::string kAssetsBaseDir = "D:/Personal_Projects/PathTracer/tools/assets/";
 static const std::string kAssetsTexturesDir = "D:/Personal_Projects/PathTracer/tools/assets/textures/";
+static const std::string kAssetsMeshesDir = "D:/Personal_Projects/PathTracer/tools/assets/meshes/";
 
 } // namespace cblt::tools::asset
 

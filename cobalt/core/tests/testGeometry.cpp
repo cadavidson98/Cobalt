@@ -3,11 +3,16 @@
 #include "geometry/intersection.h"
 #include "geometry/ray.h"
 #include "geometry/sphere.h"
+#include "geometry/triangle.h"
 
 #include <chrono>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
+
+namespace {
+static constexpr float kEpsilon = 1e-4f;
+}
 
 TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
     static const cblt::simd::vec3f origin(0.f, 0.f, 0.f);
@@ -20,11 +25,11 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
         static const cblt::simd::vec3f boxMax(4.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
-        float timeMin, timeMax;
-        const bool hit = cblt::geom::CoAxisAlignedBoundingBox::intersect(xRay, aabb, timeMin, timeMax);
+        cblt::geom::IntersectionEvent event;
+        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, event);
         EXPECT_TRUE(hit);
-        EXPECT_EQ(timeMin, 2.f);
-        EXPECT_EQ(timeMax, 4.f);
+        EXPECT_NEAR(event.timeMin, 2.f, kEpsilon);
+        EXPECT_NEAR(event.timeMax, 4.f, kEpsilon);
     }
     {
         // hit (inside)
@@ -32,10 +37,10 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
         static const cblt::simd::vec3f boxMax(1.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
-        float timeMin, timeMax;
-        const bool hit = cblt::geom::CoAxisAlignedBoundingBox::intersect(xRay, aabb, timeMin, timeMax);
+        cblt::geom::IntersectionEvent event;
+        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, event);
         EXPECT_TRUE(hit);
-        EXPECT_EQ(timeMin, 1.f);
+        EXPECT_NEAR(event.timeMin, 1.f, kEpsilon);
     }
     {
         // miss (behind)
@@ -43,8 +48,8 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
         static const cblt::simd::vec3f boxMax(-2.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
-        float timeMin, timeMax;
-        const bool hit = cblt::geom::CoAxisAlignedBoundingBox::intersect(xRay, aabb, timeMin, timeMax);
+        cblt::geom::IntersectionEvent event;
+        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, event);
         EXPECT_FALSE(hit);
     }
     {
@@ -53,8 +58,8 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
         static const cblt::simd::vec3f boxMax(1.f, 6.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
-        float timeMin, timeMax;
-        const bool hit = cblt::geom::CoAxisAlignedBoundingBox::intersect(xRay, aabb, timeMin, timeMax);
+        cblt::geom::IntersectionEvent event;
+        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, event);
         EXPECT_FALSE(hit);
     }
     {
@@ -63,8 +68,8 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
         static const cblt::simd::vec3f boxMax(14.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
-        float timeMin, timeMax;
-        const bool hit = cblt::geom::CoAxisAlignedBoundingBox::intersect(xRay, aabb, timeMin, timeMax);
+        cblt::geom::IntersectionEvent event;
+        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, event);
         EXPECT_FALSE(hit);
     }
 }
@@ -78,10 +83,10 @@ TEST(CobaltCoreGeometryTests, TestSphereIntersect) {
 
         static const cblt::geom::CoRay ray(cblt::simd::vec3f(0.f, 0.f, -5.f), cblt::simd::vec3f(0.f, 0.f, 1.f), 10.f);
 
-        float tMin, tMax;
-        EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, tMin, tMax));
-        EXPECT_EQ(tMin, 4.f);
-        EXPECT_EQ(tMax, 6.f);
+        cblt::geom::IntersectionEvent event;
+        EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, event));
+        EXPECT_EQ(event.timeMin, 4.f);
+        EXPECT_EQ(event.timeMax, 6.f);
     }
     {
         static const cblt::geom::CoSphere sphere{
@@ -91,10 +96,10 @@ TEST(CobaltCoreGeometryTests, TestSphereIntersect) {
 
         static const cblt::geom::CoRay ray(cblt::simd::vec3f(0.f, 0.f, 0.f), cblt::simd::vec3f(1.f, 0.f, 0.f), 10.f);
 
-        float tMin, tMax;
-        EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, tMin, tMax));
-        EXPECT_EQ(tMin, -4.f);
-        EXPECT_EQ(tMax, 4.f);
+        cblt::geom::IntersectionEvent event;
+        EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, event));
+        EXPECT_EQ(event.timeMin, -4.f);
+        EXPECT_EQ(event.timeMax, 4.f);
     }
     {
         static const cblt::geom::CoSphere sphere{
@@ -104,8 +109,8 @@ TEST(CobaltCoreGeometryTests, TestSphereIntersect) {
 
         static const cblt::geom::CoRay ray(cblt::simd::vec3f(0.f, 10.f, 0.f), cblt::simd::vec3f(0.f, -1.f, 0.f), 10.f);
 
-        float tMin, tMax;
-        EXPECT_FALSE(cblt::geom::raySphereIntersection(ray, sphere, tMin, tMax));
+        cblt::geom::IntersectionEvent event;
+        EXPECT_FALSE(cblt::geom::raySphereIntersection(ray, sphere, event));
     }
     {
         static const cblt::geom::CoSphere sphere{
@@ -119,10 +124,28 @@ TEST(CobaltCoreGeometryTests, TestSphereIntersect) {
             10.f
         );
 
-        float tMin, tMax;
-        EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, tMin, tMax));
-        EXPECT_NEAR(tMin, 1.24264f, 1e-4f);
-        EXPECT_NEAR(tMax, 7.24264f, 1e-4f);
+        cblt::geom::IntersectionEvent event;
+        EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, event));
+        EXPECT_NEAR(event.timeMin, 1.24264f, 1e-4f);
+        EXPECT_NEAR(event.timeMax, 7.24264f, 1e-4f);
+    }
+}
+
+TEST(CobaltCoreGeometryTests, TestTriangleIntersect) {
+    {
+        static const cblt::geom::CoTriangle triangle{
+            .position1 = cblt::simd::vec3f{0.f, 1.f, 1.f},
+            .position2 = cblt::simd::vec3f{1.f, 0.f, 1.f},
+            .position3 = cblt::simd::vec3f{-1.f, 0.f, 1.f},
+        };
+
+        static const cblt::geom::CoRay ray =
+            cblt::geom::CoRay(cblt::simd::vec3f{0.f, .5f, 0.f}, cblt::simd::vec3f{0.f, 0.f, 1.f}, 10.f);
+
+        cblt::geom::IntersectionEvent event;
+        const bool hit = cblt::geom::rayTriangleIntersection(ray, triangle, event);
+        EXPECT_TRUE(hit);
+        EXPECT_NEAR(event.timeMin, 1.f, 1e-4f);
     }
 }
 
@@ -142,9 +165,9 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxPerformance) {
     }
 
     auto s = std::chrono::high_resolution_clock::now();
-    float timeMin, timeMax;
+    cblt::geom::IntersectionEvent event;
     for (const auto &box : boxes) {
-        cblt::geom::CoAxisAlignedBoundingBox::intersect(xRay, box, timeMin, timeMax);
+        cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, box, event);
     }
     auto e = std::chrono::high_resolution_clock::now();
     std::cout << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(e - s).count() << std::endl;

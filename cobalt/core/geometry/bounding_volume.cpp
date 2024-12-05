@@ -1,5 +1,7 @@
 #include "bounding_volume.h"
 
+#include "intersection.h"
+
 #include <algorithm>
 #include <functional>
 #include <limits>
@@ -14,7 +16,7 @@ CoBoundingVolume::CoBoundingVolume(const CreateWithBoundingBoxesInfo &createOpti
 }
 
 bool CoBoundingVolume::IntersectClosest(const CoRay &ray) const {
-    float timeMin, timeMax;
+    IntersectionEvent intersectionEvent;
 
     std::deque<size_t> nodeStack;
     nodeStack.push_back(0);
@@ -25,13 +27,13 @@ bool CoBoundingVolume::IntersectClosest(const CoRay &ray) const {
             continue;
         }
         const BoundingVolumeNode &currentNode = boundingVolumeTree[currentNodeIdx];
-        if (CoAxisAlignedBoundingBox::intersect(ray, currentNode.nodeBounds, timeMin, timeMax)) {
+        if (rayAxisAlignedBoundingBoxIntersection(ray, currentNode.nodeBounds, intersectionEvent)) {
             if (currentNode.primitiveStartIdx != kInvalidIndex) {
                 // check for primitive hits
                 const size_t primitiveEndIdx = currentNode.primitiveStartIdx + currentNode.primitiveCount;
                 for (size_t primitiveIdx = currentNode.primitiveStartIdx; primitiveIdx < primitiveEndIdx;
                      ++primitiveIdx) {
-                    if (CoAxisAlignedBoundingBox::intersect(ray, primitives[primitiveIdx], timeMin, timeMax)) {
+                    if (rayAxisAlignedBoundingBoxIntersection(ray, primitives[primitiveIdx], intersectionEvent)) {
                         return true;
                     }
                 }

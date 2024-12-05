@@ -1,16 +1,17 @@
 #include "argument_parser.h"
 #include "assets.h"
-#include "bounding_box.h"
 #include "constants.h"
 #include "image.h"
 #include "intersection.h"
 #include "logging.h"
 #include "math_utilities.h"
 #include "math_utils.h"
+#include "mesh.h"
 #include "render_target.h"
 #include "scene.h"
 #include "sphere.h"
 #include "texture.h"
+#include "triangle.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -43,6 +44,11 @@ int main(int argc, char *argv[]) {
         .fileExtension = "exr",
     });
 
+    std::shared_ptr<cblt::geom::CoMesh> teapotMesh = cblt::geom::CoMesh::create({
+        .fileName = cblt::tools::asset::kAssetsMeshesDir + "teapot/teapot.obj",
+        .fileExtension = "obj",
+    });
+
     cblt::render::CoScene::CreateFromDataInfo createInfo{
         .camera = kDefaultCamera,
         .environmentMap = envMap,
@@ -53,6 +59,12 @@ int main(int argc, char *argv[]) {
     const cblt::geom::CoSphere testSphere{
         .center = cblt::simd::vec3f(1.f, 0.f, 15.f),
         .radius = 2.f,
+    };
+
+    const cblt::geom::CoTriangle testTriangle{
+        .position1 = cblt::simd::vec3f(0.f, 2.f, 15.f),
+        .position2 = cblt::simd::vec3f(-2.f, -1.f, 15.f),
+        .position3 = cblt::simd::vec3f(2.f, -1.f, 15.f),
     };
 
     static constexpr uint32_t kWidth = 800;
@@ -89,11 +101,11 @@ int main(int argc, char *argv[]) {
 
     for (uint32_t pixelY = 0; pixelY < kHeight; ++pixelY) {
         for (uint32_t pixelX = 0; pixelX < kWidth; ++pixelX) {
-            float tMin{0.f}, tMax{0.f};
+            cblt::geom::IntersectionEvent intersectionEvent;
             const cblt::geom::CoRay ray = kDefaultCamera.CreateRay(viewportToNDC({float(pixelX), float(pixelY)}));
-            const bool hit = cblt::geom::raySphereIntersection(ray, testSphere, tMin, tMax);
-
-            if (hit) {
+            const bool hitSphere = cblt::geom::raySphereIntersection(ray, testSphere, intersectionEvent);
+            const bool hitTriangle = cblt::geom::rayTriangleIntersection(ray, testTriangle, intersectionEvent);
+            if (hitTriangle) {
                 renderTarget->Write({pixelX, pixelY}, {1.f, 0.f, 0.f, 1.f});
             } else {
                 const float phi = std::acos(ray.dir.y);

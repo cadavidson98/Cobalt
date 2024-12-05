@@ -22,6 +22,9 @@ struct vec2 {
         template<typename T>
         friend vec2<T> operator/(vec2<T> lhs, vec2<T> rhs);
         template<typename T>
+        friend bool operator==(vec2<T> lhs, vec2<T> rhs);
+
+        template<typename T>
         friend vec2<T> operator/(vec2<T> lhs, T rhs);
         template<typename T>
         friend vec2<T> operator*(vec2<T> lhs, T rhs);
@@ -51,6 +54,11 @@ inline vec2<T> operator*(vec2<T> lhs, vec2<T> rhs) {
 template<typename T>
 inline vec2<T> operator/(vec2<T> lhs, vec2<T> rhs) {
     return vec2<T>{lhs.x / rhs.x, lhs.y / rhs.y};
+}
+
+template<typename T>
+inline bool operator==(vec2<T> lhs, vec2<T> rhs) {
+    return lhs.x == rhs.x && lhs.y == rhs.y;
 }
 
 template<typename T>

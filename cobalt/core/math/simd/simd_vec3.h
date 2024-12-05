@@ -16,6 +16,10 @@ struct vec3f {
                 };
         };
 
+        vec3f(float c = 0.f) {
+            xyz = _mm_setr_ps(c, c, c, 0.f);
+        }
+
         vec3f(__m128 _xyz) {
             xyz = _xyz;
         }
@@ -89,12 +93,15 @@ struct vec3f {
         }
 
         friend float dot(const vec3f &lhs, const vec3f &rhs);
+        friend vec3f cross(const vec3f &lhs, const vec3f &rhs);
 
         friend vec3f min(const vec3f &lhs, const vec3f &rhs);
         friend vec3f max(const vec3f &lhs, const vec3f &rhs);
 
         friend float reduceMin(const vec3f &lhs);
         friend float reduceMax(const vec3f &lhs);
+
+        friend vec3f abs(const vec3f &lhs);
 };
 
 inline float dot(const vec3f &lhs, const vec3f &rhs) {
@@ -103,6 +110,14 @@ inline float dot(const vec3f &lhs, const vec3f &rhs) {
     product = _mm_hadd_ps(product, product);
     return _mm_cvtss_f32(product);
 }
+
+inline vec3f cross(const vec3f &lhs, const vec3f &rhs) {
+    const __m128 shuffleLhs = _mm_shuffle_ps(lhs.xyz, lhs.xyz, _MM_SHUFFLE(3, 0, 2, 1));
+    const __m128 shuffleRhs = _mm_shuffle_ps(rhs.xyz, rhs.xyz, _MM_SHUFFLE(3, 0, 2, 1));
+    const __m128 crossProduct = _mm_sub_ps(_mm_mul_ps(lhs.xyz, shuffleRhs), _mm_mul_ps(shuffleLhs, rhs.xyz));
+    const __m128 deShuffleCross = _mm_shuffle_ps(crossProduct, crossProduct, _MM_SHUFFLE(3, 0, 2, 1));
+    return {deShuffleCross};
+};
 
 inline vec3f min(const vec3f &lhs, const vec3f &rhs) {
     return {_mm_min_ps(lhs.xyz, rhs.xyz)};
@@ -126,6 +141,11 @@ inline float reduceMax(const vec3f &lhs) {
     shuffleLeft = _mm_shuffle_ps(shuffleMax, shuffleMax, _MM_SHUFFLE(1, 0, 2, 2));
     shuffleMax = _mm_max_ps(shuffleMax, shuffleLeft);
     return _mm_cvtss_f32(shuffleMax);
+}
+
+inline vec3f abs(const vec3f &lhs) {
+    static const __m128 kMinusZero = {-1.f, -1.f, -1.f, -1.f};
+    return {_mm_andnot_ps(kMinusZero, lhs.xyz)};
 }
 
 } // namespace cblt::simd

@@ -1,10 +1,12 @@
 set(COBALT_UTILITIES_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/logging.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/math_utilities.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/math_utilities.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/string_utilities.h)
 
 set(COBALT_UTILITIES_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/logging.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/math_utilities.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/math_utilities.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/string_utilities.cpp)
 
 target_compile_definitions(CobaltCore PUBLIC CBLT_LOG_DEBUG CBLT_LOG_INFO CBLT_LOG_WARN CBLT_LOG_ERROR)
 target_sources(CobaltCore PUBLIC ${COBALT_UTILITIES_HEADERS} PRIVATE ${COBALT_UTILITIES_SOURCES})

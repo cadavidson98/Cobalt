@@ -4,7 +4,8 @@
 #include "math/simd/simd_vec3.h"
 
 namespace {
-const cblt::simd::vec3f one(1.f, 1.f, 1.f);
+const cblt::simd::vec3f kOne(1.f, 1.f, 1.f);
+const cblt::simd::vec3f kZero(1e-6f, 1e-6f, 1e-6f);
 } // namespace
 
 namespace cblt::geom {
@@ -12,7 +13,7 @@ namespace cblt::geom {
 struct CoRay {
 
         CoRay(const simd::vec3f &_pos, const simd::vec3f &_dir, float _maxDist)
-            : pos{_pos.xyz}, dir{_dir.xyz}, invDir{one / dir}, maxDist{_maxDist} {
+            : pos{_pos.xyz}, dir{_dir.xyz}, invDir{kOne / (kZero + dir)}, maxDist{_maxDist} {
         }
 
         simd::vec3f pos;

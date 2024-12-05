@@ -7,6 +7,7 @@ namespace cblt::tools::asset {
 
 static const std::string kAssetsBaseDir = "${CobaltToolsResourcesBaseDir}/";
 static const std::string kAssetsTexturesDir = "${CobaltToolsResourcesBaseDir}/textures/";
+static const std::string kAssetsMeshesDir = "${CobaltToolsResourcesBaseDir}/meshes/";
 
 }  // namespace cblt::tools::asset
 
