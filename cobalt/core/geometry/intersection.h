@@ -1,13 +1,13 @@
 #ifndef CBLT_GEOM_INTERSECTION_H
 #define CBLT_GEOM_INTERSECTION_H
 
+#include "simd/simd_vec3.h"
 #include "vec2.h"
 
 namespace cblt::geom {
 
-struct CoRay;
 struct CoAxisAlignedBoundingBox;
-struct CoTriangle;
+struct CoRay;
 struct CoSphere;
 
 struct IntersectionEvent {
@@ -18,7 +18,22 @@ struct IntersectionEvent {
 
 bool raySphereIntersection(const CoRay &ray, const CoSphere &sphere, IntersectionEvent &intersectionEvent);
 
-bool rayTriangleIntersection(const CoRay &ray, const CoTriangle &triangle, IntersectionEvent &intersectionEvent);
+bool rayTriangleIntersection(
+    const CoRay &ray,
+    simd::vec3f position1,
+    simd::vec3f position2,
+    simd::vec3f position3,
+    IntersectionEvent &IntersectionEvent
+);
+
+bool rayQuadIntersection(
+    const CoRay &ray,
+    simd::vec3f position1,
+    simd::vec3f position2,
+    simd::vec3f position3,
+    simd::vec3f position4,
+    IntersectionEvent &IntersectionEvent
+);
 
 bool rayAxisAlignedBoundingBoxIntersection(
     const CoRay &ray,

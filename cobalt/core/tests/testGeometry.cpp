@@ -184,13 +184,16 @@ TEST(CobaltCoreGeometryTests, TestCreateBoundingVolume) {
         boxes.emplace_back(boxMin, boxMax);
     }
 
-    cblt::geom::CoBoundingVolume::CreateWithBoundingBoxesInfo createInfo{
-        .boxes = boxes,
+    using boxBoundingVolume =
+        cblt::geom::CoBoundingVolume<cblt::geom::CoAxisAlignedBoundingBox, cblt::geom::boundingBoxIntersector>;
+
+    boxBoundingVolume::CreateWithPrimitivesInfo createInfo{
+        .primitives = boxes,
         .maxPrimsInLeaf = 1,
-        .partitionMethod = cblt::geom::CoBoundingVolume::PartitionMethod::Midpoint,
+        .partitionMethod = boxBoundingVolume::PartitionMethod::Midpoint,
     };
 
-    cblt::geom::CoBoundingVolume boundingVolume(createInfo);
+    boxBoundingVolume boundingVolume(createInfo);
 
     {
         cblt::geom::CoRay hitRay({5.f, 5.f, 0.f}, {0.f, 0.f, 1.f}, 10.f);

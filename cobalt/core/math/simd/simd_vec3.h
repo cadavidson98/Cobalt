@@ -102,6 +102,8 @@ struct vec3f {
         friend float reduceMax(const vec3f &lhs);
 
         friend vec3f abs(const vec3f &lhs);
+
+        friend vec3f shuffle(const vec3f lhs, size_t idx1, size_t idx2, size_t idx3);
 };
 
 inline float dot(const vec3f &lhs, const vec3f &rhs) {
@@ -128,6 +130,11 @@ inline vec3f max(const vec3f &lhs, const vec3f &rhs) {
 }
 
 inline float reduceMin(const vec3f &lhs) {
+    // mask out NaN -> replace with +inf
+    static constexpr float kMaxFloat = std::numeric_limits<float>::max();
+    static const __m128 kMaxInf = {kMaxFloat, kMaxFloat, kMaxFloat, kMaxFloat};
+    __m128 maskNAN = _mm_cmp_ps(lhs.xyz, kMaxInf, _CMP_LT_OQ);
+    __m128 values = _mm_blendv_ps(kMaxInf, lhs.xyz, maskNAN);
     __m128 shuffleLeft = _mm_shuffle_ps(lhs.xyz, lhs.xyz, _MM_SHUFFLE(2, 1, 0, 0));
     __m128 shuffleMin = _mm_min_ps(lhs.xyz, shuffleLeft);
     shuffleLeft = _mm_shuffle_ps(shuffleMin, shuffleMin, _MM_SHUFFLE(1, 0, 2, 2));
@@ -136,8 +143,13 @@ inline float reduceMin(const vec3f &lhs) {
 }
 
 inline float reduceMax(const vec3f &lhs) {
-    __m128 shuffleLeft = _mm_shuffle_ps(lhs.xyz, lhs.xyz, _MM_SHUFFLE(2, 1, 0, 0));
-    __m128 shuffleMax = _mm_max_ps(lhs.xyz, shuffleLeft);
+    // mask out NaN -> replace with -inf
+    static constexpr float kMinFloat = std::numeric_limits<float>::lowest();
+    static const __m128 kMinusInf = {kMinFloat, kMinFloat, kMinFloat, kMinFloat};
+    __m128 maskNAN = _mm_cmp_ps(lhs.xyz, kMinusInf, _CMP_GT_OQ);
+    __m128 values = _mm_blendv_ps(kMinusInf, lhs.xyz, maskNAN);
+    __m128 shuffleLeft = _mm_shuffle_ps(values, values, _MM_SHUFFLE(2, 1, 0, 0));
+    __m128 shuffleMax = _mm_max_ps(values, shuffleLeft);
     shuffleLeft = _mm_shuffle_ps(shuffleMax, shuffleMax, _MM_SHUFFLE(1, 0, 2, 2));
     shuffleMax = _mm_max_ps(shuffleMax, shuffleLeft);
     return _mm_cvtss_f32(shuffleMax);
@@ -146,6 +158,13 @@ inline float reduceMax(const vec3f &lhs) {
 inline vec3f abs(const vec3f &lhs) {
     static const __m128 kMinusZero = {-1.f, -1.f, -1.f, -1.f};
     return {_mm_andnot_ps(kMinusZero, lhs.xyz)};
+}
+
+inline vec3f shuffle(const vec3f lhs, size_t idx1, size_t idx2, size_t idx3) {
+    float array[4];
+    _mm_store_ps(array, lhs.xyz);
+    float array2[] = {array[idx1], array[idx2], array[idx3], array[3]};
+    return {_mm_load_ps(array2)};
 }
 
 } // namespace cblt::simd

@@ -1,6 +1,9 @@
 #include "mesh.h"
 
+#include "intersection.h"
 #include "logging.h"
+#include "quad.h"
+#include "triangle.h"
 #include "vec3.h"
 
 #include <fstream>
@@ -10,10 +13,63 @@ CBLT_DEFINE_LOG(CoLogMesh);
 
 namespace cblt::geom {
 
-CoMesh::VertexBuffer::VertexBuffer(size_t _numVertices, size_t _numIndices)
-    : numVertices{_numVertices}, numIndices{_numIndices}, vertices{nullptr}, indices{nullptr} {
+CoMesh::VertexBuffer::VertexBuffer(size_t _numVertices): numVertices{_numVertices}, vertices{nullptr} {
     vertices = new simd::vec3f[numVertices];
-    indices = new uint32_t[numIndices];
+}
+
+CoMesh::IndexBuffer::IndexBuffer(size_t _numTriangles, CoPrimitiveTopology primitiveType)
+    : numPrimitives{_numTriangles} {
+    if (primitiveType == CoPrimitiveTopology::kTriangle) {
+        triangles = new MeshTriangle[numPrimitives];
+    } else {
+        quads = new MeshQuad[numPrimitives];
+    }
+}
+
+bool CoMesh::MeshTriangleIntersector::operator()(const MeshTriangle &meshTriangle) {
+    return rayTriangleIntersection(
+        ray,
+        meshTriangle.vertices[meshTriangle.indices.x],
+        meshTriangle.vertices[meshTriangle.indices.y],
+        meshTriangle.vertices[meshTriangle.indices.z],
+        event
+    );
+}
+
+CoAxisAlignedBoundingBox CoMesh::MeshTriangleBounder::operator()(const MeshTriangle &meshTriangle) {
+    simd::vec3f boxMin =
+        simd::min(meshTriangle.vertices[meshTriangle.indices.x], meshTriangle.vertices[meshTriangle.indices.y]);
+    simd::vec3f boxMax =
+        simd::max(meshTriangle.vertices[meshTriangle.indices.x], meshTriangle.vertices[meshTriangle.indices.y]);
+
+    return CoAxisAlignedBoundingBox{
+        .min = simd::min(boxMin, meshTriangle.vertices[meshTriangle.indices.z]),
+        .max = simd::max(boxMax, meshTriangle.vertices[meshTriangle.indices.z]),
+    };
+}
+
+bool CoMesh::MeshQuadIntersector::operator()(const CoMesh::MeshQuad &meshQuad) {
+    return rayQuadIntersection(
+        ray,
+        meshQuad.vertices[meshQuad.indices.x],
+        meshQuad.vertices[meshQuad.indices.y],
+        meshQuad.vertices[meshQuad.indices.z],
+        meshQuad.vertices[meshQuad.indices.w],
+        event
+    );
+}
+
+CoAxisAlignedBoundingBox CoMesh::MeshQuadBounder::operator()(const CoMesh::MeshQuad &meshQuad) {
+    simd::vec3f boxMin1 = simd::min(meshQuad.vertices[meshQuad.indices.x], meshQuad.vertices[meshQuad.indices.y]);
+    simd::vec3f boxMax1 = simd::max(meshQuad.vertices[meshQuad.indices.x], meshQuad.vertices[meshQuad.indices.y]);
+
+    simd::vec3f boxMin2 = simd::min(meshQuad.vertices[meshQuad.indices.z], meshQuad.vertices[meshQuad.indices.w]);
+    simd::vec3f boxMax2 = simd::max(meshQuad.vertices[meshQuad.indices.z], meshQuad.vertices[meshQuad.indices.w]);
+
+    return CoAxisAlignedBoundingBox{
+        .min = simd::min(boxMin1, boxMin2),
+        .max = simd::max(boxMax1, boxMax2),
+    };
 }
 
 std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateFromFileInfo &createInfo) {
@@ -21,9 +77,7 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateFromFileInfo &createI
         return nullptr;
     }
 
-    if (createInfo.fileExtension ==
-        "ob"
-        "j") {
+    if (createInfo.fileExtension == "obj") {
         const std::optional<CreateFromBuffersInfo> vertexBuffers = _readObjFile(createInfo.fileName);
         if (vertexBuffers) {
             return std::shared_ptr<CoMesh>(new CoMesh(vertexBuffers.value()));
@@ -34,14 +88,54 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateFromFileInfo &createI
 }
 
 CoMesh::CoMesh(const CreateFromBuffersInfo &createInfo)
-    : _positions{createInfo.positions}, _normals{createInfo.normals}, _topology{createInfo.topology} {
+    : _positions{createInfo.positions}, _primitives{createInfo.indices}, _normals{createInfo.normals},
+      _topology{createInfo.topology} {
+    switch (_topology) {
+    case CoPrimitiveTopology::kTriangle :
+        _triangles =
+            std::unique_ptr<TriangleAccelerator>(new TriangleAccelerator(TriangleAccelerator::CreateWithPrimitivesInfo{
+                .primitives = std::span<MeshTriangle>(_primitives.triangles, _primitives.numPrimitives),
+            }));
+        break;
+    case CoPrimitiveTopology::kQuad :
+        _quads = std::unique_ptr<QuadAccelerator>(new QuadAccelerator(QuadAccelerator::CreateWithPrimitivesInfo{
+            .primitives = std::span<MeshQuad>(_primitives.quads, _primitives.numPrimitives),
+        }));
+    }
 }
 
 CoMesh::~CoMesh() {
     delete[] _positions.vertices;
-    delete[] _positions.indices;
+    if (_topology == CoPrimitiveTopology::kTriangle) {
+        delete[] _primitives.triangles;
+    } else {
+        delete[] _primitives.quads;
+    }
+
     delete[] _normals.vertices;
-    delete[] _normals.indices;
+}
+
+bool CoMesh::intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) {
+    if (_topology == CoPrimitiveTopology::kTriangle) {
+        return _triangles->IntersectClosest(ray);
+    } else {
+        return _quads->IntersectClosest(ray);
+        for (size_t idx = 0; idx < _primitives.numPrimitives; ++idx) {
+            const vec4u quadIdx = _primitives.quads[idx].indices;
+
+            if (rayQuadIntersection(
+                    ray,
+                    _positions.vertices[quadIdx.x],
+                    _positions.vertices[quadIdx.y],
+                    _positions.vertices[quadIdx.z],
+                    _positions.vertices[quadIdx.w],
+                    intersectionEvent
+                )) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 bool CoMesh::_checkCreateInfo(const CoMesh::CreateFromFileInfo &createInfo) {
@@ -57,17 +151,17 @@ std::optional<CoMesh::CreateFromBuffersInfo> CoMesh::_readObjFile(const std::str
 
     const size_t begginningIdx = meshFile.tellg();
     // prescan to get the number of vertices, normals, and indices count
-    const std::optional<MeshBuffersSizeInfo> buffersSizeInfo = _scanVertexBuffersSize(meshFile);
-    if (!buffersSizeInfo || buffersSizeInfo->numPositions == 0 || buffersSizeInfo->numIndices == 0) {
+    const std::optional<MeshBuffersSizeInfo> buffersSizeInfo = _scanMeshBuffersSize(meshFile);
+    if (!buffersSizeInfo || buffersSizeInfo->numPositions == 0 || buffersSizeInfo->numFaces == 0) {
         return std::nullopt;
     }
 
     const bool readNormals = buffersSizeInfo->numNormals > 0;
-    VertexBuffer positionsBuffer(buffersSizeInfo->numPositions, buffersSizeInfo->numIndices);
-    VertexBuffer normalsBuffer(
-        readNormals ? buffersSizeInfo->numNormals : buffersSizeInfo->numPositions,
-        buffersSizeInfo->numIndices
-    );
+    VertexBuffer positionsBuffer(buffersSizeInfo->numPositions);
+    VertexBuffer normalsBuffer(readNormals ? buffersSizeInfo->numNormals : buffersSizeInfo->numPositions);
+
+    const bool isQuadMesh = buffersSizeInfo->topology == CoPrimitiveTopology::kQuad;
+    IndexBuffer indicesBuffer(buffersSizeInfo->numFaces, buffersSizeInfo->topology);
 
     meshFile.clear();
     meshFile.seekg(begginningIdx);
@@ -100,14 +194,27 @@ std::optional<CoMesh::CreateFromBuffersInfo> CoMesh::_readObjFile(const std::str
             normalsBuffer.vertices[normalIdx++] = simd::vec3f(vertexNormal.x, vertexNormal.y, vertexNormal.z);
         } else if (lineInfo == "f") { // face
             std::string indices;
+            vec3i parsedIndices[4] = {};
+            size_t currentIndex = 0;
             while (!lineParser.eof()) {
                 lineParser >> indices;
-                const vec3i vertexIndices = _parseIndices(indices);
-                positionsBuffer.indices[faceIdx] = vertexIndices.x;
-                if (readNormals) {
-                    normalsBuffer.indices[faceIdx] = vertexIndices.z;
-                }
-                ++faceIdx;
+                parsedIndices[currentIndex++] = _parseIndices(indices);
+            }
+
+            assert(currentIndex == (isQuadMesh ? 4 : 3));
+            if (isQuadMesh) {
+                indicesBuffer.quads[faceIdx++] = {
+                    {uint32_t(parsedIndices[0].x),
+                     uint32_t(parsedIndices[1].x),
+                     uint32_t(parsedIndices[2].x),
+                     uint32_t(parsedIndices[3].x)},
+                    positionsBuffer.vertices,
+                };
+            } else {
+                indicesBuffer.triangles[faceIdx++] = {
+                    {uint32_t(parsedIndices[0].x), uint32_t(parsedIndices[1].x), uint32_t(parsedIndices[2].x)},
+                    positionsBuffer.vertices,
+                };
             }
         }
     }
@@ -118,19 +225,20 @@ std::optional<CoMesh::CreateFromBuffersInfo> CoMesh::_readObjFile(const std::str
 
     return CreateFromBuffersInfo{
         .positions = std::move(positionsBuffer),
+        .indices = std::move(indicesBuffer),
         .normals = std::move(normalsBuffer),
         .topology = buffersSizeInfo->topology,
     };
 }
 
-std::optional<CoMesh::MeshBuffersSizeInfo> CoMesh::_scanVertexBuffersSize(std::ifstream &meshFile) {
+std::optional<CoMesh::MeshBuffersSizeInfo> CoMesh::_scanMeshBuffersSize(std::ifstream &meshFile) {
     static constexpr size_t kMaxLineLength = 256;
     std::string objLine(kMaxLineLength, '\0');
 
     MeshBuffersSizeInfo buffersSizeInfo{
         .numPositions = 0,
         .numNormals = 0,
-        .numIndices = 0,
+        .numFaces = 0,
         .topology = CoPrimitiveTopology::kTriangle,
     };
 
@@ -160,12 +268,13 @@ std::optional<CoMesh::MeshBuffersSizeInfo> CoMesh::_scanVertexBuffersSize(std::i
                 CoLogError(CoLogMesh) << "Unsupported mesh topology";
             }
 
-            buffersSizeInfo.numIndices += numVerticesInFace;
+            buffersSizeInfo.topology =
+                (numVerticesInFace == 3) ? CoPrimitiveTopology::kTriangle : CoPrimitiveTopology::kQuad;
+
+            ++buffersSizeInfo.numFaces;
         }
     }
 
-    buffersSizeInfo.topology =
-        (buffersSizeInfo.numIndices % 3 == 0) ? CoPrimitiveTopology::kTriangle : CoPrimitiveTopology::kQuad;
     return buffersSizeInfo;
 }
 

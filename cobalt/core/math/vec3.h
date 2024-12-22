@@ -62,6 +62,7 @@ inline vec3<T> normalize(const vec3<T> &vector) {
 
 using vec3f = vec3<float>;
 using vec3i = vec3<int>;
+using vec3u = vec3<uint32_t>;
 
 } // namespace cblt
 

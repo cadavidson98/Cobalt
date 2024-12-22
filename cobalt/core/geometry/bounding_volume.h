@@ -2,13 +2,24 @@
 #define CBLT_GEOM_BOUNDING_VOLUME_H
 
 #include "bounding_box.h"
+#include "intersection.h"
 #include "ray.h"
 
 #include <cstdint>
+#include <span>
 #include <vector>
 
 namespace cblt::geom {
 
+struct boundingBoxIntersector {
+        const CoRay ray;
+        IntersectionEvent event;
+        bool operator()(const CoAxisAlignedBoundingBox &aabb) {
+            return rayAxisAlignedBoundingBoxIntersection(ray, aabb, event);
+        }
+};
+
+template<typename PrimitiveType, typename Bounding, typename Intersector>
 class CoBoundingVolume {
     public:
         enum class PartitionMethod {
@@ -17,13 +28,14 @@ class CoBoundingVolume {
             SurfaceAreaHeuristic,
         };
 
-        struct CreateWithBoundingBoxesInfo {
-                std::vector<CoAxisAlignedBoundingBox> boxes;
+        struct CreateWithPrimitivesInfo {
+                std::span<PrimitiveType> primitives;
                 uint8_t maxPrimsInLeaf = kMaxPrimitivesPerLeaf;
-                PartitionMethod partitionMethod;
+                PartitionMethod partitionMethod = PartitionMethod::Midpoint;
         };
 
-        CoBoundingVolume(const CreateWithBoundingBoxesInfo &createOptions);
+        CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions);
+        ~CoBoundingVolume();
 
         bool IntersectClosest(const CoRay &ray) const;
 
@@ -41,12 +53,14 @@ class CoBoundingVolume {
 
         uint8_t primitivesPerLeaf;
         PartitionMethod partitionMethod;
-        std::vector<CoAxisAlignedBoundingBox> primitives;
+        std::span<PrimitiveType> primitives;
         std::vector<BoundingVolumeNode> boundingVolumeTree;
 
         void BuildBoundingVolumeTree(size_t startIdx, size_t endIdx);
 };
 
 } // namespace cblt::geom
+
+#include "bounding_volume.inl"
 
 #endif // CBLT_GEOM_BOUNDING_VOLUME_H

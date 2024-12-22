@@ -1,3 +1,5 @@
+#ifndef CBLT_GEOM_BOUNDING_VOLUME_INL
+#define CBLT_GEOM_BOUNDING_VOLUME_INL
 #include "bounding_volume.h"
 
 #include "intersection.h"
@@ -9,14 +11,21 @@
 
 namespace cblt::geom {
 
-CoBoundingVolume::CoBoundingVolume(const CreateWithBoundingBoxesInfo &createOptions)
+template<typename PrimitiveType, typename Bounding, typename Intersector>
+CoBoundingVolume<typename PrimitiveType, typename Bounding, typename Intersector>::CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions)
     : primitivesPerLeaf{createOptions.maxPrimsInLeaf}, partitionMethod{createOptions.partitionMethod},
-      primitives{std::move(createOptions.boxes)} {
-    BuildBoundingVolumeTree(0, primitives.size());
+      primitives{createOptions.primitives} {
+    BuildBoundingVolumeTree(0, primitives.size() - 1);
 }
 
-bool CoBoundingVolume::IntersectClosest(const CoRay &ray) const {
+template<typename PrimitiveType, typename Bounding, typename Intersector>
+CoBoundingVolume<typename PrimitiveType, typename Bounding, typename Intersector>::~CoBoundingVolume() {
+}
+
+template<typename PrimitiveType, typename Bounding, typename Intersector>
+bool CoBoundingVolume<typename PrimitiveType, typename Bounding, typename Intersector>::IntersectClosest(const CoRay &ray) const {
     IntersectionEvent intersectionEvent;
+    Intersector boxIntersector{ray, intersectionEvent};
 
     std::deque<size_t> nodeStack;
     nodeStack.push_back(0);
@@ -33,25 +42,28 @@ bool CoBoundingVolume::IntersectClosest(const CoRay &ray) const {
                 const size_t primitiveEndIdx = currentNode.primitiveStartIdx + currentNode.primitiveCount;
                 for (size_t primitiveIdx = currentNode.primitiveStartIdx; primitiveIdx < primitiveEndIdx;
                      ++primitiveIdx) {
-                    if (rayAxisAlignedBoundingBoxIntersection(ray, primitives[primitiveIdx], intersectionEvent)) {
+                    if (boxIntersector(primitives[primitiveIdx])) {
                         return true;
                     }
                 }
+                continue;
             }
+            const size_t leftChildIdx = currentNodeIdx + 1; 
             nodeStack.push_back(currentNode.rightChildIdx);
-            nodeStack.push_back(currentNodeIdx + 1);
+            nodeStack.push_back(leftChildIdx);
         }
     }
     return false;
 }
 
-void CoBoundingVolume::BuildBoundingVolumeTree(size_t startIdx, size_t endIdx) {
+template<typename PrimitiveType, typename Bounding, typename Intersector>
+void CoBoundingVolume<typename PrimitiveType, typename Bounding, typename Intersector>::BuildBoundingVolumeTree(size_t startIdx, size_t endIdx) {
 
     if (startIdx > endIdx) {
         return;
     }
 
-    const size_t numPrimitives = endIdx - startIdx;
+    const size_t numPrimitives = endIdx - startIdx + 1;
 
     // TODO: don't use copy constructor
     static constexpr float minFloat = std::numeric_limits<float>::lowest();
@@ -61,13 +73,14 @@ void CoBoundingVolume::BuildBoundingVolumeTree(size_t startIdx, size_t endIdx) {
         .max = simd::vec3f(minFloat, minFloat, minFloat),
     };
 
+    Bounding primitiveBounder;
     for (size_t idx = startIdx; idx < endIdx; ++idx) {
-        regionBounds = CoAxisAlignedBoundingBox::Union(primitives[idx], regionBounds);
+        regionBounds = CoAxisAlignedBoundingBox::Union(primitiveBounder(primitives[idx]), regionBounds);
     }
 
     if (numPrimitives <= primitivesPerLeaf) {
         BoundingVolumeNode leafNode{
-            .nodeBounds = primitives[startIdx],
+            .nodeBounds = primitiveBounder(primitives[startIdx]),
             .rightChildIdx = kInvalidIndex,
             .primitiveStartIdx = startIdx,
             .primitiveCount = static_cast<uint8_t>(numPrimitives),
@@ -93,17 +106,26 @@ void CoBoundingVolume::BuildBoundingVolumeTree(size_t startIdx, size_t endIdx) {
     // my vote is for reordering w/ CSR style indexing for the leaves
     size_t splitIdx = startIdx;
     switch (partitionMethod) {
-    case PartitionMethod::Midpoint :
-    default :
+    case PartitionMethod::Midpoint: {
         auto primitiveStart = std::next(primitives.begin(), startIdx);
         auto primitiveEnd = std::next(primitives.begin(), endIdx);
         const float splitValue = boundingCenter[maxIndex];
         const auto primitiveSplit =
-            std::partition(primitiveStart, primitiveEnd, [splitValue, maxIndex](const CoAxisAlignedBoundingBox &aabb) {
+            std::partition(primitiveStart, primitiveEnd, [splitValue, maxIndex](const PrimitiveType &primitive) {
+                static Bounding bounder;
+                const CoAxisAlignedBoundingBox aabb = bounder(primitive);
                 const simd::vec3f aabbCenter = CoAxisAlignedBoundingBox::Center(aabb);
                 return aabbCenter[maxIndex] < splitValue;
             });
         splitIdx = std::distance(primitives.begin(), primitiveSplit);
+        if (splitIdx != startIdx && splitIdx != endIdx) {
+            break;
+        }
+    }
+    case PartitionMethod::Binary:
+    default: {
+        splitIdx = (endIdx + startIdx) >> 1;
+    }
     }
     // make node
     BoundingVolumeNode node{
@@ -121,3 +143,5 @@ void CoBoundingVolume::BuildBoundingVolumeTree(size_t startIdx, size_t endIdx) {
 }
 
 } // namespace cblt::geom
+
+#endif   // CBLT_GEOM_BOUNDING_VOLUME_INL
