@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <immintrin.h>
+#include <limits>
 
 namespace cblt::simd {
 
@@ -94,6 +95,7 @@ struct vec3f {
 
         friend float dot(const vec3f &lhs, const vec3f &rhs);
         friend vec3f cross(const vec3f &lhs, const vec3f &rhs);
+        friend vec3f lerp(const vec3f &lhs, const vec3f &rhs, const float value);
 
         friend vec3f min(const vec3f &lhs, const vec3f &rhs);
         friend vec3f max(const vec3f &lhs, const vec3f &rhs);
@@ -120,6 +122,10 @@ inline vec3f cross(const vec3f &lhs, const vec3f &rhs) {
     const __m128 deShuffleCross = _mm_shuffle_ps(crossProduct, crossProduct, _MM_SHUFFLE(3, 0, 2, 1));
     return {deShuffleCross};
 };
+
+inline vec3f lerp(const vec3f &lhs, const vec3f &rhs, const float value) {
+    return lhs * (1.f - value) + rhs * value;
+}
 
 inline vec3f min(const vec3f &lhs, const vec3f &rhs) {
     return {_mm_min_ps(lhs.xyz, rhs.xyz)};

@@ -7,6 +7,7 @@
 #include "math_utilities.h"
 #include "math_utils.h"
 #include "mesh.h"
+#include "quad.h"
 #include "render_target.h"
 #include "scene.h"
 #include "sphere.h"
@@ -14,7 +15,6 @@
 #include "triangle.h"
 
 #include <cstdlib>
-#include <iostream>
 
 CBLT_DEFINE_LOG(CobaltCLI);
 
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
                 {1.f, 0.f, 0.f, 0.f},
                 {0.f, 1.f, 0.f, 0.f},
                 {0.f, 0.f, 1.f, 0.f},
-                {0.f, 0.f, 0.f, 1.f},
+                {0.f, 0.f, -5.f, 1.f},
             },
     });
 
@@ -56,16 +56,10 @@ int main(int argc, char *argv[]) {
 
     std::shared_ptr<cblt::render::CoScene> defaultScene = cblt::render::CoScene::Create(createInfo);
 
-    const cblt::geom::CoSphere testSphere{
-        .center = cblt::simd::vec3f(1.f, 0.f, 15.f),
-        .radius = 2.f,
-    };
-
-    const cblt::geom::CoTriangle testTriangle{
-        .position1 = cblt::simd::vec3f(0.f, 2.f, 15.f),
-        .position2 = cblt::simd::vec3f(-2.f, -1.f, 15.f),
-        .position3 = cblt::simd::vec3f(2.f, -1.f, 15.f),
-    };
+    std::shared_ptr<cblt::geom::CoMesh> testMesh = cblt::geom::CoMesh::create({
+        .fileName = cblt::tools::asset::kAssetsMeshesDir + std::string("teapot/teapot.obj"),
+        .fileExtension = "obj",
+    });
 
     static constexpr uint32_t kWidth = 800;
     static constexpr uint32_t kHeight = 800;
@@ -99,14 +93,23 @@ int main(int argc, char *argv[]) {
         return ((pixelPos / viewportDimensions) * cblt::vec2f{2.f, -2.f} + cblt::vec2f{-1.f, 1.f});
     };
 
+    {
+        cblt::geom::IntersectionEvent intersectionEvent;
+        const cblt::geom::CoRay ray = kDefaultCamera.CreateRay(viewportToNDC({400.f, 250.f}));
+        const bool hitMesh = testMesh->intersects(ray, intersectionEvent);
+        CoLogDebug(CobaltCLI) << "Hit Mesh:" << hitMesh;
+    }
+
     for (uint32_t pixelY = 0; pixelY < kHeight; ++pixelY) {
         for (uint32_t pixelX = 0; pixelX < kWidth; ++pixelX) {
             cblt::geom::IntersectionEvent intersectionEvent;
             const cblt::geom::CoRay ray = kDefaultCamera.CreateRay(viewportToNDC({float(pixelX), float(pixelY)}));
-            const bool hitSphere = cblt::geom::raySphereIntersection(ray, testSphere, intersectionEvent);
-            const bool hitTriangle = cblt::geom::rayTriangleIntersection(ray, testTriangle, intersectionEvent);
-            if (hitTriangle) {
-                renderTarget->Write({pixelX, pixelY}, {1.f, 0.f, 0.f, 1.f});
+            const bool hitMesh = testMesh->intersects(ray, intersectionEvent);
+            if (hitMesh) {
+                const float depth = (intersectionEvent.timeMin - 4.f) / 2.f;
+                const float u = intersectionEvent.localCoordinates.x;
+                const float v = intersectionEvent.localCoordinates.y;
+                renderTarget->Write({pixelX, pixelY}, {u, 0.f, v, 1.f});
             } else {
                 const float phi = std::acos(ray.dir.y);
                 // TODO: make sure camera is using an rhs csys

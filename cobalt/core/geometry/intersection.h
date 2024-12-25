@@ -35,6 +35,15 @@ bool rayQuadIntersection(
     IntersectionEvent &IntersectionEvent
 );
 
+bool rayPatchIntersection(
+    const CoRay &ray,
+    simd::vec3f position1,
+    simd::vec3f position2,
+    simd::vec3f position3,
+    simd::vec3f position4,
+    IntersectionEvent &intersectionEvent
+);
+
 bool rayAxisAlignedBoundingBoxIntersection(
     const CoRay &ray,
     const CoAxisAlignedBoundingBox &boundingBox,

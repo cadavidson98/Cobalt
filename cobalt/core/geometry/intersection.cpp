@@ -67,98 +67,118 @@ bool rayTriangleIntersection(
     return intersectionEvent.timeMin <= ray.maxDist;
 }
 
-// ray quad intersection, from Inigo Quilez
-// TODO: link here
-bool rayQuadIntersection(const CoRay &ray, const CoQuad &quad, IntersectionEvent &intersectionEvent) {
-    static constexpr std::array<int, 4> lookupTable = {1, 2, 0, 1};
-    static constexpr float kZero = -1e-4f;
-    static constexpr float kOne = 1 + 1e-4;
-
-    const simd::vec3f edge1 = quad.position2 - quad.position1;
-    const simd::vec3f edge2 = quad.position4 - quad.position1;
-    const simd::vec3f edge3 = quad.position3 - quad.position1;
-    const simd::vec3f toQuad = ray.pos - quad.position1;
-
-    simd::vec3f planeNormal = simd::cross(edge1, edge2);
-    const float hitTime = -simd::dot(planeNormal, toQuad) / simd::dot(ray.dir, planeNormal);
-    if (hitTime < kZero) {
-        return false;
-    }
-
-    const simd::vec3f hitPosition = toQuad + hitTime * ray.dir;
-    // project onto quad plane
-    const simd::vec3f absPlane = simd::abs(planeNormal);
-    std::array<float, 3> planeValues = {absPlane.x, absPlane.y, absPlane.z};
-    const int maxDimension = planeValues[0] > planeValues[1] && planeValues[0] > planeValues[2] ? 0
-                             : planeValues[1] > planeValues[2]                                  ? 1
-                                                                                                : 2;
-
-    const int uID = lookupTable[maxDimension];
-    const int vID = lookupTable[maxDimension + 1];
-
-    // project to 2D
-    const simd::vec3f projectedPosition = simd::shuffle(hitPosition, uID, vID, 2);
-    const simd::vec3f projectedEdge1 = simd::shuffle(edge1, uID, vID, 2);
-    const simd::vec3f projectedEdge2 = simd::shuffle(edge2, uID, vID, 2);
-    const simd::vec3f projectedEdge3 = simd::shuffle(edge3, uID, vID, 2);
-
-    // find barycentric coordinates
-    const simd::vec3f projectedSum = projectedEdge3 - projectedEdge2 - projectedEdge1;
-
-    auto crossProduct2D = [](const simd::vec3f &lhs, const simd::vec3f &rhs) {
-        const simd::vec3f cross3D = simd::cross(lhs, rhs);
-        return cross3D.z;
-    };
-
-    const float cross0 = crossProduct2D(projectedPosition, projectedEdge2);
-    const float cross2 = crossProduct2D(projectedEdge3 - projectedEdge2, projectedEdge1);
-    const float cross1 = crossProduct2D(projectedPosition, projectedSum) - planeNormal[maxDimension];
-
-    float u = 0;
-    float v = 0;
-    if (!(std::fabs(cross2) > std::numeric_limits<float>::epsilon())) {
-        u = crossProduct2D(projectedPosition, projectedEdge1) / cross1;
-        v = -cross0 / cross1;
-    } else {
-        const float w = cross1 * cross1 - 4.f * cross0 * cross2;
-        if (w < kZero) {
-            return false;
-        }
-        const float sqrtW = std::sqrt(w);
-        const float inv2A = 1.f / (2.f * cross2);
-        v = (-cross1 - sqrtW) * inv2A;
-        if (std::clamp(v, kZero, kOne) != v) {
-            v = (-cross1 + sqrtW) * inv2A;
-        }
-
-        u = (projectedPosition.y - projectedEdge1.y * v) / (projectedEdge2.y + projectedSum.y * v);
-        if (std::clamp(u, kZero, kOne) != u) {
-            u = (projectedPosition.x - projectedEdge1.x * v) / (projectedEdge2.x + projectedSum.x * v);
-        }
-    }
-
-    if (std::clamp(u, kZero, kOne) != u || std::clamp(v, kZero, kOne) != v) {
-        return false;
-    }
-
-    intersectionEvent.timeMin = hitTime;
-    intersectionEvent.localCoordinates = vec2f{u, v};
-    return true;
-}
-
 bool rayQuadIntersection(
     const CoRay &ray,
     simd::vec3f position1,
     simd::vec3f position2,
     simd::vec3f position3,
     simd::vec3f position4,
-    IntersectionEvent &IntersectionEvent
+    IntersectionEvent &intersectionEvent
 ) {
-    if (rayTriangleIntersection(ray, position1, position2, position3, IntersectionEvent)) {
+    if (rayTriangleIntersection(ray, position1, position2, position3, intersectionEvent)) {
         return true;
     }
+    return rayTriangleIntersection(ray, position1, position3, position4, intersectionEvent);
+}
 
-    return rayTriangleIntersection(ray, position1, position3, position4, IntersectionEvent);
+static float determinant(simd::vec3f a, simd::vec3f b, simd::vec3f c) {
+    const float one = a.x * (b.y * c.z - c.y * b.z);
+    const float two = -b.x * (a.y * c.z - c.y * b.z);
+    const float three = c.x * (a.y * b.z - b.y * a.z);
+    return one + two + three;
+}
+
+bool rayPatchIntersection(
+    const CoRay &ray,
+    simd::vec3f position1,
+    simd::vec3f position2,
+    simd::vec3f position3,
+    simd::vec3f position4,
+    IntersectionEvent &intersectionEvent
+) {
+    const simd::vec3f edge21 = position2 - position1;
+    const simd::vec3f edge43 = position4 - position3;
+    const simd::vec3f edge41 = position4 - position1;
+    const simd::vec3f edge32 = position3 - position2;
+    const simd::vec3f patchNormal = simd::cross(edge21, edge43);
+
+    const bool areParallel = std::fabs(simd::dot(patchNormal, patchNormal)) < 1e-4f;
+
+    const float quadraticA = simd::dot(patchNormal, ray.dir);
+    const float quadraticC = simd::dot(simd::cross(position1 - ray.pos, ray.dir), edge41);
+    const float quadraticB = simd::dot(simd::cross(position2 - ray.pos, ray.dir), edge32) - (quadraticA + quadraticC);
+
+    float u1 = 0.f;
+    float u2 = 0.f;
+
+    if (quadraticA == 0.f) {
+        if (quadraticB == 0.f) {
+            return false;
+        }
+        u1 = -quadraticC / quadraticB;
+        u2 = u1;
+    } else {
+        const float discriminant = quadraticB * quadraticB - 4.f * quadraticA * quadraticC;
+
+        if (discriminant < 0.f) {
+            return false;
+        }
+
+        const float rootDiscriminant = std::sqrt(discriminant);
+        const float Q = -.5f * (quadraticB + std::copysign(rootDiscriminant, quadraticB));
+        u1 = Q / quadraticA;
+        u2 = quadraticC / Q;
+    }
+
+    struct PatchValues {
+            float time;
+            float v;
+    };
+
+    auto computePatchValues = [&ray, &position1, &position2, &position3, &position4](float u) {
+        const simd::vec3f Fx = simd::lerp(position1, position2, u);
+        const simd::vec3f Fy = simd::lerp(position4, position3, u);
+        const simd::vec3f directionV = Fy - Fx;
+
+        const simd::vec3f rayToFx = Fx - ray.pos;
+        const simd::vec3f normal = simd::cross(ray.dir, directionV);
+        const float normalLengthSquared = simd::dot(normal, normal);
+
+        // use scalar triple product for determinant of 3x3 matrix
+        const float ref_v1 = determinant(rayToFx, ray.dir, normal) / normalLengthSquared;
+        const float ref_t1 = determinant(rayToFx, directionV, normal) / normalLengthSquared;
+        const float v1 = simd::dot(rayToFx, simd::cross(ray.dir, normal)) / normalLengthSquared;
+        const float t1 = simd::dot(rayToFx, simd::cross(directionV, normal)) / normalLengthSquared;
+
+        return PatchValues{.time = t1, .v = v1};
+    };
+
+    float hitTime = std::numeric_limits<float>::max();
+    const bool u1Valid = 0.f <= u1 && u1 <= 1.f;
+    if (u1Valid) {
+        const PatchValues patchValues = computePatchValues(u1);
+        if (0.f < patchValues.time && 0.f <= patchValues.v && patchValues.v <= 1.f) {
+            hitTime = patchValues.time;
+            intersectionEvent.localCoordinates = {u1, patchValues.v};
+        }
+    }
+
+    const bool u2Valid = 0.f <= u2 && u2 <= 1.f;
+    if (u2Valid) {
+        const PatchValues patchValues = computePatchValues(u2);
+        if (0.f < patchValues.time && patchValues.time < hitTime && 0.f <= patchValues.v && patchValues.v <= 1.f) {
+            hitTime = patchValues.time;
+            intersectionEvent.localCoordinates = {u2, patchValues.v};
+        }
+    }
+
+    // if ((u1Valid || u2Valid) && hitTime == std::numeric_limits<float>::max()) {
+    //     intersectionEvent.localCoordinates = {0.f, 0.f};
+    //     return true;
+    // }
+
+    intersectionEvent.timeMin = hitTime;
+    return hitTime <= ray.maxDist;
 }
 
 bool rayAxisAlignedBoundingBoxIntersection(

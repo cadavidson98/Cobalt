@@ -49,7 +49,7 @@ CoAxisAlignedBoundingBox CoMesh::MeshTriangleBounder::operator()(const MeshTrian
 }
 
 bool CoMesh::MeshQuadIntersector::operator()(const CoMesh::MeshQuad &meshQuad) {
-    return rayQuadIntersection(
+    return rayPatchIntersection(
         ray,
         meshQuad.vertices[meshQuad.indices.x],
         meshQuad.vertices[meshQuad.indices.y],
@@ -120,21 +120,6 @@ bool CoMesh::intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) 
         return _triangles->IntersectClosest(ray);
     } else {
         return _quads->IntersectClosest(ray);
-        for (size_t idx = 0; idx < _primitives.numPrimitives; ++idx) {
-            const vec4u quadIdx = _primitives.quads[idx].indices;
-
-            if (rayQuadIntersection(
-                    ray,
-                    _positions.vertices[quadIdx.x],
-                    _positions.vertices[quadIdx.y],
-                    _positions.vertices[quadIdx.z],
-                    _positions.vertices[quadIdx.w],
-                    intersectionEvent
-                )) {
-                return true;
-            }
-        }
-        return false;
     }
 }
 
@@ -300,9 +285,10 @@ vec3i CoMesh::_parseIndices(const std::string &faceString) {
     }
 
     index = endIndex + 1;
-    endIndex = faceString.size() - 1;
+    const size_t stringSize = std::strlen(faceString.c_str());
+    endIndex = stringSize - 1;
     length = endIndex - index + 1;
-    if (length != 0) {
+    if (index < stringSize && length != 0) {
         const std::string normalIndex = faceString.substr(index, length);
         indices.z = std::stoi(normalIndex) - 1;
     }
