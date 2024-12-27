@@ -12,12 +12,12 @@ struct CoAxisAlignedBoundingBox {
         simd::vec3f min;
         simd::vec3f max;
 
-        static simd::vec3f Center(const CoAxisAlignedBoundingBox &aabb) {
-            return 0.5f * (aabb.min + aabb.max);
+        simd::vec3f Center() const {
+            return 0.5f * (min + max);
         };
 
-        static simd::vec3f Scales(const CoAxisAlignedBoundingBox &aabb) {
-            return aabb.max - aabb.min;
+        simd::vec3f Scales() const {
+            return max - min;
         }
 
         static CoAxisAlignedBoundingBox

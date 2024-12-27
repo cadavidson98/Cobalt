@@ -154,12 +154,13 @@ bool rayPatchIntersection(
     };
 
     float hitTime = std::numeric_limits<float>::max();
+    vec2f hitCoordinates = {0.f, 0.f};
     const bool u1Valid = 0.f <= u1 && u1 <= 1.f;
     if (u1Valid) {
         const PatchValues patchValues = computePatchValues(u1);
         if (0.f < patchValues.time && 0.f <= patchValues.v && patchValues.v <= 1.f) {
             hitTime = patchValues.time;
-            intersectionEvent.localCoordinates = {u1, patchValues.v};
+            hitCoordinates = {u1, patchValues.v};
         }
     }
 
@@ -168,23 +169,24 @@ bool rayPatchIntersection(
         const PatchValues patchValues = computePatchValues(u2);
         if (0.f < patchValues.time && patchValues.time < hitTime && 0.f <= patchValues.v && patchValues.v <= 1.f) {
             hitTime = patchValues.time;
-            intersectionEvent.localCoordinates = {u2, patchValues.v};
+            hitCoordinates = {u2, patchValues.v};
         }
     }
 
-    // if ((u1Valid || u2Valid) && hitTime == std::numeric_limits<float>::max()) {
-    //     intersectionEvent.localCoordinates = {0.f, 0.f};
-    //     return true;
-    // }
+    if (hitTime <= ray.maxDist && hitTime < intersectionEvent.timeMin) {
+        intersectionEvent.timeMin = hitTime;
+        intersectionEvent.localCoordinates = hitCoordinates;
+        return true;
+    }
 
-    intersectionEvent.timeMin = hitTime;
-    return hitTime <= ray.maxDist;
+    return false;
 }
 
 bool rayAxisAlignedBoundingBoxIntersection(
     const CoRay &ray,
     const CoAxisAlignedBoundingBox &aabb,
-    IntersectionEvent &intersectionEvent
+    float &minTime,
+    float &maxTime
 ) {
     const simd::vec3f minIntersectTimes = (aabb.min - ray.pos) * ray.invDir;
     const simd::vec3f maxIntersectTimes = (aabb.max - ray.pos) * ray.invDir;
@@ -192,17 +194,17 @@ bool rayAxisAlignedBoundingBoxIntersection(
     const simd::vec3f closestTimes = simd::min(minIntersectTimes, maxIntersectTimes);
     const simd::vec3f farthestTimes = simd::max(minIntersectTimes, maxIntersectTimes);
 
-    intersectionEvent.timeMin = simd::reduceMax(closestTimes);
-    intersectionEvent.timeMax = simd::reduceMin(farthestTimes);
+    minTime = simd::reduceMax(closestTimes);
+    maxTime = simd::reduceMin(farthestTimes);
 
-    if (intersectionEvent.timeMax < intersectionEvent.timeMin) {
-        std::swap(intersectionEvent.timeMax, intersectionEvent.timeMin);
+    if (maxTime < minTime) {
+        std::swap(minTime, maxTime);
     }
 
-    if (intersectionEvent.timeMin <= 0.f) {
-        intersectionEvent.timeMin = intersectionEvent.timeMax;
+    if (minTime <= 0.f) {
+        minTime = maxTime;
     }
-    return intersectionEvent.timeMax >= 0.f && intersectionEvent.timeMin < ray.maxDist;
+    return maxTime >= 0.f && minTime < ray.maxDist;
 }
 
 } // namespace cblt::geom

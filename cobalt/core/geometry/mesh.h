@@ -7,6 +7,7 @@
 #include "vec4.h"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -35,57 +36,61 @@ class CoMesh {
         bool intersects(const CoRay &ray, IntersectionEvent &intersectionEvent);
 
     private:
-        struct MeshTriangle {
-                vec3u indices;
-                simd::vec3f *vertices;
+        class TriangleStorage {
+            public:
+                TriangleStorage(simd::vec3f *positions, vec4u *indices);
+                ~TriangleStorage();
+
+                size_t NumPrimitives() const;
+                CoAxisAlignedBoundingBox PrimitiveBounds(size_t startIdx, size_t endIdx) const;
+                size_t Reorder(
+                    size_t startIdx,
+                    size_t endIdx,
+                    std::function<bool(const CoAxisAlignedBoundingBox &)> comparator
+                );
+                bool
+                PrimitivesIntersect(const CoRay &ray, size_t startIdx, size_t endIdx, IntersectionEvent &event) const;
+
+            private:
+                vec4u *_indices;
+                size_t numIndices;
+
+                simd::vec3f *_positions;
+
+                std::vector<CoAxisAlignedBoundingBox> _ComputePrimitiveBounds(size_t startIdx, size_t endIdx) const;
         };
 
-        struct MeshQuad {
-                vec4u indices;
-                simd::vec3f *vertices;
-        };
+        class QuadStorage {
+            public:
+                QuadStorage(simd::vec3f *positions, vec4u *indices, size_t numIndices);
+                ~QuadStorage();
 
-        struct MeshTriangleIntersector {
-                const CoRay ray;
-                IntersectionEvent event;
-                bool operator()(const MeshTriangle &meshTriangle);
-        };
+                size_t NumPrimitives() const;
+                CoAxisAlignedBoundingBox PrimitiveBounds(size_t startIdx, size_t endIdx) const;
+                size_t Reorder(
+                    size_t startIdx,
+                    size_t endIdx,
+                    std::function<bool(const CoAxisAlignedBoundingBox &)> comparator
+                );
+                bool
+                PrimitivesIntersect(const CoRay &ray, size_t startIdx, size_t endIdx, IntersectionEvent &event) const;
 
-        struct MeshQuadIntersector {
-                const CoRay ray;
-                IntersectionEvent event;
-                bool operator()(const MeshQuad &meshQuad);
-        };
+            private:
+                vec4u *_indices;
+                size_t _numIndices;
 
-        struct MeshTriangleBounder {
-                CoAxisAlignedBoundingBox operator()(const MeshTriangle &meshTriangle);
-        };
+                simd::vec3f *_positions;
 
-        struct MeshQuadBounder {
-                CoAxisAlignedBoundingBox operator()(const MeshQuad &meshQuad);
-        };
+                std::vector<CoAxisAlignedBoundingBox> _bounds;
 
-        struct VertexBuffer {
-                simd::vec3f *vertices;
-                size_t numVertices;
-
-                VertexBuffer(size_t numVertices);
-        };
-
-        struct IndexBuffer {
-                union {
-                        MeshTriangle *triangles;
-                        MeshQuad *quads;
-                };
-                size_t numPrimitives;
-
-                IndexBuffer(size_t numPrimtives, CoPrimitiveTopology topology);
+                std::vector<CoAxisAlignedBoundingBox> _ComputePrimitiveBounds(size_t startIdx, size_t endIdx) const;
         };
 
         struct CreateFromBuffersInfo {
-                VertexBuffer positions;
-                IndexBuffer indices;
-                VertexBuffer normals;
+                simd::vec3f *positions;
+                size_t numVertices;
+                vec4u *indices;
+                size_t numIndices;
                 CoPrimitiveTopology topology;
         };
 
@@ -96,16 +101,16 @@ class CoMesh {
                 CoPrimitiveTopology topology;
         };
 
-        using TriangleAccelerator = CoBoundingVolume<MeshTriangle, MeshTriangleBounder, MeshTriangleIntersector>;
-        using QuadAccelerator = CoBoundingVolume<MeshQuad, MeshQuadBounder, MeshQuadIntersector>;
+        using TriangleAccelerator = CoBoundingVolume<TriangleStorage>;
+        using QuadAccelerator = CoBoundingVolume<QuadStorage>;
 
-        VertexBuffer _positions;
-        IndexBuffer _primitives;
-        VertexBuffer _normals;
         CoPrimitiveTopology _topology;
 
-        std::unique_ptr<TriangleAccelerator> _triangles;
-        std::unique_ptr<QuadAccelerator> _quads;
+        std::shared_ptr<TriangleStorage> _triangles;
+        std::unique_ptr<TriangleAccelerator> _triangleAccelerator;
+
+        std::shared_ptr<QuadStorage> _quads;
+        std::unique_ptr<QuadAccelerator> _quadAccelerator;
 
         static bool _checkCreateInfo(const CreateFromFileInfo &createInfo);
         static std::optional<CreateFromBuffersInfo> _readObjFile(const std::string &fileName);

@@ -11,8 +11,8 @@ struct CoRay;
 struct CoSphere;
 
 struct IntersectionEvent {
-        float timeMin = 0.f;
-        float timeMax = 0.f;
+        float timeMin = std::numeric_limits<float>::max();
+        float timeMax = std::numeric_limits<float>::max();
         vec2f localCoordinates = {0.f, 0.f};
 };
 
@@ -47,7 +47,8 @@ bool rayPatchIntersection(
 bool rayAxisAlignedBoundingBoxIntersection(
     const CoRay &ray,
     const CoAxisAlignedBoundingBox &boundingBox,
-    IntersectionEvent &intersectionEvent
+    float &minTime,
+    float &maxTime
 );
 } // namespace cblt::geom
 

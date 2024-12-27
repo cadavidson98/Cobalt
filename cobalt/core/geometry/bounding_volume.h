@@ -6,20 +6,13 @@
 #include "ray.h"
 
 #include <cstdint>
+#include <memory>
 #include <span>
 #include <vector>
 
 namespace cblt::geom {
 
-struct boundingBoxIntersector {
-        const CoRay ray;
-        IntersectionEvent event;
-        bool operator()(const CoAxisAlignedBoundingBox &aabb) {
-            return rayAxisAlignedBoundingBoxIntersection(ray, aabb, event);
-        }
-};
-
-template<typename PrimitiveType, typename Bounding, typename Intersector>
+template<typename BoundingVolumeStorage>
 class CoBoundingVolume {
     public:
         enum class PartitionMethod {
@@ -29,7 +22,7 @@ class CoBoundingVolume {
         };
 
         struct CreateWithPrimitivesInfo {
-                std::span<PrimitiveType> primitives;
+                std::shared_ptr<BoundingVolumeStorage> primitives;
                 uint8_t maxPrimsInLeaf = kMaxPrimitivesPerLeaf;
                 PartitionMethod partitionMethod = PartitionMethod::Midpoint;
         };
@@ -37,7 +30,7 @@ class CoBoundingVolume {
         CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions);
         ~CoBoundingVolume();
 
-        bool IntersectClosest(const CoRay &ray) const;
+        bool IntersectClosest(const CoRay &ray, IntersectionEvent &intersectionEvent) const;
 
     private:
         static const size_t kInvalidIndex = -1;
@@ -46,14 +39,16 @@ class CoBoundingVolume {
         struct BoundingVolumeNode {
                 CoAxisAlignedBoundingBox nodeBounds;
                 // left child index is current node index + 1
-                size_t rightChildIdx;
-                size_t primitiveStartIdx;
+                union {
+                        size_t rightChildIdx;
+                        size_t primitiveStartIdx;
+                };
                 uint8_t primitiveCount;
         };
 
         uint8_t primitivesPerLeaf;
         PartitionMethod partitionMethod;
-        std::span<PrimitiveType> primitives;
+        std::shared_ptr<BoundingVolumeStorage> storage;
         std::vector<BoundingVolumeNode> boundingVolumeTree;
 
         void BuildBoundingVolumeTree(size_t startIdx, size_t endIdx);

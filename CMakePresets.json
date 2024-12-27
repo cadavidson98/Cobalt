@@ -100,10 +100,18 @@
     ],
     "buildPresets": [
         {
-            "name": "MinGW G++",
+            "name": "mingw-debug",
             "description": "G++ 13 compiler for x86_64",
             "displayName": "GCC 13.1.0 x86_64-w64-mingw32 (mingw64)",
-            "configurePreset": "MinGW G++"
+            "configurePreset": "mingw-debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "mingw-release",
+            "description": "G++ 13 compiler for x86_64",
+            "displayName": "GCC 13.1.0 x86_64-w64-mingw32 (mingw64)",
+            "configurePreset": "mingw-release",
+            "configuration": "Release"
         },
         {
             "name":"vs2019-debug",

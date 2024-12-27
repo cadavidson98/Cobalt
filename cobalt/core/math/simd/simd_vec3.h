@@ -1,6 +1,7 @@
 #ifndef CBLT_SIMD_VEC3_H
 #define CBLT_SIMD_VEC3_H
 
+#include <array>
 #include <cassert>
 #include <immintrin.h>
 #include <limits>
@@ -33,6 +34,12 @@ struct vec3f {
             assert(idx < 3);
             return *(&x + idx);
         }
+
+        std::array<float, 4> Values() const {
+            std::array<float, 4> values;
+            _mm_store_ps(values.data(), xyz);
+            return values;
+        };
 
         vec3f &operator+=(const vec3f &b) {
             xyz = _mm_add_ps(xyz, b.xyz);
