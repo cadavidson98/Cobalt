@@ -24,12 +24,15 @@ enum class CoPrimitiveTopology {
 
 class CoMesh {
     public:
-        struct CreateFromFileInfo {
-                std::string fileName;
-                std::string fileExtension;
+        struct CreateInfo {
+                simd::vec3f *positions;
+                size_t numVertices;
+                vec4u *indices;
+                size_t numIndices;
+                CoPrimitiveTopology topology;
         };
 
-        static std::shared_ptr<CoMesh> create(const CreateFromFileInfo &createInfo);
+        static std::shared_ptr<CoMesh> create(const CreateInfo &createInfo);
 
         ~CoMesh();
 
@@ -86,21 +89,6 @@ class CoMesh {
                 std::vector<CoAxisAlignedBoundingBox> _ComputePrimitiveBounds(size_t startIdx, size_t endIdx) const;
         };
 
-        struct CreateFromBuffersInfo {
-                simd::vec3f *positions;
-                size_t numVertices;
-                vec4u *indices;
-                size_t numIndices;
-                CoPrimitiveTopology topology;
-        };
-
-        struct MeshBuffersSizeInfo {
-                size_t numPositions;
-                size_t numNormals;
-                size_t numFaces;
-                CoPrimitiveTopology topology;
-        };
-
         using TriangleAccelerator = CoBoundingVolume<TriangleStorage>;
         using QuadAccelerator = CoBoundingVolume<QuadStorage>;
 
@@ -112,13 +100,8 @@ class CoMesh {
         std::shared_ptr<QuadStorage> _quads;
         std::unique_ptr<QuadAccelerator> _quadAccelerator;
 
-        static bool _checkCreateInfo(const CreateFromFileInfo &createInfo);
-        static std::optional<CreateFromBuffersInfo> _readObjFile(const std::string &fileName);
-        static std::optional<MeshBuffersSizeInfo> _scanMeshBuffersSize(std::ifstream &objFileStream);
-        static vec3i _parseIndices(const std::string &faceString);
-
         CoMesh() = delete;
-        CoMesh(const CreateFromBuffersInfo &createInfo);
+        CoMesh(const CreateInfo &createInfo);
 };
 
 } // namespace cblt::geom

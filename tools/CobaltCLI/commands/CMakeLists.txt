@@ -1,0 +1,7 @@
+set(COBALT_CLI_COMMAND_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/commands.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/render.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/render.h)
+
+target_sources(CobaltCLI PRIVATE ${COBALT_CLI_COMMAND_SOURCES})
+target_include_directories(CobaltCLI AFTER PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

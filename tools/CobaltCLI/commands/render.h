@@ -1,11 +1,12 @@
-#ifndef COBALT_CLI_PARSER_H
-#define COBALT_CLI_PARSER_H
+#ifndef CBLT_CLI_RENDER_H
+#define CBLT_CLI_RENDER_H
 
 #include <cstdint>
 #include <optional>
 #include <string>
 
 namespace cblt::cli {
+
 struct RenderTarget {
         uint32_t offsetX;
         uint32_t offsetY;
@@ -30,7 +31,6 @@ struct CoCLIParams {
         std::optional<RenderConfiguration> runtimeSettings;
 };
 
-std::optional<CoCLIParams> parseArguments(int numArgs, char **argv);
 } // namespace cblt::cli
 
-#endif // COBALT_CLI_PARSER_H
+#endif // CBLT_CLI_RENDER_H
