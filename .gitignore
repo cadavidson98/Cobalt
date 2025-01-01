@@ -36,11 +36,3 @@
 
 # Vs code files
 .vscode
-
-# data directory
-data/
-
-#images
-*.png
-*.jpg
-*.jpeg
