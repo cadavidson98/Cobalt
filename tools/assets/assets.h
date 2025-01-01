@@ -1,14 +1,3 @@
-#ifndef CBLT_TOOLS_ASSETS_H
-#define CBLT_TOOLS_ASSETS_H
-
-#include <string>
-
-namespace cblt::tools::asset {
-
-static const std::string kAssetsBaseDir = "D:/Personal_Projects/PathTracer/tools/assets/";
-static const std::string kAssetsTexturesDir = "D:/Personal_Projects/PathTracer/tools/assets/textures/";
-static const std::string kAssetsMeshesDir = "D:/Personal_Projects/PathTracer/tools/assets/meshes/";
-
-} // namespace cblt::tools::asset
-
-#endif // CBLT_RENDER_TESTS_RESOURCES_H
+version https://git-lfs.github.com/spec/v1
+oid sha256:f1362b497e74c2b3138ad5bcb1c943ed498032dfb6db611867bcaa382d828454
+size 467

@@ -56,6 +56,6 @@ class CoBoundingVolume {
 
 } // namespace cblt::geom
 
-#include "bounding_volume.inl"
+// #include "bounding_volume.inl"
 
 #endif // CBLT_GEOM_BOUNDING_VOLUME_H

@@ -242,4 +242,7 @@ bool CoMesh::intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) 
     }
 }
 
+template class CoBoundingVolume<CoMesh::TriangleStorage>;
+template class CoBoundingVolume<CoMesh::QuadStorage>;
+
 } // namespace cblt::geom

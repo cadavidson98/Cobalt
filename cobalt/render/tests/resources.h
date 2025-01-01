@@ -3,7 +3,7 @@
 
 namespace cblt::render::test {
 
-static const char *kTestDataDir = "D:/Personal_Projects/PathTracer/cobalt/render/tests/TestData";
+static const char *kTestDataDir = "D:/Personal_Projects/Cobalt/cobalt/render/tests/TestData";
 
 } // namespace cblt::render::test
 

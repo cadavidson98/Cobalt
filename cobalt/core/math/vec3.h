@@ -4,20 +4,44 @@
 #include <cmath>
 
 namespace cblt {
+
+template<typename T>
+struct vec3;
+
+template<typename T>
+vec3<T> operator+(const vec3<T> &lhs, const vec3<T> &rhs);
+
+template<typename T>
+vec3<T> operator-(const vec3<T> &lhs, const vec3<T> &rhs);
+
+template<typename T>
+vec3<T> operator/(const vec3<T> &lhs, T rhs);
+
+template<typename T>
+bool operator==(vec3<T> lhs, vec3<T> rhs);
+
+template<typename T>
+T dot(const vec3<T> &lhs, const vec3<T> &rhs);
+
+template<typename T>
+T absDot(const vec3<T> &lhs, const vec3<T> &rhs);
+
+template<typename T>
+T length(const vec3<T> &vector);
+
+template<typename T>
+vec3<T> normalize(const vec3<T> &vector);
+
 template<typename T>
 struct vec3 {
         T x;
         T y;
         T z;
 
-        template<typename T>
-        friend vec3<T> operator+(const vec3<T> &lhs, const vec3<T> &rhs);
-        template<typename T>
-        friend vec3<T> operator-(const vec3<T> &lhs, const vec3<T> &rhs);
-        template<typename T>
-        friend vec3<T> operator/(const vec3<T> &lhs, T rhs);
-        template<typename T>
-        friend bool operator==(const vec3<T> lhs, const vec3<T> rhs);
+        friend vec3<T> operator+ <>(const vec3<T> &lhs, const vec3<T> &rhs);
+        friend vec3<T> operator- <>(const vec3<T> &lhs, const vec3<T> &rhs);
+        friend vec3<T> operator/ <>(const vec3<T> &lhs, T rhs);
+        friend bool operator== <>(const vec3<T> lhs, const vec3<T> rhs);
 };
 
 template<typename T>

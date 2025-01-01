@@ -7,7 +7,7 @@
     },
     "configurePresets": [
         {
-            "name": "MinGW G++",
+            "name": "mingw-g++",
             "displayName": "GCC 13.1.0 x86_64-w64-mingw32 (mingw64)",
             "description": "G++ 13 compiler for x86_64",
             "hidden": true,
@@ -69,7 +69,8 @@
             "displayName": "MingGW Debug",
             "description": "Debug for minGW G++ compiler",
             "inherits": [
-                "MinGW G++"
+                "mingw-g++",
+                "verbose-debug"
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"Debug"
@@ -80,7 +81,7 @@
             "displayName": "MingGW Release",
             "description": "Release for minGW G++ compiler",
             "inherits": [
-                "MinGW G++"
+                "mingw-g++"
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"Release"
@@ -91,7 +92,7 @@
             "displayName": "MingGW Release With Debug Symbols",
             "description": "Release for minGW G++ compiler (with debug symbols)",
             "inherits": [
-                "MinGW G++"
+                "mingw-g++"
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"RelWithDebInfo"
@@ -102,14 +103,14 @@
         {
             "name": "mingw-debug",
             "description": "G++ 13 compiler for x86_64",
-            "displayName": "GCC 13.1.0 x86_64-w64-mingw32 (mingw64)",
+            "displayName": "G++ 13.1.0 x86_64 (mingw64)",
             "configurePreset": "mingw-debug",
             "configuration": "Debug"
         },
         {
             "name": "mingw-release",
             "description": "G++ 13 compiler for x86_64",
-            "displayName": "GCC 13.1.0 x86_64-w64-mingw32 (mingw64)",
+            "displayName": "G++ 13.1.0 x86_64 (mingw64)",
             "configurePreset": "mingw-release",
             "configuration": "Release"
         },
@@ -131,7 +132,7 @@
             "name": "MinGW G++",
             "description": "G++ 13 compiler for x86_64",
             "displayName": "GCC 13.1.0 x86_64-w64-mingw32 (mingw64)",
-            "configurePreset": "MinGW G++"
+            "configurePreset": "mingw-g++"
         },
         {
             "name": "Intel ICL",
