@@ -16,11 +16,12 @@ bool CoDebugBuilder::buildMeshes() {
     }
 
     std::shared_ptr<cblt::geom::CoMesh> teapotMesh = cblt::geom::CoMesh::create(
-        {.positions = meshBuffers->positions,
-         .numVertices = meshBuffers->numPositions,
-         .indices = meshBuffers->indices,
-         .numIndices = meshBuffers->numIndices,
-         .topology = meshBuffers->topology}
+        {
+            .positions = meshBuffers->positions,
+            .numVertices = meshBuffers->numPositions,
+            .indices = meshBuffers->indices,
+            .numIndices = meshBuffers->numIndices,
+        }
     );
 
     if (!teapotMesh) {
@@ -44,12 +45,12 @@ bool CoDebugBuilder::buildCameras() {
 }
 
 bool CoDebugBuilder::buildEnvironment() {
-    std::shared_ptr<cblt::render::CoTexture> envMap = cblt::render::CoTexture::create({
+    _environmentMap = cblt::render::CoTexture::create({
         .fileName = cblt::tools::asset::kAssetsTexturesDir + "arches.exr",
         .fileExtension = "exr",
     });
 
-    return envMap != nullptr;
+    return _environmentMap != nullptr;
 }
 
 std::shared_ptr<render::CoScene> CoDebugBuilder::scene() const {

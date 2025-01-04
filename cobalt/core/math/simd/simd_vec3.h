@@ -9,15 +9,7 @@
 namespace cblt::simd {
 
 struct vec3f {
-        union {
-                __m128 xyz;
-                struct alignas(16) {
-                        float x;
-                        float y;
-                        float z;
-                };
-        };
-
+        __m128 xyz;
         vec3f(float c = 0.f) {
             xyz = _mm_setr_ps(c, c, c, 0.f);
         }
@@ -30,16 +22,17 @@ struct vec3f {
             xyz = _mm_setr_ps(x, y, z, 0.f);
         }
 
-        float operator[](const size_t idx) const {
-            assert(idx < 3);
-            return *(&x + idx);
-        }
-
         std::array<float, 4> Values() const {
             std::array<float, 4> values;
             _mm_store_ps(values.data(), xyz);
             return values;
         };
+
+        float operator[](const size_t idx) const {
+            assert(idx < 3);
+            std::array<float, 4> values = Values();
+            return values[idx];
+        }
 
         vec3f &operator+=(const vec3f &b) {
             xyz = _mm_add_ps(xyz, b.xyz);
@@ -97,7 +90,9 @@ struct vec3f {
         }
 
         friend bool operator==(const vec3f &a, const vec3f &b) {
-            return a.x == b.x && a.y == b.y && a.z == b.z;
+            const std::array<float, 4> lhsValues = a.Values();
+            const std::array<float, 4> rhsValues = b.Values();
+            return lhsValues[0] == rhsValues[0] && lhsValues[1] == rhsValues[1] && lhsValues[2] == rhsValues[2];
         }
 
         friend float dot(const vec3f &lhs, const vec3f &rhs);

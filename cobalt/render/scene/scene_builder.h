@@ -39,14 +39,12 @@ class CoSceneBuilder {
                 size_t numPositions;
                 vec4u *indices;
                 size_t numIndices;
-                geom::CoPrimitiveTopology topology;
         };
 
         struct MeshBuffersSizeInfo {
                 size_t numPositions;
                 size_t numNormals;
                 size_t numFaces;
-                geom::CoPrimitiveTopology topology;
         };
 
         static std::optional<MeshBuffers> _readObjFile(const std::string &fileName);

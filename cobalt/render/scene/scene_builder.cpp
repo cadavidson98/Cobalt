@@ -5,6 +5,7 @@
 #include "vec3.h"
 #include "vec4.h"
 
+#include <cstring>
 #include <fstream>
 #include <sstream>
 
@@ -29,7 +30,6 @@ std::optional<CoSceneBuilder::MeshBuffers> CoSceneBuilder::_readObjFile(const st
     const bool readNormals = buffersSizeInfo->numNormals > 0;
     simd::vec3f *positionsBuffer = new simd::vec3f[buffersSizeInfo->numPositions];
 
-    const bool isQuadMesh = buffersSizeInfo->topology == geom::CoPrimitiveTopology::kQuad;
     vec4u *indicesBuffer = new vec4u[buffersSizeInfo->numFaces];
 
     meshFile.clear();
@@ -39,37 +39,43 @@ std::optional<CoSceneBuilder::MeshBuffers> CoSceneBuilder::_readObjFile(const st
     size_t normalIdx = 0;
     size_t faceIdx = 0;
 
+    const char *kObjTokens = " \n";
     static constexpr size_t kMaxLineLength = 256;
-    std::string objLine(kMaxLineLength, '\0');
+    char objLine[kMaxLineLength] = {'\0'};
+
+    auto stringToVec3 = [kObjTokens]() {
+        vec3f value;
+        char *floatString = nullptr;
+        value.x = std::stof(std::strtok(nullptr, kObjTokens));
+        value.y = std::stof(std::strtok(nullptr, kObjTokens));
+        value.z = std::stof(std::strtok(nullptr, kObjTokens));
+        return simd::vec3f(value.x, value.y, value.z);
+    };
+
     while (!meshFile.eof()) {
-        meshFile.getline(objLine.data(), kMaxLineLength);
-        if (objLine[0] == '#') {
+        std::memset(objLine, '\0', kMaxLineLength);
+        meshFile.getline(objLine, kMaxLineLength);
+        if (objLine[0] == '#' || std::strlen(objLine) == 0) {
             // skip comments
             continue;
         }
 
         // TODO: I think it is better to split the line here (on spaces),
         // then inside any other sub call
-        std::stringstream lineParser(objLine);
-        std::string lineInfo;
-        lineParser >> lineInfo;
-        if (lineInfo == "v") { // vertex
-            vec3f vertexPos;
-            lineParser >> vertexPos.x >> vertexPos.y >> vertexPos.z;
-            positionsBuffer[positionIdx++] = simd::vec3f(vertexPos.x, vertexPos.y, vertexPos.z);
-        } else if (lineInfo == "vn") { // vertex normal
-            vec3f vertexNormal;
-            lineParser >> vertexNormal.x >> vertexNormal.y >> vertexNormal.z;
-        } else if (lineInfo == "f") {  // face
-            std::string indices;
-            vec3i parsedIndices[4] = {};
+        char *lineInfo = std::strtok(objLine, kObjTokens);
+        if (std::strncmp(lineInfo, "v", kMaxLineLength) == 0) { // vertex
+            positionsBuffer[positionIdx++] = stringToVec3();
+        } else if (std::strncmp(lineInfo, "vn", kMaxLineLength) == 0) { // vertex normal
+            // TODO: need this?
+        } else if (std::strncmp(lineInfo, "f", kMaxLineLength) == 0) {  // face
+            char *indicesString = nullptr;
+            vec3i parsedIndices[4] = {{-1, -1, -1}, {-1, -1, -1}, {-1, -1, -1}, {-1, -1, -1}};
             size_t currentIndex = 0;
-            while (!lineParser.eof()) {
-                lineParser >> indices;
+            while ((indicesString = std::strtok(nullptr, kObjTokens)) != nullptr) {
+                std::string indices(indicesString);
                 parsedIndices[currentIndex++] = _parseIndices(indices);
             }
 
-            assert(currentIndex == (isQuadMesh ? 4 : 3));
             indicesBuffer[faceIdx++] = vec4u{
                 uint32_t(parsedIndices[0].x),
                 uint32_t(parsedIndices[1].x),
@@ -88,49 +94,52 @@ std::optional<CoSceneBuilder::MeshBuffers> CoSceneBuilder::_readObjFile(const st
         .numPositions = buffersSizeInfo->numPositions,
         .indices = indicesBuffer,
         .numIndices = buffersSizeInfo->numFaces,
-        .topology = buffersSizeInfo->topology,
     };
 }
 
 std::optional<CoSceneBuilder::MeshBuffersSizeInfo> CoSceneBuilder::_scanMeshBuffersSize(std::ifstream &meshFile) {
     static constexpr size_t kMaxLineLength = 256;
-    std::string objLine(kMaxLineLength, '\0');
+    char objLine[kMaxLineLength] = {'\0'};
+
+    size_t indexCount = 0;
 
     MeshBuffersSizeInfo buffersSizeInfo{
         .numPositions = 0,
         .numNormals = 0,
         .numFaces = 0,
-        .topology = geom::CoPrimitiveTopology::kTriangle,
     };
 
     while (!meshFile.eof()) {
-        meshFile.getline(objLine.data(), kMaxLineLength);
-        if (objLine[0] == '#') {
+        std::memset(objLine, '\0', kMaxLineLength);
+        meshFile.getline(objLine, kMaxLineLength);
+        if (objLine[0] == '#' || std::strlen(objLine) == 0) {
             // skip comments
             continue;
         }
 
-        std::stringstream lineParser(objLine);
-        std::string lineInfo;
-        lineParser >> lineInfo;
-        if (lineInfo == "v") {         // vertex
+        const char *objTokens = " \n";
+        char *lineArguments = std::strtok(objLine, objTokens);
+        if (!lineArguments) {
+            return std::nullopt;
+        }
+        if (std::strncmp(lineArguments, "v", kMaxLineLength) == 0) {         // vertex
             ++buffersSizeInfo.numPositions;
-        } else if (lineInfo == "vn") { // vertex normal
+        } else if (std::strncmp(lineArguments, "vn", kMaxLineLength) == 0) { // vertex normal
             ++buffersSizeInfo.numNormals;
-        } else if (lineInfo == "f") {  // face
-            std::string indices;
+        } else if (std::strncmp(lineArguments, "f", kMaxLineLength) == 0) {  // face
             size_t numVerticesInFace = 0;
-            while (!lineParser.eof()) {
-                lineParser >> indices;
+            while (std::strtok(nullptr, objTokens) != nullptr) {
                 ++numVerticesInFace;
+            }
+
+            if (indexCount == 0) {
+                indexCount = numVerticesInFace;
             }
 
             if (numVerticesInFace != 3 && numVerticesInFace != 4) {
                 CoLogError(CoLogSceneBuilder) << "Unsupported mesh topology";
+                return std::nullopt;
             }
-
-            buffersSizeInfo.topology =
-                (numVerticesInFace == 3) ? geom::CoPrimitiveTopology::kTriangle : geom::CoPrimitiveTopology::kQuad;
 
             ++buffersSizeInfo.numFaces;
         }

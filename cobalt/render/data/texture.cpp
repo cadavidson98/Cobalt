@@ -17,38 +17,11 @@ std::shared_ptr<CoTexture> CoTexture::create(const CreateFromFileInfo &createInf
         return nullptr;
     }
 
-    if (createInfo.fileExtension ==
-        "ex"
-        "r") {
+    if (createInfo.fileExtension == "exr") {
         return _loadFromEXR(createInfo);
     }
 
-    CoLogError(CoLogTexture) << "U"
-                                "n"
-                                "s"
-                                "u"
-                                "p"
-                                "p"
-                                "o"
-                                "r"
-                                "t"
-                                "e"
-                                "d"
-                                " "
-                                "t"
-                                "e"
-                                "x"
-                                "t"
-                                "u"
-                                "r"
-                                "e"
-                                " "
-                                "f"
-                                "o"
-                                "r"
-                                "m"
-                                "a"
-                                "t";
+    CoLogError(CoLogTexture) << "Unsupported texture format";
     return nullptr;
 }
 
@@ -57,10 +30,7 @@ CoSize CoTexture::size() const {
 }
 
 CoColor CoTexture::sample(const vec2f &uvCoord) {
-    // rescale
-    // to
-    // image
-    // space
+    // rescale to image space
     const vec2f texel = uvCoord * vec2f{_textureSize.width, _textureSize.height};
     if (std::clamp(texel.x, 0.f, _textureSize.width - 1) != texel.x ||
         std::clamp(texel.y, 0.f, _textureSize.height - 1) != texel.y) {

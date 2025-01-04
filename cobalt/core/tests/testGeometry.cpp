@@ -5,13 +5,63 @@
 #include "geometry/sphere.h"
 #include "geometry/triangle.h"
 
+#include <algorithm>
 #include <chrono>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
 
-namespace {
 static constexpr float kEpsilon = 1e-4f;
+
+namespace cblt::geom::test {
+        struct BoxStorage {
+        std::vector<CoAxisAlignedBoundingBox> boxes;
+        BoxStorage() {
+            static const size_t numBoxes = 10;
+            boxes.reserve(numBoxes);
+
+            for (size_t idx = 0; idx < numBoxes; ++idx) {
+                simd::vec3f boxMin(idx, idx, idx);
+                simd::vec3f boxMax(idx + 1, idx + 1, idx + 1);
+                boxes.emplace_back(boxMin, boxMax);
+            }
+        }
+
+        size_t NumPrimitives() const {
+            return boxes.size();
+        }
+
+        CoAxisAlignedBoundingBox PrimitiveBounds(size_t startIdx, size_t endIdx) const {
+            static constexpr float minFloat = std::numeric_limits<float>::lowest();
+            static constexpr float maxFloat = std::numeric_limits<float>::max();
+            CoAxisAlignedBoundingBox regionBounds = {
+                .min = simd::vec3f(maxFloat, maxFloat, maxFloat),
+                .max = simd::vec3f(minFloat, minFloat, minFloat),
+            };
+
+            for (size_t idx = startIdx; idx < endIdx; ++idx) {
+                regionBounds.min = simd::min(regionBounds.min, boxes[idx].min);
+                regionBounds.max = simd::max(regionBounds.max, boxes[idx].max);
+            }
+
+            return regionBounds;
+        }
+
+        size_t Reorder(size_t startIdx, size_t endIdx, std::function<bool(const CoAxisAlignedBoundingBox &)> comparator) {
+            auto start = boxes.begin() + startIdx;
+            auto end = boxes.begin() + endIdx;
+            auto split = std::partition(start, end, comparator);
+            return startIdx + std::distance(start, split);
+        }
+
+        bool PrimitivesIntersect(const CoRay &ray, size_t startIdx, size_t endIdx, IntersectionEvent &event) const {
+            bool hit = false;
+            for(size_t idx = startIdx; idx < endIdx; ++idx) {
+                hit = rayAxisAlignedBoundingBoxIntersection(ray, boxes[idx], event.timeMin, event.timeMax) || hit;
+            }
+            return hit;
+        }
+    };
 }
 
 TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
@@ -25,11 +75,11 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
         static const cblt::simd::vec3f boxMax(4.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
-        cblt::geom::IntersectionEvent event;
-        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, event);
+        float timeMin, timeMax;
+        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, timeMin, timeMax);
         EXPECT_TRUE(hit);
-        EXPECT_NEAR(event.timeMin, 2.f, kEpsilon);
-        EXPECT_NEAR(event.timeMax, 4.f, kEpsilon);
+        EXPECT_NEAR(timeMin, 2.f, kEpsilon);
+        EXPECT_NEAR(timeMax, 4.f, kEpsilon);
     }
     {
         // hit (inside)
@@ -37,10 +87,10 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
         static const cblt::simd::vec3f boxMax(1.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
-        cblt::geom::IntersectionEvent event;
-        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, event);
+        float timeMin, timeMax;
+        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, timeMin, timeMax);
         EXPECT_TRUE(hit);
-        EXPECT_NEAR(event.timeMin, 1.f, kEpsilon);
+        EXPECT_NEAR(timeMin, 1.f, kEpsilon);
     }
     {
         // miss (behind)
@@ -48,18 +98,18 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
         static const cblt::simd::vec3f boxMax(-2.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
-        cblt::geom::IntersectionEvent event;
-        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, event);
+        float timeMin, timeMax;
+        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, timeMin, timeMax);
         EXPECT_FALSE(hit);
     }
     {
         // miss
-        static const cblt::simd::vec3f boxMin(-1.f, 4.f, -1.f);
-        static const cblt::simd::vec3f boxMax(1.f, 6.f, 1.f);
+        static const cblt::simd::vec3f boxMin(-3.f, 4.f, -1.f);
+        static const cblt::simd::vec3f boxMax(-1.f, 6.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
-        cblt::geom::IntersectionEvent event;
-        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, event);
+        float timeMin, timeMax;
+        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, timeMin, timeMax);
         EXPECT_FALSE(hit);
     }
     {
@@ -68,8 +118,8 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
         static const cblt::simd::vec3f boxMax(14.f, 1.f, 1.f);
         const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
 
-        cblt::geom::IntersectionEvent event;
-        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, event);
+        float timeMin, timeMax;
+        const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, timeMin, timeMax);
         EXPECT_FALSE(hit);
     }
 }
@@ -143,7 +193,7 @@ TEST(CobaltCoreGeometryTests, TestTriangleIntersect) {
             cblt::geom::CoRay(cblt::simd::vec3f{0.f, .5f, 0.f}, cblt::simd::vec3f{0.f, 0.f, 1.f}, 10.f);
 
         cblt::geom::IntersectionEvent event;
-        const bool hit = cblt::geom::rayTriangleIntersection(ray, triangle, event);
+        const bool hit = cblt::geom::rayTriangleIntersection(ray, triangle.position1, triangle.position2, triangle.position3, event);
         EXPECT_TRUE(hit);
         EXPECT_NEAR(event.timeMin, 1.f, 1e-4f);
     }
@@ -166,37 +216,31 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxPerformance) {
 
     auto s = std::chrono::high_resolution_clock::now();
     cblt::geom::IntersectionEvent event;
+    float timeMin, timeMax;
     for (const auto &box : boxes) {
-        cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, box, event);
+        cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, box, timeMin, timeMax);
     }
     auto e = std::chrono::high_resolution_clock::now();
     std::cout << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(e - s).count() << std::endl;
 }
 
 TEST(CobaltCoreGeometryTests, TestCreateBoundingVolume) {
-    std::vector<cblt::geom::CoAxisAlignedBoundingBox> boxes;
-    static const size_t numBoxes = 10;
-    boxes.reserve(numBoxes);
 
-    for (size_t idx = 0; idx < numBoxes; ++idx) {
-        cblt::simd::vec3f boxMin(idx, idx, idx);
-        cblt::simd::vec3f boxMax(idx + 1, idx + 1, idx + 1);
-        boxes.emplace_back(boxMin, boxMax);
-    }
+    using BoxAccelerator = cblt::geom::CoBoundingVolume<cblt::geom::test::BoxStorage>;
 
-    using boxBoundingVolume =
-        cblt::geom::CoBoundingVolume<cblt::geom::CoAxisAlignedBoundingBox, cblt::geom::boundingBoxIntersector>;
+    std::shared_ptr<cblt::geom::test::BoxStorage> primitives = std::shared_ptr<cblt::geom::test::BoxStorage>(new cblt::geom::test::BoxStorage);
 
-    boxBoundingVolume::CreateWithPrimitivesInfo createInfo{
-        .primitives = boxes,
+    BoxAccelerator::CreateWithPrimitivesInfo createInfo{
+        .primitives = primitives,
         .maxPrimsInLeaf = 1,
-        .partitionMethod = boxBoundingVolume::PartitionMethod::Midpoint,
+        .partitionMethod = BoxAccelerator::PartitionMethod::Midpoint,
     };
 
-    boxBoundingVolume boundingVolume(createInfo);
+    BoxAccelerator boundingVolume(createInfo);
 
     {
+        cblt::geom::IntersectionEvent event;
         cblt::geom::CoRay hitRay({5.f, 5.f, 0.f}, {0.f, 0.f, 1.f}, 10.f);
-        EXPECT_TRUE(boundingVolume.IntersectClosest(hitRay));
+        EXPECT_TRUE(boundingVolume.IntersectClosest(hitRay, event));
     }
 }

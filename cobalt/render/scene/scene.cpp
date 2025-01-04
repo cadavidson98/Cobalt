@@ -30,9 +30,9 @@ bool CoScene::closestIntersection(const geom::CoRay &ray, geom::IntersectionEven
 }
 
 CoColor CoScene::environment(const geom::CoRay &ray) const {
-    const float phi = std::acos(ray.dir.y);
+    const float phi = std::acos(ray.dir[1]);
     // TODO: make sure camera is using an rhs csys
-    float theta = std::atan2(-ray.dir.z, ray.dir.x);
+    float theta = std::atan2(-ray.dir[2], ray.dir[0]);
     theta = (theta < 0.f) ? theta + cblt::kPI : theta;
     const float u = ((theta) / (2.f * cblt::kPI));
     const float v = phi / cblt::kPI;

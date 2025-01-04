@@ -17,11 +17,6 @@ namespace cblt::geom {
 struct CoRay;
 struct IntersectionEvent;
 
-enum class CoPrimitiveTopology {
-    kTriangle,
-    kQuad,
-};
-
 class CoMesh {
     public:
         struct CreateInfo {
@@ -29,7 +24,6 @@ class CoMesh {
                 size_t numVertices;
                 vec4u *indices;
                 size_t numIndices;
-                CoPrimitiveTopology topology;
         };
 
         static std::shared_ptr<CoMesh> create(const CreateInfo &createInfo);
@@ -39,10 +33,12 @@ class CoMesh {
         bool intersects(const CoRay &ray, IntersectionEvent &intersectionEvent);
 
     private:
-        class TriangleStorage {
+        class MeshStorage {
             public:
-                TriangleStorage(simd::vec3f *positions, vec4u *indices);
-                ~TriangleStorage();
+                MeshStorage(simd::vec3f *positions, vec4u *indices, size_t numIndices);
+                ~MeshStorage();
+
+                static constexpr uint32_t kInvalidIndex = -1u;
 
                 size_t NumPrimitives() const;
                 CoAxisAlignedBoundingBox PrimitiveBounds(size_t startIdx, size_t endIdx) const;
@@ -51,32 +47,7 @@ class CoMesh {
                     size_t endIdx,
                     std::function<bool(const CoAxisAlignedBoundingBox &)> comparator
                 );
-                bool
-                PrimitivesIntersect(const CoRay &ray, size_t startIdx, size_t endIdx, IntersectionEvent &event) const;
-
-            private:
-                vec4u *_indices;
-                size_t numIndices;
-
-                simd::vec3f *_positions;
-
-                std::vector<CoAxisAlignedBoundingBox> _ComputePrimitiveBounds(size_t startIdx, size_t endIdx) const;
-        };
-
-        class QuadStorage {
-            public:
-                QuadStorage(simd::vec3f *positions, vec4u *indices, size_t numIndices);
-                ~QuadStorage();
-
-                size_t NumPrimitives() const;
-                CoAxisAlignedBoundingBox PrimitiveBounds(size_t startIdx, size_t endIdx) const;
-                size_t Reorder(
-                    size_t startIdx,
-                    size_t endIdx,
-                    std::function<bool(const CoAxisAlignedBoundingBox &)> comparator
-                );
-                bool
-                PrimitivesIntersect(const CoRay &ray, size_t startIdx, size_t endIdx, IntersectionEvent &event) const;
+                bool PrimitivesIntersect(const CoRay &ray, size_t startIdx, size_t endIdx, IntersectionEvent &event) const;
 
             private:
                 vec4u *_indices;
@@ -89,16 +60,10 @@ class CoMesh {
                 std::vector<CoAxisAlignedBoundingBox> _ComputePrimitiveBounds(size_t startIdx, size_t endIdx) const;
         };
 
-        using TriangleAccelerator = CoBoundingVolume<TriangleStorage>;
-        using QuadAccelerator = CoBoundingVolume<QuadStorage>;
+        using MeshAccelerator = CoBoundingVolume<MeshStorage>;
 
-        CoPrimitiveTopology _topology;
-
-        std::shared_ptr<TriangleStorage> _triangles;
-        std::unique_ptr<TriangleAccelerator> _triangleAccelerator;
-
-        std::shared_ptr<QuadStorage> _quads;
-        std::unique_ptr<QuadAccelerator> _quadAccelerator;
+        std::shared_ptr<MeshStorage> _primitives;
+        std::unique_ptr<MeshAccelerator> _accelerator;
 
         CoMesh() = delete;
         CoMesh(const CreateInfo &createInfo);

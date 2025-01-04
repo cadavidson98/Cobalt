@@ -10,6 +10,6 @@ TEST(CobaltRenderDataTests, TestLoadTextureFromEXR) {
         .fileName = std::string(cblt::render::test::kTestDataDir) + "/sky.exr",
         .fileExtension = "exr",
     };
-    std::shared_ptr<cblt::render::CoTexture> texture = cblt::render::CoTexture::Create(exrInfo);
+    std::shared_ptr<cblt::render::CoTexture> texture = cblt::render::CoTexture::create(exrInfo);
     ASSERT_TRUE(texture != nullptr);
 }

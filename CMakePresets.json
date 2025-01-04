@@ -7,6 +7,25 @@
     },
     "configurePresets": [
         {
+            "name":"verbose-debug",
+            "hidden":true,
+            "cacheVariables": {
+                "EXTENDED_DEBUG_OUTPUT_ENABLED": "ON"
+            }
+        },
+        {
+            "name": "gcc-g++",
+            "displayName": "GCC 9.0 x86_64 G++",
+            "description": "G++ 9 compiler for x86_64",
+            "hidden": true,
+            "generator": "Unix Makefiles",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_CXX_FLAGS": "-march=native"
+            }
+        },
+        {
             "name": "mingw-g++",
             "displayName": "GCC 13.1.0 x86_64-w64-mingw32 (mingw64)",
             "description": "G++ 13 compiler for x86_64",
@@ -18,13 +37,6 @@
                 "CMAKE_C_COMPILER": "D:/msys64/mingw64/bin/gcc.exe",
                 "CMAKE_CXX_COMPILER": "D:/msys64/mingw64/bin/g++.exe",
                 "CMAKE_CXX_FLAGS": "-march=native"
-            }
-        },
-        {
-            "name":"verbose-debug",
-            "hidden":true,
-            "cacheVariables": {
-                "EXTENDED_DEBUG_OUTPUT_ENABLED": "ON"
             }
         },
         {
@@ -97,6 +109,40 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"RelWithDebInfo"
             }
+        },
+        {
+            "name": "gcc-debug",
+            "displayName": "GCC Debug",
+            "description": "Debug for GCC G++ compiler",
+            "inherits": [
+                "gcc-g++",
+                "verbose-debug"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE":"Debug"
+            }
+        },
+        {
+            "name": "gcc-release",
+            "displayName": "GCC Release",
+            "description": "Release for GCC G++ compiler",
+            "inherits": [
+                "gcc-g++"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE":"Release"
+            }
+        },
+        {
+            "name": "gcc-release-debug-symbols",
+            "displayName": "GCC Release With Debug Symbols",
+            "description": "Release for GCC G++ compiler (with debug symbols)",
+            "inherits": [
+                "gcc-g++"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE":"RelWithDebInfo"
+            }
         }
     ],
     "buildPresets": [
@@ -124,6 +170,20 @@
             "name":"vs2019-release",
             "displayName": "MSVC 2019 Release",
             "configurePreset": "intel-vs2019-release",
+            "configuration": "Release"
+        },
+        {
+            "name": "gcc-debug",
+            "description": "G++ 9 compiler for x86_64",
+            "displayName": "G++ 9 x86_64 (gcc)",
+            "configurePreset": "gcc-debug",
+            "configuration": "Debug"
+        },
+        {
+            "name": "gcc-release",
+            "description": "G++ 9 compiler for x86_64",
+            "displayName": "G++ 9 x86_64 (gcc)",
+            "configurePreset": "gcc-release",
             "configuration": "Release"
         }
     ],

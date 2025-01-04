@@ -194,7 +194,7 @@ bool renderCommand(int argc, char **argv) {
         return false;
     }
 
-    CoLogDebug(CobaltCLIRender) << "wrote image", settings->outputFile;
+    CoLogDebug(CobaltCLIRender) << "wrote image " << settings->outputFile;
     return true;
 }
 

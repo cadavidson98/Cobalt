@@ -10,9 +10,6 @@ struct mat3f {
 
         mat3f(float diagonal): columns{{diagonal, 0.f, 0.f}, {0.f, diagonal, 0.f}, {0.f, 0.f, diagonal}} {};
 
-        mat3f(const vec3f &diagonal): columns{{diagonal.x, 0.f, 0.f}, {0.f, diagonal.y, 0.f}, {0.f, 0.f, diagonal.z}} {
-        }
-
         mat3f(const vec3f &column1, const vec3f &column2, const vec3f &column3): columns{column1, column2, column3} {
         }
 
@@ -21,9 +18,10 @@ struct mat3f {
         }
 
         friend vec3f operator*(const mat3f &a, vec3f b) {
-            vec3f out = a.columns[0] * b.x;
-            out += a.columns[1] * b.y;
-            out += a.columns[2] * b.z;
+            const std::array<float, 4> bValues = b.Values();
+            vec3f out = a.columns[0] * bValues[0];
+            out += a.columns[1] * bValues[1];
+            out += a.columns[2] * bValues[2];
             return out;
         }
 

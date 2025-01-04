@@ -1,6 +1,7 @@
 #ifndef CBLT_VEC3_H
 #define CBLT_VEC3_H
 
+#include <cstdint>
 #include <cmath>
 
 namespace cblt {

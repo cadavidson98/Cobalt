@@ -3,8 +3,8 @@
 
 namespace cblt::render::test {
 
-static const char *kTestDataDir = "D:/Personal_Projects/Cobalt/cobalt/render/tests/TestData";
+static const char *kTestDataDir = "/home/cdavidson/Cobalt/cobalt/render/tests/TestData";
 
-} // namespace cblt::render::test
+}  // namespace cblt::render::test
 
-#endif // CBLT_RENDER_TESTS_RESOURCES_H
+#endif  // CBLT_RENDER_TESTS_RESOURCES_H

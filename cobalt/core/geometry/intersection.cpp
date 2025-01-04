@@ -81,13 +81,6 @@ bool rayQuadIntersection(
     return rayTriangleIntersection(ray, position1, position3, position4, intersectionEvent);
 }
 
-static float determinant(simd::vec3f a, simd::vec3f b, simd::vec3f c) {
-    const float one = a.x * (b.y * c.z - c.y * b.z);
-    const float two = -b.x * (a.y * c.z - c.y * b.z);
-    const float three = c.x * (a.y * b.z - b.y * a.z);
-    return one + two + three;
-}
-
 bool rayPatchIntersection(
     const CoRay &ray,
     simd::vec3f position1,
@@ -145,8 +138,6 @@ bool rayPatchIntersection(
         const float normalLengthSquared = simd::dot(normal, normal);
 
         // use scalar triple product for determinant of 3x3 matrix
-        const float ref_v1 = determinant(rayToFx, ray.dir, normal) / normalLengthSquared;
-        const float ref_t1 = determinant(rayToFx, directionV, normal) / normalLengthSquared;
         const float v1 = simd::dot(rayToFx, simd::cross(ray.dir, normal)) / normalLengthSquared;
         const float t1 = simd::dot(rayToFx, simd::cross(directionV, normal)) / normalLengthSquared;
 
@@ -201,10 +192,10 @@ bool rayAxisAlignedBoundingBoxIntersection(
         std::swap(minTime, maxTime);
     }
 
-    if (minTime <= 0.f) {
+    if (minTime < 0.f) {
         minTime = maxTime;
     }
-    return maxTime >= 0.f && minTime < ray.maxDist;
+    return maxTime >= 0.f && minTime <= ray.maxDist;
 }
 
 } // namespace cblt::geom
