@@ -7,6 +7,12 @@
 namespace cblt::tools {
 
 CoDebugBuilder::CoDebugBuilder() {
+    static constexpr size_t kMaxTextureMemory = 1024 * 1024 * 4;  // 4 mB 
+    _textures = Ptex::PtexCache::create(20, kMaxTextureMemory, true);
+}
+
+CoDebugBuilder::~CoDebugBuilder() {
+    _textures->release();
 }
 
 bool CoDebugBuilder::buildMeshes() {
@@ -27,6 +33,16 @@ bool CoDebugBuilder::buildMeshes() {
     if (!teapotMesh) {
         return false;
     }
+
+    Ptex::String errorString;
+    static const std::string teapotTexture = asset::kAssetsMeshesDir + "teapot/teapot.ptx";
+    Ptex::PtexTexture *meshTexture = _textures->get(teapotTexture.c_str(), errorString);
+
+    if (!meshTexture) {
+        return false;
+    }
+
+    const Ptex::PtexTexture::Info textureInfo = meshTexture->getInfo();
 
     _mesh = teapotMesh;
     return true;

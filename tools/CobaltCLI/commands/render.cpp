@@ -152,9 +152,14 @@ bool renderCommand(int argc, char **argv) {
             const bool hitMesh = defaultScene->closestIntersection(ray, intersectionEvent);
             if (hitMesh) {
                 const float depth = (intersectionEvent.timeMin - 4.f) / 2.f;
-                const float u = intersectionEvent.localCoordinates.x;
-                const float v = intersectionEvent.localCoordinates.y;
-                renderTarget->Write({pixelX, pixelY}, {u, 0.f, v, 1.f});
+                const uint32_t idx = intersectionEvent.primitiveIndex;
+                vec4f faceColors[4] = {
+                    {1.f, 0.f, 0.f, 1.f},
+                    {0.f, 0.f, 1.f, 1.f},
+                    {0.f, 1.f, 1.f, 1.f},
+                    {1.f, 1.f, 1.f, 1.f},
+                };
+                renderTarget->Write({pixelX, pixelY}, faceColors[idx % 4]);
             } else {
                 const render::CoColor environmentColor = defaultScene->environment(ray);
                 renderTarget->Write(

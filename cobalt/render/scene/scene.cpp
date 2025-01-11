@@ -29,6 +29,11 @@ bool CoScene::closestIntersection(const geom::CoRay &ray, geom::IntersectionEven
     return _mesh->intersects(ray, intersectionEvent);
 }
 
+CoMaterial *CoScene::materialForPrimitive(CoUUID primitiveID) const {
+    const PrimitiveComponents &primitive = _scenePrimitives[primitiveID];
+    return (primitive.materialIdx != kInvalidID) ? _materials[primitive.materialIdx] : nullptr;
+}
+
 CoColor CoScene::environment(const geom::CoRay &ray) const {
     const float phi = std::acos(ray.dir[1]);
     // TODO: make sure camera is using an rhs csys

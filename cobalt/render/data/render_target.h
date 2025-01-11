@@ -1,8 +1,8 @@
 #ifndef COBALT_RENDER_RENDERTARGET_H
 #define COBALT_RENDER_RENDERTARGET_H
 
-#include "math/vec2.h"
-#include "math/vec4.h"
+#include "vec2.h"
+#include "vec4.h"
 
 #include <cstdint>
 #include <memory>

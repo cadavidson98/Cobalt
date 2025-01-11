@@ -3,6 +3,8 @@
 
 #include "scene_builder.h"
 
+#include "Ptexture.h"
+
 namespace cblt {
 
 namespace geom {
@@ -25,7 +27,7 @@ namespace cblt::tools {
 class CoDebugBuilder final : render::CoSceneBuilder {
     public:
         CoDebugBuilder();
-
+        virtual ~CoDebugBuilder();
         bool buildMeshes() override;
         bool buildCameras() override;
         bool buildEnvironment() override;
@@ -36,6 +38,7 @@ class CoDebugBuilder final : render::CoSceneBuilder {
         std::shared_ptr<geom::CoMesh> _mesh;
         std::shared_ptr<render::CoTexture> _environmentMap;
         std::shared_ptr<render::CoCamera> _camera;
+        Ptex::PtexCache *_textures;
 };
 
 } // namespace cblt::tools

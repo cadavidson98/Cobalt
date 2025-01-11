@@ -2,6 +2,10 @@
 #define CBLT_RENDER_SCENE_H
 
 #include "camera.h"
+#include "material.h"
+#include "dynamic_array.h"
+
+#include "Ptexture.h"
 
 #include <memory>
 #include <optional>
@@ -20,6 +24,8 @@ namespace render {
 class CoTexture;
 class CoColor;
 
+using CoUUID = uint32_t;
+
 class CoScene {
     public:
         struct CreateFromDataInfo {
@@ -32,6 +38,7 @@ class CoScene {
 
         bool closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const;
 
+        const CoMaterial *materialForPrimitive(CoUUID primitiveID) const;
         CoColor environment(const geom::CoRay &ray) const;
 
         ~CoScene();
@@ -39,10 +46,16 @@ class CoScene {
     private:
         CoScene();
 
+        struct PrimitiveComponents{
+            uint32_t materialIdx;
+        };
+
         CoCamera _camera;
         std::shared_ptr<CoTexture> _environmentMap;
-        std::shared_ptr<geom::CoMesh> _mesh;
-
+        Ptex::PtexCache *_ptexTextures;
+        DynamicArray<geom::CoMesh> _meshs;
+        DynamicArray<CoMaterial> _materials;
+        DynamicArray<PrimitiveComponents> _scenePrimitives;
 }; // CoScene
 
 } // namespace render

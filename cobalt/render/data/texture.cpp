@@ -91,20 +91,7 @@ bool CoTexture::_checkCreateInfo(const CreateFromFileInfo &createInfo) {
 }
 
 std::shared_ptr<CoTexture> CoTexture::_loadFromEXR(const CreateFromFileInfo &createInfo) {
-    // TODO:
-    // make
-    // array
-    // of
-    // half4
-    // as it
-    // will
-    // support
-    // loading
-    // EXR
-    // trivially
-    // and
-    // API
-    // agnostic
+    // TODO: make array of half4 as it will support loading EXR trivially and API agnostic
     Imf::Rgba *pixelBuffer = nullptr;
     try {
         Imf::RgbaInputFile inputFile(createInfo.fileName.c_str(), 1);
@@ -132,5 +119,4 @@ std::shared_ptr<CoTexture> CoTexture::_loadFromEXR(const CreateFromFileInfo &cre
     }
 }
 
-} // namespace
-  // cblt::render
+} // namespace cblt::render
