@@ -24,13 +24,13 @@ class CoSceneBuilder {
                 std::string fileName;
         };
 
-        static std::shared_ptr<CoSceneBuilder> create(const CreateInfo &createInfo);
+        static std::shared_ptr<CoSceneBuilder> create(CreateInfo &createInfo);
         // todo: pass the XML to these build functions instead of as constructor argument?
         virtual bool buildMeshes() = 0;
         virtual bool buildCameras() = 0;
         virtual bool buildEnvironment() = 0;
 
-        virtual std::shared_ptr<CoScene> scene() const = 0;
+        virtual std::shared_ptr<CoScene> scene() = 0;
 
     protected:
         // obj loading

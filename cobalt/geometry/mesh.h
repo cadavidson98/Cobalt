@@ -2,6 +2,7 @@
 #define CBLT_CORE_MESH_H
 
 #include "bounding_volume.h"
+#include "interpolation.h"
 #include "simd/simd_vec3.h"
 #include "vec3.h"
 #include "vec4.h"
@@ -31,6 +32,7 @@ class CoMesh {
         ~CoMesh();
 
         bool intersects(const CoRay &ray, IntersectionEvent &intersectionEvent);
+        CoSurface resolveSurface(const IntersectionEvent &intersectionEvent);
 
     private:
         class MeshStorage : public CoPrimitiveStorage {
@@ -48,7 +50,6 @@ class CoMesh {
                     std::function<bool(const CoAxisAlignedBoundingBox &)> comparator
                 );
                 bool PrimitivesIntersect(const CoRay &ray, size_t startIdx, size_t endIdx, IntersectionEvent &event) const;
-
             private:
                 vec4u *_indices;
                 size_t _numIndices;
@@ -58,6 +59,7 @@ class CoMesh {
                 std::vector<CoAxisAlignedBoundingBox> _bounds;
 
                 std::vector<CoAxisAlignedBoundingBox> _ComputePrimitiveBounds(size_t startIdx, size_t endIdx) const;
+                friend class CoMesh;
         };
 
         using MeshAccelerator = CoBoundingVolume<MeshStorage>;

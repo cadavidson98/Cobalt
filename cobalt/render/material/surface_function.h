@@ -2,14 +2,11 @@
 #define CBLT_RENDER_SURFACE_FUNC_H
 
 #include "surface_params.h"
+#include "color.h"
 #include "vec3.h"
 #include "vec4.h"
 
 namespace cblt::render {
-
-namespace {
-using CoColor = vec4f;
-}
 
 class CoSurfaceFunction {
     public:

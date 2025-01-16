@@ -2,6 +2,7 @@
 #define CBLT_RENDER_SCENE_DEBUG_BUILDER_H
 
 #include "scene_builder.h"
+#include "dynamic_array.h"
 
 #include "Ptexture.h"
 
@@ -17,6 +18,7 @@ namespace render {
 
 class CoTexture;
 class CoCamera;
+class CoMaterial;
 
 } // namespace render
 
@@ -32,13 +34,14 @@ class CoDebugBuilder final : render::CoSceneBuilder {
         bool buildCameras() override;
         bool buildEnvironment() override;
 
-        std::shared_ptr<render::CoScene> scene() const override;
+        std::shared_ptr<render::CoScene> scene() override;
 
     private:
         std::shared_ptr<geom::CoMesh> _mesh;
         std::shared_ptr<render::CoTexture> _environmentMap;
         std::shared_ptr<render::CoCamera> _camera;
         Ptex::PtexCache *_textures;
+        CoDynamicArray<render::CoMaterial> _materials;
 };
 
 } // namespace cblt::tools

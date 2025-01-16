@@ -4,6 +4,7 @@
 #include "commands.h"
 #include "debug_builder.h"
 #include "image.h"
+#include "interpolation.h"
 #include "logging.h"
 #include "ray.h"
 #include "render_target.h"
@@ -151,15 +152,9 @@ bool renderCommand(int argc, char **argv) {
             const geom::CoRay ray = kDefaultCamera.CreateRay(viewportToNDC({float(pixelX), float(pixelY)}));
             const bool hitMesh = defaultScene->closestIntersection(ray, intersectionEvent);
             if (hitMesh) {
-                const float depth = (intersectionEvent.timeMin - 4.f) / 2.f;
-                const uint32_t idx = intersectionEvent.primitiveIndex;
-                vec4f faceColors[4] = {
-                    {1.f, 0.f, 0.f, 1.f},
-                    {0.f, 0.f, 1.f, 1.f},
-                    {0.f, 1.f, 1.f, 1.f},
-                    {1.f, 1.f, 1.f, 1.f},
-                };
-                renderTarget->Write({pixelX, pixelY}, faceColors[idx % 4]);
+                const render::CoSurfaceParams surfaceParams = defaultScene->resolveSurfaceAtInteraction(intersectionEvent);
+                
+                renderTarget->Write({pixelX, pixelY}, surfaceParams.baseColor);
             } else {
                 const render::CoColor environmentColor = defaultScene->environment(ray);
                 renderTarget->Write(

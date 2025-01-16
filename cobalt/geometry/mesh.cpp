@@ -164,4 +164,17 @@ bool CoMesh::intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) 
     return _accelerator->IntersectClosest(ray, intersectionEvent);
 }
 
+CoSurface CoMesh::resolveSurface(const IntersectionEvent &intersectionEvent) {
+    const vec4u primitiveIndices = _primitives->_indices[intersectionEvent.primitiveIndex];
+    if (primitiveIndices.w != uint32_t(-1)) {
+        return interpolatePatch(
+            _primitives->_positions[primitiveIndices.x],
+            _primitives->_positions[primitiveIndices.y],
+            _primitives->_positions[primitiveIndices.z],
+            _primitives->_positions[primitiveIndices.w],
+            intersectionEvent.localCoordinates);
+    }
+    return CoSurface();
+}
+
 } // namespace cblt::geom

@@ -3,6 +3,7 @@
 #include "color.h"
 #include "constants.h"
 #include "intersection.h"
+#include "interpolation.h"
 #include "mesh.h"
 #include "texture.h"
 
@@ -11,27 +12,53 @@
 
 namespace cblt::render {
 
-std::shared_ptr<CoScene> CoScene::Create(const CoScene::CreateFromDataInfo &createInfo) {
+std::shared_ptr<CoScene> CoScene::createEmptyScene() {
+    return std::shared_ptr<CoScene>(new CoScene);
+}
+
+std::shared_ptr<CoScene> CoScene::create(CoScene::CreateFromDataInfo &createInfo) {
     std::shared_ptr<CoScene> scene = std::shared_ptr<CoScene>(new CoScene);
     scene->_camera = createInfo.camera;
     scene->_environmentMap = createInfo.environmentMap;
     scene->_mesh = createInfo.mesh;
+    scene->_materials = std::move(createInfo.materials);
+    // TODO: needs to move to builder?
+    scene->_scenePrimitives = CoDynamicArray<PrimitiveComponents>(1);
+    scene->_scenePrimitives[0] = {
+        .materialIdx = 0,
+    };
+
     return scene;
 }
 
-CoScene::CoScene(): _camera{{}} {
+CoScene::CoScene(): _camera{{}}, _defaultMaterial(CoSurfaceParams{}, nullptr) {
+    _ptexTextures = Ptex::PtexCache::create(0, 0, true);
 }
 
 CoScene::~CoScene() {
+    _ptexTextures->release();
 }
 
 bool CoScene::closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const {
-    return _mesh->intersects(ray, intersectionEvent);
+    if (_mesh->intersects(ray, intersectionEvent)) {
+        intersectionEvent.geometryIndex = 0;
+        return true;
+    }
+
+    return false;
 }
 
-CoMaterial *CoScene::materialForPrimitive(CoUUID primitiveID) const {
-    const PrimitiveComponents &primitive = _scenePrimitives[primitiveID];
-    return (primitive.materialIdx != kInvalidID) ? _materials[primitive.materialIdx] : nullptr;
+CoSurfaceParams CoScene::resolveSurfaceAtInteraction(const geom::IntersectionEvent &intersectionEvent) const {
+    assert(_scenePrimitives);
+
+    const PrimitiveComponents &primitive = _scenePrimitives[intersectionEvent.geometryIndex];
+    if (primitive.materialIdx != kInvalidID) {
+        // const geom::CoSurface surfaceProperties = _mesh->resolveSurface(intersectionEvent);
+        const CoMaterial &material = _materials[primitive.materialIdx];
+        return material.surfaceParamsAtCoordinates(intersectionEvent.localCoordinates, intersectionEvent.primitiveIndex);
+    }
+
+    return _defaultMaterial.surfaceParamsAtCoordinates(intersectionEvent.localCoordinates, intersectionEvent.primitiveIndex);
 }
 
 CoColor CoScene::environment(const geom::CoRay &ray) const {

@@ -13,6 +13,8 @@ struct CoSphere;
 struct IntersectionEvent {
         float timeMin = std::numeric_limits<float>::max();
         float timeMax = std::numeric_limits<float>::max();
+        uint32_t geometryIndex = 0;
+
         vec2f localCoordinates = {0.f, 0.f};
         uint32_t primitiveIndex = 0;
 };

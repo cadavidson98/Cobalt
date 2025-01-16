@@ -1,28 +1,28 @@
-#ifndef CBLT_RENDER_H
-#define CBLT_RENDER_H
+#ifndef CBLT_RENDER_MATERIAL_H
+#define CBLT_RENDER_MATERIAL_H
 
-#include <memory>
+#include "interpolation.h"
+#include "surface_function.h"
+#include "surface_params.h"
+
+#include "vec2.h"
 
 #include "Ptexture.h"
+
+#include <memory>
 
 namespace cblt::render {
 
 class CoMaterial {
     public:
-
-    struct CreateInfo {
-        std::string fileName;
-        std::string fileExtension;
-    };
-
-    static std::shared_ptr<CoMaterial> create(const CreateInfo &createInfo);
-
+    CoMaterial(CoSurfaceParams params, Ptex::PtexTexture *texture);
+    CoSurfaceParams surfaceParamsAtCoordinates(const vec2f uvCoords, uint32_t faceIdx) const;
+    // void sampleMaterialAtCoordinate(const CoRay &ray?, vec2f localCoorindates, uint32_t faceIdx) const;
     private:
-    Ptex::PtexPtr<Ptex::PtexTexture> _texture;
-
-
-    CoMaterial(Ptex::PtexPtr<PtexTexture> &&texture);
+    CoSurfaceParams _params;
+    Ptex::PtexTexture *_texture;
+    Ptex::PtexFilter *_filter;
 };
 
 } // namespace cblt::render
-#endif // CBLT_RENDER_H
+#endif // CBLT_RENDER_MATERIAL_H

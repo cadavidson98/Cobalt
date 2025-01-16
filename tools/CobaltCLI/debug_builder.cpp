@@ -44,6 +44,14 @@ bool CoDebugBuilder::buildMeshes() {
 
     const Ptex::PtexTexture::Info textureInfo = meshTexture->getInfo();
 
+    _materials = CoDynamicArray<render::CoMaterial>(1);
+    _materials[0] = render::CoMaterial(
+        render::CoSurfaceParams{
+            .baseColor = vec4f(1.f, 0.f, 0.f, 1.f),
+        },
+        meshTexture
+    );
+
     _mesh = teapotMesh;
     return true;
 }
@@ -69,16 +77,20 @@ bool CoDebugBuilder::buildEnvironment() {
     return _environmentMap != nullptr;
 }
 
-std::shared_ptr<render::CoScene> CoDebugBuilder::scene() const {
+std::shared_ptr<render::CoScene> CoDebugBuilder::scene() {
     if (!_camera || !_mesh || !_environmentMap) {
         return nullptr;
     }
 
-    return render::CoScene::Create(render::CoScene::CreateFromDataInfo{
+    render::CoScene::CreateFromDataInfo createInfo{
         .camera = *_camera,
         .mesh = _mesh,
         .environmentMap = _environmentMap,
-    });
+        .materials = std::move(_materials),
+        .ptexTextures = _textures,
+    };
+
+    return render::CoScene::create(createInfo);
 }
 
 } // namespace cblt::tools

@@ -4,29 +4,61 @@
 namespace cblt {
 
 template<typename T>
-class DynamicArray {
+class CoDynamicArray final {
     public:
-    DynamicArray(size_t size=0ul);
+    CoDynamicArray(size_t capacity = 0ul)
+        : _size{capacity}  {
+        if(_size > 0) {
+            _array = reinterpret_cast<T *>(new Byte[sizeof(T) * _size]);
+        }
+    }
 
-    DynamicArray(DynamicArray&&);
-    DynamicArray &operator=(DynamicArray&&);
+    CoDynamicArray(CoDynamicArray&& other)
+        : _size{other._size}, _array{other._array} {
+        other._size = 0;
+        other._array = nullptr;
+    }
 
-    ~DynamicArray();
+    CoDynamicArray &operator=(CoDynamicArray&& other) {
+        _size = std::move(other._size);
+        _array = std::move(other._array);
 
-    DynamicArray(DynamicArray&) = delete;
-    DynamicArray &operator=(DynamicArray&) = delete;
-    DynamicArray operator=(DynamicArray) = delete;
+        other._size = 0;
+        other._array = nullptr;
 
-    explicit operator bool() const;
+        return *this;
+    }
 
-    size_type size();
-    size_type capacity();
+    ~CoDynamicArray() {
+        delete[] _array;
+    }
+
+    explicit operator bool() const {
+        return _size != 0;
+    }
+
+    T& operator[](size_t idx) {
+        return _array[idx];
+    }
+
+    const T& operator[](size_t idx) const {
+        return _array[idx];
+    }
+
+    size_t size() const {
+        return _size;
+    }
 
     private:
-    T *_array;
 
-    size_type _size;
-    size_type _maxSize;
+    using Byte = unsigned char;
+
+    T *_array = nullptr;
+
+    size_t _size = 0;
+
+    CoDynamicArray(CoDynamicArray&) = delete;
+    CoDynamicArray &operator=(CoDynamicArray&) = delete;
 };
 
 }  // namespace cblt

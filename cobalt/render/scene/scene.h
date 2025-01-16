@@ -32,13 +32,16 @@ class CoScene {
                 CoCamera camera;
                 std::shared_ptr<geom::CoMesh> mesh;
                 std::shared_ptr<CoTexture> environmentMap;
+                CoDynamicArray<CoMaterial> materials;
+                Ptex::PtexCache *ptexTextures;
         };
 
-        static std::shared_ptr<CoScene> Create(const CreateFromDataInfo &createInfo);
+        static std::shared_ptr<CoScene> createEmptyScene();
+        static std::shared_ptr<CoScene> create(CreateFromDataInfo &createInfo);
 
         bool closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const;
 
-        const CoMaterial *materialForPrimitive(CoUUID primitiveID) const;
+        CoSurfaceParams resolveSurfaceAtInteraction(const geom::IntersectionEvent &intersectionEvent) const;
         CoColor environment(const geom::CoRay &ray) const;
 
         ~CoScene();
@@ -50,12 +53,16 @@ class CoScene {
             uint32_t materialIdx;
         };
 
+        static constexpr CoUUID kInvalidID = CoUUID(~0);
+
+        CoMaterial _defaultMaterial;
+
         CoCamera _camera;
         std::shared_ptr<CoTexture> _environmentMap;
         Ptex::PtexCache *_ptexTextures;
-        DynamicArray<geom::CoMesh> _meshs;
-        DynamicArray<CoMaterial> _materials;
-        DynamicArray<PrimitiveComponents> _scenePrimitives;
+        std::shared_ptr<geom::CoMesh> _mesh;
+        CoDynamicArray<CoMaterial> _materials;
+        CoDynamicArray<PrimitiveComponents> _scenePrimitives;
 }; // CoScene
 
 } // namespace render
