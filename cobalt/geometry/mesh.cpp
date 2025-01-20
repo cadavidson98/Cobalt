@@ -9,8 +9,6 @@
 #include <fstream>
 #include <sstream>
 
-CBLT_DEFINE_LOG(CoLogMesh);
-
 namespace cblt::geom {
 
 CoMesh::MeshStorage::MeshStorage(simd::vec3f *positions, vec4u *indices, size_t numFaces)

@@ -17,8 +17,16 @@ class CoMaterial {
     public:
     CoMaterial(CoSurfaceParams params, Ptex::PtexTexture *texture);
     CoSurfaceParams surfaceParamsAtCoordinates(const vec2f uvCoords, uint32_t faceIdx) const;
+    
+    CoMaterial(CoMaterial&& other);
+    CoMaterial &operator=(CoMaterial&& other);
+
     // void sampleMaterialAtCoordinate(const CoRay &ray?, vec2f localCoorindates, uint32_t faceIdx) const;
     private:
+
+    CoMaterial(CoMaterial&) = delete;
+    CoMaterial &operator=(CoMaterial&) = delete;
+
     CoSurfaceParams _params;
     Ptex::PtexTexture *_texture;
     Ptex::PtexFilter *_filter;

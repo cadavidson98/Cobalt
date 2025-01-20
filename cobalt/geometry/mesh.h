@@ -7,7 +7,8 @@
 #include "vec3.h"
 #include "vec4.h"
 
-#include <cstdint>
+#include "size_types.h"
+
 #include <functional>
 #include <memory>
 #include <optional>

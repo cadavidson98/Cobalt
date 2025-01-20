@@ -4,7 +4,7 @@
 #include "vec2.h"
 #include "vec4.h"
 
-#include <cstdint>
+#include "size_types.h"
 #include <memory>
 
 namespace cblt::render {

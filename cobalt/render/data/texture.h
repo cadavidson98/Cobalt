@@ -22,7 +22,7 @@ class CoTexture {
 
         ~CoTexture();
 
-        CoSize size() const;
+        vec2f size() const;
         CoColor sample(const vec2f &uvCoord);
 
     private:
@@ -38,7 +38,7 @@ class CoTexture {
         struct CreateFromBytesInfo {
                 uint8_t *bytes;
                 PixelFormat format;
-                CoSize dimensions;
+                vec2f dimensions;
         };
 
         CoTexture() = delete;
@@ -46,7 +46,7 @@ class CoTexture {
 
         uint8_t *_textureData;
         PixelFormat _textureFormat;
-        CoSize _textureSize;
+        vec2f _textureSize;
 
         static bool _checkCreateInfo(const CreateFromFileInfo &createInfo);
 

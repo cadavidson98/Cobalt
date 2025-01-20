@@ -14,7 +14,7 @@ CoCamera::CoCamera(const CreateFromProjectionInfo &createInfo) {
 }
 
 geom::CoRay CoCamera::CreateRay(vec2f ndcPos) const {
-    const vec2 filmPos = ndcPos * vec2f{_filmSize.width, _filmSize.height} * .5f;
+    const vec2 filmPos = ndcPos * _filmSize * .5f;
 
     const vec4f pixelWorldPos = _viewportToWorld * vec4f(filmPos.x, filmPos.y, 0.f, 1.f);
     const vec3f rayOrigin = vec3f(pixelWorldPos.x, pixelWorldPos.y, pixelWorldPos.z) / pixelWorldPos.w;

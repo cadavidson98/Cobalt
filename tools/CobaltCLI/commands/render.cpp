@@ -1,20 +1,20 @@
 #include "render.h"
 
+#include "cli_progress.h"
 #include "color.h"
 #include "commands.h"
 #include "debug_builder.h"
 #include "image.h"
-#include "interpolation.h"
-#include "logging.h"
 #include "ray.h"
 #include "render_target.h"
 #include "scene.h"
 #include "size_types.h"
+#include "system.h"
 
+#include <iostream>
 #include <fstream>
+#include <mutex>
 #include <string>
-
-CBLT_DEFINE_LOG(CobaltCLIRender);
 
 namespace cblt::cli {
 
@@ -98,14 +98,27 @@ bool renderCommand(int argc, char **argv) {
     std::shared_ptr<tools::CoDebugBuilder> sceneBuilder =
         std::shared_ptr<tools::CoDebugBuilder>(new tools::CoDebugBuilder);
 
-    if (!sceneBuilder->buildMeshes() || !sceneBuilder->buildCameras() || !sceneBuilder->buildEnvironment()) {
+    const uint64_t unixStart = core::time();
+    std::mutex progressMutex;
+    int totalProgress = 0;
+    auto progressCallback = [&progressMutex, &totalProgress](int currentProgress, const char *message = nullptr) {
+        std::scoped_lock(progressMutex);
+        totalProgress += currentProgress;
+        printProgress(totalProgress);
+    };
+
+    if (!sceneBuilder->buildMeshes(progressCallback) || !sceneBuilder->buildCameras(progressCallback) || !sceneBuilder->buildEnvironment(progressCallback)) {
         return false;
     }
+
+    const uint64_t unixEnd = core::time();
+    // report load time
+    std::cout << "Loaded Scene in " << (unixEnd - unixStart) * 1e-6 << " ms " << std::endl;
 
     static const render::CoCamera kDefaultCamera(render::CoCamera::CreateFromProjectionInfo{
         .hFov = toRadians(40.f),
         .vFov = toRadians(40.f),
-        .filmSize = CoSize(2.2f, 2.2f),
+        .filmSize = vec2f{2.2f, 2.2f},
         .cameraToWorld = utils::translationMatrix({0.f, 0.f, -5.f}),
     });
 
@@ -124,28 +137,30 @@ bool renderCommand(int argc, char **argv) {
             },
     });
 
-    static const CoRect viewport = CoRect{
-        .offset =
-            {
-                0.f,
-                0.f,
-            },
-        .size =
-            {
-                kWidth,
-                kHeight,
-            },
-    };
+    if (!renderTarget) {
+        std::cerr << "no render target" << std::endl;
+        return false;
+    }
 
     const vec2f viewportDimensions = {
-        viewport.size.width - viewport.offset.x,
-        viewport.size.height - viewport.offset.y,
+        float(kWidth),
+        float(kHeight),
     };
 
     auto viewportToNDC = [&viewportDimensions](vec2f pixelPos) {
         return ((pixelPos / viewportDimensions) * vec2f{2.f, -2.f} + vec2f{-1.f, 1.f});
     };
 
+    int renderProgress = 0;
+    auto renderCallback = [&progressMutex, &renderProgress](uint32_t currentProgress) {
+        std::scoped_lock(progressMutex);
+        renderProgress += currentProgress;
+        printProgress(renderProgress);
+    };
+
+    const uint32_t numTotalPixels = kWidth * kHeight;
+    const uint32_t pumpValue = 5;
+    const uint32_t pixelProgress = numTotalPixels / 20;
     for (uint32_t pixelY = 0; pixelY < kHeight; ++pixelY) {
         for (uint32_t pixelX = 0; pixelX < kWidth; ++pixelX) {
             geom::IntersectionEvent intersectionEvent;
@@ -167,12 +182,11 @@ bool renderCommand(int argc, char **argv) {
                     }
                 );
             }
+            const uint32_t currentPixel = pixelY * kWidth + pixelX;
+            if (currentPixel % pixelProgress == 0) {
+                renderCallback(pumpValue);
+            }
         }
-    }
-
-    if (!renderTarget) {
-        CoLogError(CobaltCLIRender) << "no render target";
-        return false;
     }
 
     std::shared_ptr<Image> renderImage = Image::create({
@@ -180,7 +194,7 @@ bool renderCommand(int argc, char **argv) {
     });
 
     if (!renderImage) {
-        CoLogError(CobaltCLIRender) << "no image";
+        std::cerr << "no image" << std::endl;
         return false;
     }
 
@@ -190,11 +204,11 @@ bool renderCommand(int argc, char **argv) {
     });
 
     if (!wrote) {
-        CoLogError(CobaltCLIRender) << "failed to write";
+        std::cerr << "failed to write" << std::endl;
         return false;
     }
 
-    CoLogDebug(CobaltCLIRender) << "wrote image " << settings->outputFile;
+    std::cout<< "wrote image " << settings->outputFile << std::endl;
     return true;
 }
 

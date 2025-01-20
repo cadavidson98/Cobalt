@@ -26,9 +26,9 @@ class CoSceneBuilder {
 
         static std::shared_ptr<CoSceneBuilder> create(CreateInfo &createInfo);
         // todo: pass the XML to these build functions instead of as constructor argument?
-        virtual bool buildMeshes() = 0;
-        virtual bool buildCameras() = 0;
-        virtual bool buildEnvironment() = 0;
+        virtual bool buildMeshes(std::function<void(int, const char *)> callback) = 0;
+        virtual bool buildCameras(std::function<void(int, const char *)> callback) = 0;
+        virtual bool buildEnvironment(std::function<void(int, const char *)> callback) = 0;
 
         virtual std::shared_ptr<CoScene> scene() = 0;
 

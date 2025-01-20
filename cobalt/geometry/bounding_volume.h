@@ -4,8 +4,8 @@
 #include "bounding_box.h"
 #include "intersection.h"
 #include "ray.h"
+#include "size_types.h"
 
-#include <cstdint>
 #include <memory>
 #include <span>
 #include <vector>

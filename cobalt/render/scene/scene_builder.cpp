@@ -9,14 +9,12 @@
 #include <fstream>
 #include <sstream>
 
-CBLT_DEFINE_LOG(CoLogSceneBuilder);
-
 namespace cblt::render {
 
 std::optional<CoSceneBuilder::MeshBuffers> CoSceneBuilder::_readObjFile(const std::string &fileName) {
     std::ifstream meshFile(fileName);
     if (!meshFile.good()) {
-        CoLogError(CoLogSceneBuilder) << "Failed to open mesh file " << fileName;
+        CoLogError("Failed to open mesh file %s", fileName);
         return std::nullopt;
     }
 
@@ -137,7 +135,7 @@ std::optional<CoSceneBuilder::MeshBuffersSizeInfo> CoSceneBuilder::_scanMeshBuff
             }
 
             if (numVerticesInFace != 3 && numVerticesInFace != 4) {
-                CoLogError(CoLogSceneBuilder) << "Unsupported mesh topology";
+                CoLogError("Unsupported mesh topology");
                 return std::nullopt;
             }
 

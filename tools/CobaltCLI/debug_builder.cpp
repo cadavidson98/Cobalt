@@ -15,7 +15,7 @@ CoDebugBuilder::~CoDebugBuilder() {
     _textures->release();
 }
 
-bool CoDebugBuilder::buildMeshes() {
+bool CoDebugBuilder::buildMeshes(std::function<void(int, const char *)> progressCallback) {
     const std::optional<MeshBuffers> meshBuffers = _readObjFile(asset::kAssetsMeshesDir + "teapot/teapot.obj");
     if (!meshBuffers) {
         return false;
@@ -34,6 +34,8 @@ bool CoDebugBuilder::buildMeshes() {
         return false;
     }
 
+    progressCallback(25, "loading meshes");
+
     Ptex::String errorString;
     static const std::string teapotTexture = asset::kAssetsMeshesDir + "teapot/teapot.ptx";
     Ptex::PtexTexture *meshTexture = _textures->get(teapotTexture.c_str(), errorString);
@@ -43,6 +45,7 @@ bool CoDebugBuilder::buildMeshes() {
     }
 
     const Ptex::PtexTexture::Info textureInfo = meshTexture->getInfo();
+    progressCallback(25, "loading materials");
 
     _materials = CoDynamicArray<render::CoMaterial>(1);
     _materials[0] = render::CoMaterial(
@@ -56,29 +59,31 @@ bool CoDebugBuilder::buildMeshes() {
     return true;
 }
 
-bool CoDebugBuilder::buildCameras() {
+bool CoDebugBuilder::buildCameras(std::function<void(int, const char *)> progressCallback) {
     static const cblt::render::CoCamera kDefaultCamera(cblt::render::CoCamera::CreateFromProjectionInfo{
         .hFov = cblt::toRadians(40.f),
         .vFov = cblt::toRadians(40.f),
-        .filmSize = cblt::CoSize(2.2f, 2.2f),
+        .filmSize = vec2f{2.2f, 2.2f},
         .cameraToWorld = cblt::utils::translationMatrix({0.f, 0.f, -5.f}),
     });
 
+    progressCallback(25, "loading camera frames");
     _camera = std::shared_ptr<render::CoCamera>(new render::CoCamera(kDefaultCamera));
     return _camera != nullptr;
 }
 
-bool CoDebugBuilder::buildEnvironment() {
+bool CoDebugBuilder::buildEnvironment(std::function<void(int, const char *)> progressCallback) {
     _environmentMap = cblt::render::CoTexture::create({
         .fileName = cblt::tools::asset::kAssetsTexturesDir + "arches.exr",
         .fileExtension = "exr",
     });
 
+    progressCallback(25, "loading environments");
     return _environmentMap != nullptr;
 }
 
 std::shared_ptr<render::CoScene> CoDebugBuilder::scene() {
-    if (!_camera || !_mesh || !_environmentMap) {
+    if (!_camera || !_mesh || !_environmentMap || !_materials) {
         return nullptr;
     }
 

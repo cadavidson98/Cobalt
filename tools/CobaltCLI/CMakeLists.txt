@@ -1,4 +1,6 @@
 set(COBALT_CLI_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/cli_progress.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/cli_progress.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cobalt_cli.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/debug_builder.h
     ${CMAKE_CURRENT_SOURCE_DIR}/debug_builder.cpp)

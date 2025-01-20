@@ -30,9 +30,9 @@ class CoDebugBuilder final : render::CoSceneBuilder {
     public:
         CoDebugBuilder();
         virtual ~CoDebugBuilder();
-        bool buildMeshes() override;
-        bool buildCameras() override;
-        bool buildEnvironment() override;
+        virtual bool buildMeshes(std::function<void(int, const char *)> callback) override;
+        virtual bool buildCameras(std::function<void(int, const char *)> callback) override;
+        virtual bool buildEnvironment(std::function<void(int, const char *)> callback) override;
 
         std::shared_ptr<render::CoScene> scene() override;
 

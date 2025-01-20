@@ -16,7 +16,7 @@ class CoCamera {
         struct CreateFromProjectionInfo {
                 float hFov = toRadians(35.f);
                 float vFov = toRadians(35.f);
-                CoSize filmSize = {2.f, 2.f};
+                vec2f filmSize = {2.f, 2.f};
                 mat4f cameraToWorld = utils::translationMatrix({0.f, 0.f, -5.f});
         };
 
@@ -27,7 +27,7 @@ class CoCamera {
     private:
         mat4f _viewportToWorld;
         vec3f _cameraPos;
-        CoSize _filmSize;
+        vec2f _filmSize;
 };
 
 } // namespace

@@ -1,7 +1,7 @@
 #ifndef COBALT_CLI_PARSER_H
 #define COBALT_CLI_PARSER_H
 
-#include <cstdint>
+#include "size_types.h"
 #include <optional>
 #include <string>
 #include <vector>

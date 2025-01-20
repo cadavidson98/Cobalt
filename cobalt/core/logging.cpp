@@ -1,29 +1,77 @@
-#ifndef CBLT_LOGGING_INL
-#define CBLT_LOGGING_INL
-
 #include "logging.h"
+
+#ifndef __linux__
+#error Only Linux Supported
+#endif
+
+#include <syslog.h>
+#include <cstring>
+#include <cstdarg>
 
 #include <iostream>
 #include <string>
 
-CoLogStream &CoLogWrite(CoLogLevel level, CoLog &log) {
-    std::string logCategory;
+namespace cblt::core {
+
+class CoLogInternal {
+    public:
+    CoLogInternal() {
+        openlog("Cobalt", LOG_PID, LOG_USER);
+    }
+
+    ~CoLogInternal() {
+        closelog();
+    }
+
+    void writeMessage(int level, const char *trace, const char *message) {
+        syslog(level | LOG_USER, "%s: %s", trace, message);
+    }
+
+    private:
+};
+
+static std::unique_ptr<CoLogInternal> gLog = nullptr;
+
+void CoLogWrite(CoLogLevel level, const char *trace, const char *message, ...) {
+    int osLogLevel = LOG_DEBUG;
     switch (level) {
 #ifdef CBLT_LOG_DEBUG
-    case CoLogLevelDebug : logCategory = "debug"; break;
+    case CoLogLevelDebug : {
+        osLogLevel = LOG_DEBUG;
+        break;
+    }
 #endif
 #ifdef CBLT_LOG_INFO
-    case CoLogLevelInfo : logCategory = "info"; break;
+    case CoLogLevelInfo : {
+        osLogLevel = LOG_INFO;
+        break;
+    }
 #endif
 #ifdef CBLT_LOG_WARN
-    case CoLogLevelWarn : logCategory = "warn"; break;
+    case CoLogLevelWarn : {
+        osLogLevel = LOG_WARNING;
+        break;
+    }
 #endif
 #ifdef CBLT_LOG_ERROR
-    case CoLogLevelError : logCategory = "error"; break;
+    case CoLogLevelError : {
+        osLogLevel = LOG_ERR;
+        break;
+    }
 #endif
     };
 
-    return std::cout << log.logName << ": " << logCategory << " ";
+    if (!gLog) {
+        gLog = std::make_unique<CoLogInternal>();
+    }
+
+    char logMessage[256];
+    std::memset(logMessage, 0, 256);
+    std::va_list messageArguments;
+    va_start(messageArguments, message);
+    std::vsnprintf(logMessage, 256, message, messageArguments);
+    va_end(messageArguments);
+    gLog->writeMessage(osLogLevel, trace, logMessage);
 }
 
-#endif // CBLT_LOGGING_INL
+}  // namespace cblt::core

@@ -8,8 +8,6 @@
 
 #include <algorithm>
 
-CBLT_DEFINE_LOG(CoLogTexture);
-
 namespace cblt::render {
 
 std::shared_ptr<CoTexture> CoTexture::create(const CreateFromFileInfo &createInfo) {
@@ -21,19 +19,19 @@ std::shared_ptr<CoTexture> CoTexture::create(const CreateFromFileInfo &createInf
         return _loadFromEXR(createInfo);
     }
 
-    CoLogError(CoLogTexture) << "Unsupported texture format";
+    CoLogError("Unsupported texture format");
     return nullptr;
 }
 
-CoSize CoTexture::size() const {
+vec2f CoTexture::size() const {
     return _textureSize;
 }
 
 CoColor CoTexture::sample(const vec2f &uvCoord) {
     // rescale to image space
-    const vec2f texel = uvCoord * vec2f{_textureSize.width, _textureSize.height};
-    if (std::clamp(texel.x, 0.f, _textureSize.width - 1) != texel.x ||
-        std::clamp(texel.y, 0.f, _textureSize.height - 1) != texel.y) {
+    const vec2f texel = uvCoord * _textureSize;
+    if (std::clamp(texel.x, 0.f, _textureSize.x - 1.f) != texel.x ||
+        std::clamp(texel.y, 0.f, _textureSize.y - 1.f) != texel.y) {
         return CoColor{0.f, 0.f, 0.f, 0.f};
     }
 
@@ -46,10 +44,10 @@ CoColor CoTexture::sample(const vec2f &uvCoord) {
         static constexpr int kHalfNeighborhood = kNeighborhood >> 1;
         const vec2i start = vec2i(nearestTexel.x - kHalfNeighborhood, nearestTexel.y - kHalfNeighborhood);
         const vec2i end = vec2i(nearestTexel.x + kHalfNeighborhood + 1, nearestTexel.y + kHalfNeighborhood + 1);
-        for (int yTexel = std::max(0, start.y); yTexel < std::min(int(_textureSize.height), end.y); ++yTexel) {
-            for (int xTexel = std::max(0, start.x); xTexel < std::min(int(_textureSize.width), end.x); ++xTexel) {
+        for (int yTexel = std::max(0, start.y); yTexel < std::min(int(_textureSize.y), end.y); ++yTexel) {
+            for (int xTexel = std::max(0, start.x); xTexel < std::min(int(_textureSize.x), end.x); ++xTexel) {
                 const vec2f neighborTexel{float(xTexel), float(yTexel)};
-                const Imf::Rgba &color = textureDataFloat16[yTexel * uint32_t(_textureSize.width) + xTexel];
+                const Imf::Rgba &color = textureDataFloat16[yTexel * uint32_t(_textureSize.x) + xTexel];
 
                 const vec4f neighborColor{
                     float(color.r),
@@ -83,7 +81,7 @@ CoTexture::~CoTexture() {
 
 bool CoTexture::_checkCreateInfo(const CreateFromFileInfo &createInfo) {
     if (std::find(kValidFileTypes.begin(), kValidFileTypes.end(), createInfo.fileExtension) == kValidFileTypes.end()) {
-        CoLogError(CoLogTexture) << "Invalid file type" << std::endl;
+        CoLogError("Invalid file type");
         return false;
     }
 
@@ -109,12 +107,12 @@ std::shared_ptr<CoTexture> CoTexture::_loadFromEXR(const CreateFromFileInfo &cre
             .format = kPixelFormatRGBA16Float,
             .dimensions =
                 {
-                    .width = float(windowSize.x),
-                    .height = float(windowSize.y),
+                    float(windowSize.x),
+                    float(windowSize.y),
                 },
         }));
     } catch (Iex::BaseExc &e) {
-        CoLogError(CoLogTexture) << e.what() << std::endl;
+        CoLogError(e.what());
         return nullptr;
     }
 }
