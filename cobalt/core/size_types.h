@@ -15,6 +15,11 @@ using uint32_t = unsigned int;
 using uint64_t = unsigned long long;
 #endif
 
+#if __has_include(<cstddef>)
+#include <cstddef>
+#else
+using size_t = unsigned long long;
+#endif
 // TODO: half type here
 
 #endif  // CBLT_CORE_SIZE_TYPES_H

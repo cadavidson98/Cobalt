@@ -159,6 +159,7 @@ CoMesh::~CoMesh() {
 }
 
 bool CoMesh::intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) {
+    assert(_accelerator && "missing accelerator");
     return _accelerator->IntersectClosest(ray, intersectionEvent);
 }
 

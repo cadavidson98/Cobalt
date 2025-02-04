@@ -1,9 +1,8 @@
-#ifndef CBLT_CAMERA_H
-#define CBLT_CAMERA_H
+#ifndef CBLT_RENDER_CAMERA_H
+#define CBLT_RENDER_CAMERA_H
 
 #include "mat4.h"
 #include "math_utilities.h"
-#include "math_utils.h"
 #include "ray.h"
 #include "size_types.h"
 #include "vec2.h"
@@ -14,15 +13,15 @@ namespace cblt::render {
 class CoCamera {
     public:
         struct CreateFromProjectionInfo {
-                float hFov = toRadians(35.f);
-                float vFov = toRadians(35.f);
+                float hFov = cblt::utils::toRadians(35.f);
+                float vFov = cblt::utils::toRadians(35.f);
                 vec2f filmSize = {2.f, 2.f};
-                mat4f cameraToWorld = utils::translationMatrix({0.f, 0.f, -5.f});
+                mat4f cameraToWorld = cblt::utils::translationMatrix({0.f, 0.f, -5.f});
         };
 
         CoCamera(const CreateFromProjectionInfo &createInfo);
 
-        geom::CoRay CreateRay(vec2f pixelPos) const;
+        geom::CoRay createRay(vec2f pixelPos) const;
 
     private:
         mat4f _viewportToWorld;
@@ -30,7 +29,6 @@ class CoCamera {
         vec2f _filmSize;
 };
 
-} // namespace
-  // cblt::render
+} // namespace cblt::render
 
-#endif // CBLT_CAMERA_H
+#endif // CBLT_RENDER_CAMERA_H

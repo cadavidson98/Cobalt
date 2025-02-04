@@ -2,7 +2,7 @@
 #define CBLT_RENDER_GGX_FUNCTION_H
 
 #include "constants.h"
-#include "math_utils.h"
+#include "math_utilities.h"
 
 namespace cblt::render {
 
@@ -13,8 +13,8 @@ inline float GGX(float cosTheta, float alpha) {
 }
 
 inline float GGX_aniso(float alphaX, float alphaY, float cosPhi, float sinPhi, float cosTheta) {
-    const float A = sqr(cosPhi / alphaX) + sqr(sinPhi / alphaY);
-    float denom = kPI * alphaX * alphaY * sqr(sqr(cosTheta) + A);
+    const float A = cblt::utils::sqr(cosPhi / alphaX) + cblt::utils::sqr(sinPhi / alphaY);
+    float denom = kPI * alphaX * alphaY * cblt::utils::sqr(cblt::utils::sqr(cosTheta) + A);
     return 1.f / denom;
 }
 

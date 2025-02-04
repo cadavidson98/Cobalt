@@ -63,6 +63,11 @@
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"Debug"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
             }
         },
         {
@@ -74,6 +79,11 @@
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
             }
         },
         {
@@ -86,6 +96,11 @@
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"Debug"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
             }
         },
         {
@@ -97,6 +112,11 @@
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"Release"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
             }
         },
         {
@@ -108,6 +128,11 @@
             ],
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE":"RelWithDebInfo"
+            },
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
             }
         },
         {

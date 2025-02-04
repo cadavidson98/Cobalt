@@ -10,12 +10,19 @@
 #include "Ptexture.h"
 
 #include <memory>
+#include <variant>
 
 namespace cblt::render {
 
 class CoMaterial {
     public:
-    CoMaterial(CoSurfaceParams params, Ptex::PtexTexture *texture);
+
+    template<typename parameterType>
+    using ParameterSlot = std::variant<Ptex::PtexTexture *, parameterType>;
+
+    using CoMaterialParams = CoPrincipledParams<ParameterSlot<vec4f>, float>;
+
+    CoMaterial(CoMaterialParams params);
     CoSurfaceParams surfaceParamsAtCoordinates(const vec2f uvCoords, uint32_t faceIdx) const;
     
     CoMaterial(CoMaterial&& other);
@@ -27,8 +34,7 @@ class CoMaterial {
     CoMaterial(CoMaterial&) = delete;
     CoMaterial &operator=(CoMaterial&) = delete;
 
-    CoSurfaceParams _params;
-    Ptex::PtexTexture *_texture;
+    CoMaterialParams _params;
     Ptex::PtexFilter *_filter;
 };
 

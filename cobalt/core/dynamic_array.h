@@ -1,6 +1,10 @@
 #ifndef CBLT_CORE_DYNAMIC_ARRAY_H
 #define CBLT_CORE_DYNAMIC_ARRAY_H
 
+#include "size_types.h"
+
+#include <utility>
+
 namespace cblt {
 
 template<typename T>
@@ -11,6 +15,11 @@ class CoDynamicArray final {
         if(_size > 0) {
             _array = reinterpret_cast<T *>(new Byte[sizeof(T) * _size]);
         }
+    }
+
+    CoDynamicArray(std::nullptr_t)
+        : _size{0} {
+        _array = nullptr;
     }
 
     CoDynamicArray(CoDynamicArray&& other)

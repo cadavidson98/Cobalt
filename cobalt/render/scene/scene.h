@@ -29,15 +29,16 @@ using CoUUID = uint32_t;
 class CoScene {
     public:
         struct CreateFromDataInfo {
-                CoCamera camera;
+                std::shared_ptr<CoCamera> camera;
                 std::shared_ptr<geom::CoMesh> mesh;
                 std::shared_ptr<CoTexture> environmentMap;
                 CoDynamicArray<CoMaterial> materials;
                 Ptex::PtexCache *ptexTextures;
         };
 
-        static std::shared_ptr<CoScene> createEmptyScene();
         static std::shared_ptr<CoScene> create(CreateFromDataInfo &createInfo);
+
+        std::shared_ptr<CoCamera> camera() const;
 
         bool closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const;
 
@@ -55,9 +56,9 @@ class CoScene {
 
         static constexpr CoUUID kInvalidID = CoUUID(~0);
 
-        CoMaterial _defaultMaterial;
+        std::shared_ptr<CoMaterial> _defaultMaterial;
 
-        CoCamera _camera;
+        std::shared_ptr<CoCamera> _camera;
         std::shared_ptr<CoTexture> _environmentMap;
         Ptex::PtexCache *_ptexTextures;
         std::shared_ptr<geom::CoMesh> _mesh;

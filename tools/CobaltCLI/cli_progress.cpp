@@ -14,21 +14,24 @@ void printProgress(int percent, const char *status) {
         return;
     }
 
-    static constexpr int kStatusBarLength = 64;
-    static constexpr int kMaxProgressBarLength = 2048;
+    static constexpr int kStatusBarLength = 128;
 
     char statusBar[kStatusBarLength];
-    char progressBar[kMaxProgressBarLength];
-    const int currentLineLength = (terminalSize.ws_col < kMaxProgressBarLength) ? terminalSize.ws_col : kMaxProgressBarLength;
+    const int currentLineLength = (terminalSize.ws_col < kStatusBarLength) ? terminalSize.ws_col : kStatusBarLength;
 
     std::memset(statusBar, 0, kStatusBarLength);
-    std::memset(progressBar, 0, kMaxProgressBarLength);
-    const int statusFormatSize = std::snprintf(statusBar, kStatusBarLength, "[progress %3d]: ", percent);
+    int statusFormatSize = 0;
+    if (percent < 100) {
+        statusFormatSize = std::snprintf(statusBar, kStatusBarLength, "[progress %3d%%]: %s ", percent, status);
+    } else {
+        const char *completeMessage = "complete.";
+        statusFormatSize = std::snprintf(statusBar, kStatusBarLength, "complete.");
+    }
+
     if (statusFormatSize < 0) {
         return;
     }
 
-    // progress bar format: [###......]
     const int remainingChars = currentLineLength - statusFormatSize;
     // reserve 2 characters for newline/carriage return & null character
     const int barLength = remainingChars - 2;
@@ -36,27 +39,14 @@ void printProgress(int percent, const char *status) {
         return;
     }
 
-    if (percent >= 100) {
-        const char *completeMessage = "complete.";
-        const size_t completeMessageLength = std::strlen(completeMessage);
-        std::strncpy(progressBar, "complete.", kMaxProgressBarLength);
-        // overwrite null character
-        std::memset(progressBar + completeMessageLength, ' ', barLength - completeMessageLength);
-        progressBar[barLength] = '\n';
-        progressBar[barLength + 1] = '\0';
-    } else {
-        const int fillLength = barLength - 2;
-        const int numFilled = (percent * fillLength) / 100;
-        const int numEmpty = fillLength - numFilled;
-        progressBar[0] = '[';
-        std::memset(progressBar + 1, '#', numFilled);
-        std::memset(progressBar + 1 + numFilled, '.', numEmpty);
-        progressBar[barLength - 1] = ']';
-        progressBar[barLength] = '\r';
-        progressBar[barLength + 1] = '\0';
-    }
+    const char endLineCharacter = (percent < 100) ? '\r' : '\n';
 
-    std::fprintf(stdout, "%s%s", statusBar, progressBar);
+    // overwrite null character
+    std::memset(statusBar + statusFormatSize, ' ', barLength);
+    statusBar[barLength] = endLineCharacter;
+    statusBar[barLength + 1] = '\0';
+
+    std::fprintf(stdout, "%s", statusBar);
     std::fflush(stdout);
 }
 

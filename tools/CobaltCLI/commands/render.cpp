@@ -1,13 +1,15 @@
 #include "render.h"
 
+#include "assets.h"
+#include "callback.h"
 #include "cli_progress.h"
 #include "color.h"
 #include "commands.h"
-#include "debug_builder.h"
 #include "image.h"
 #include "ray.h"
 #include "render_target.h"
 #include "scene.h"
+#include "scene_factory.h"
 #include "size_types.h"
 #include "system.h"
 
@@ -95,37 +97,27 @@ bool renderCommand(int argc, char **argv) {
         return false;
     }
 
-    std::shared_ptr<tools::CoDebugBuilder> sceneBuilder =
-        std::shared_ptr<tools::CoDebugBuilder>(new tools::CoDebugBuilder);
-
-    const uint64_t unixStart = core::time();
+    const uint64_t loadStart = core::time();
     std::mutex progressMutex;
-    int totalProgress = 0;
-    auto progressCallback = [&progressMutex, &totalProgress](int currentProgress, const char *message = nullptr) {
+    core::CoCallback progressCallback;
+    progressCallback.functor = [&progressMutex](const char *message, int totalProgress) {
         std::scoped_lock(progressMutex);
-        totalProgress += currentProgress;
-        printProgress(totalProgress);
+        printProgress(totalProgress, message);
     };
 
-    if (!sceneBuilder->buildMeshes(progressCallback) || !sceneBuilder->buildCameras(progressCallback) || !sceneBuilder->buildEnvironment(progressCallback)) {
-        return false;
-    }
+    std::shared_ptr<render::CoScene> defaultScene = render::CoSceneFactory::buildScene({
+        .fileName = tools::asset::kAssetsBaseDir + "teapot.xml",
+        .parentDirectory = tools::asset::kAssetsBaseDir,
+        .format = render::CoSceneFactory::SceneFormat::kMitsuba,
+    }, progressCallback);
 
-    const uint64_t unixEnd = core::time();
-    // report load time
-    std::cout << "Loaded Scene in " << (unixEnd - unixStart) * 1e-6 << " ms " << std::endl;
-
-    static const render::CoCamera kDefaultCamera(render::CoCamera::CreateFromProjectionInfo{
-        .hFov = toRadians(40.f),
-        .vFov = toRadians(40.f),
-        .filmSize = vec2f{2.2f, 2.2f},
-        .cameraToWorld = utils::translationMatrix({0.f, 0.f, -5.f}),
-    });
-
-    std::shared_ptr<render::CoScene> defaultScene = sceneBuilder->scene();
     if (!defaultScene) {
         return false;
     }
+
+    const uint64_t loadEnd = core::time();
+    // report load time
+    std::cout << "Loaded Scene in " << (loadEnd - loadStart) * 1e-6 << " ms " << std::endl;
 
     static constexpr uint32_t kWidth = 800;
     static constexpr uint32_t kHeight = 800;
@@ -158,13 +150,16 @@ bool renderCommand(int argc, char **argv) {
         printProgress(renderProgress);
     };
 
+    std::shared_ptr<render::CoCamera> camera = defaultScene->camera();
+
     const uint32_t numTotalPixels = kWidth * kHeight;
     const uint32_t pumpValue = 5;
     const uint32_t pixelProgress = numTotalPixels / 20;
+    const uint64_t renderStartTime = core::time();
     for (uint32_t pixelY = 0; pixelY < kHeight; ++pixelY) {
         for (uint32_t pixelX = 0; pixelX < kWidth; ++pixelX) {
             geom::IntersectionEvent intersectionEvent;
-            const geom::CoRay ray = kDefaultCamera.CreateRay(viewportToNDC({float(pixelX), float(pixelY)}));
+            const geom::CoRay ray = camera->createRay(viewportToNDC({float(pixelX), float(pixelY)}));
             const bool hitMesh = defaultScene->closestIntersection(ray, intersectionEvent);
             if (hitMesh) {
                 const render::CoSurfaceParams surfaceParams = defaultScene->resolveSurfaceAtInteraction(intersectionEvent);
@@ -188,6 +183,9 @@ bool renderCommand(int argc, char **argv) {
             }
         }
     }
+    const uint64_t renderEndTime = core::time();
+
+    std::cout << "Rendered image in " << (renderEndTime - renderStartTime) * 1e-9 << " s\n";
 
     std::shared_ptr<Image> renderImage = Image::create({
         .renderTarget = renderTarget,

@@ -1,7 +1,7 @@
 #ifndef CBLT_RENDER_SMITH_GEOMETRY_H
 #define CBLT_RENDER_SMITH_GEOMETRY_H
 
-#include "math_utils.h"
+#include "math_utilities.h"
 #include "vec3.h"
 
 #include <cmath>
@@ -21,12 +21,12 @@ inline float smithGeomAniso(
     const float nDotO = dot(omegaO, normal);
 
     // masking
-    float sinCosAniso = cblt::sqr(dot(omegaI, X) * alphaX) + cblt::sqr(dot(omegaI, Y) * alphaY);
-    float tanSqr = (1.f - cblt::sqr(nDotI)) / (cblt::sqr(nDotI));
+    float sinCosAniso = cblt::utils::sqr(dot(omegaI, X) * alphaX) + cblt::utils::sqr(dot(omegaI, Y) * alphaY);
+    float tanSqr = (1.f - cblt::utils::sqr(nDotI)) / (cblt::utils::sqr(nDotI));
     const float lambdaI = std::sqrt(1.f + sinCosAniso * tanSqr);
     // shadowing
-    sinCosAniso = cblt::sqr(dot(omegaO, X) * alphaX) + cblt::sqr(dot(omegaO, Y) * alphaY);
-    tanSqr = (1.f - cblt::sqr(nDotO)) / (cblt::sqr(nDotO));
+    sinCosAniso = cblt::utils::sqr(dot(omegaO, X) * alphaX) + cblt::utils::sqr(dot(omegaO, Y) * alphaY);
+    tanSqr = (1.f - cblt::utils::sqr(nDotO)) / (cblt::utils::sqr(nDotO));
     float lambdaO = std::sqrt(1.f + sinCosAniso * tanSqr);
 
     return 2.0f / (lambdaI + lambdaO);
@@ -40,7 +40,7 @@ inline float smithPartialGeom(const vec3f &omega, const vec3f &halfway, float al
 }
 
 inline float smithPartialGeomAniso(float alphaX, float alphaY, float n_dot_v, float vDotX, float vDotY) {
-    float sinCosAniso = cblt::sqr(vDotX * alphaX) + cblt::sqr(vDotY * alphaY);
+    float sinCosAniso = cblt::utils::sqr(vDotX * alphaX) + cblt::utils::sqr(vDotY * alphaY);
     float tanSqr = (1.f - n_dot_v * n_dot_v) / (n_dot_v * n_dot_v);
     float denom = 1.f + std::sqrt(1.f + sinCosAniso * tanSqr);
     return 2.f / denom;

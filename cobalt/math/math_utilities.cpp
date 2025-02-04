@@ -48,4 +48,24 @@ mat4f translationMatrix(vec3f translation) {
     };
 }
 
+mat4f rotationMatrix(vec3f axis, float angle) {
+    const float sinAngle = std::sin(angle);
+    const float cosAngle = std::cos(angle);
+    const float oneMinusCos = 1.f - cosAngle;
+
+    const float xx = axis.x * axis.x;
+    const float xy = axis.x * axis.y;
+    const float xz = axis.x * axis.z;
+    const float yy = axis.y * axis.y;
+    const float yz = axis.y * axis.z;
+    const float zz = axis.z * axis.z;
+
+    return mat4f {
+        vec4f{cosAngle + xx * oneMinusCos, xy * oneMinusCos + axis.z * sinAngle, xz * oneMinusCos - axis.y * sinAngle, 0.f},
+        vec4f{xy * oneMinusCos - axis.z * sinAngle, cosAngle + yy * oneMinusCos, yz * oneMinusCos + axis.x * sinAngle, 0.f},
+        vec4f{xz * oneMinusCos + axis.y * sinAngle, yz * oneMinusCos - axis.x * sinAngle, cosAngle + zz * oneMinusCos, 0.f},
+        vec4f{0.f, 0.f, 0.f, 1.f},
+    };
+}
+
 } // namespace cblt::utils

@@ -12,10 +12,6 @@
 
 namespace cblt::render {
 
-std::shared_ptr<CoScene> CoScene::createEmptyScene() {
-    return std::shared_ptr<CoScene>(new CoScene);
-}
-
 std::shared_ptr<CoScene> CoScene::create(CoScene::CreateFromDataInfo &createInfo) {
     std::shared_ptr<CoScene> scene = std::shared_ptr<CoScene>(new CoScene);
     scene->_camera = createInfo.camera;
@@ -25,18 +21,40 @@ std::shared_ptr<CoScene> CoScene::create(CoScene::CreateFromDataInfo &createInfo
     // TODO: needs to move to builder?
     scene->_scenePrimitives = CoDynamicArray<PrimitiveComponents>(1);
     scene->_scenePrimitives[0] = {
-        .materialIdx = 0,
+        .materialIdx = kInvalidID,
     };
 
     return scene;
 }
 
-CoScene::CoScene(): _camera{{}}, _defaultMaterial(CoSurfaceParams{}, nullptr) {
-    _ptexTextures = Ptex::PtexCache::create(0, 0, true);
+CoScene::CoScene() {
+    const CoMaterial::CoMaterialParams defaultMaterialParams {
+        .baseColor = vec4f{1.f, 0.f, .5f, 1.f},
+        .metallic = 0.f,
+        .subsurface = 0.f,
+        .ior = 1.4,
+        .specular = 0.f,
+        .specularTint = 0.f,
+        .specularTransmission = 0.f,
+        .roughness = 1.f,
+        .anisotropic = 0.f,
+        .sheen = 0.f,
+        .sheenTint = 0.f,
+        .clearcoat = 0.f,
+        .clearcoatGloss = 0.f,
+    };
+
+    _defaultMaterial = std::make_shared<CoMaterial>(defaultMaterialParams);
 }
 
 CoScene::~CoScene() {
-    _ptexTextures->release();
+    if (_ptexTextures) {
+        _ptexTextures->release();
+    }
+}
+
+std::shared_ptr<CoCamera> CoScene::camera() const {
+    return _camera;
 }
 
 bool CoScene::closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const {
@@ -58,7 +76,7 @@ CoSurfaceParams CoScene::resolveSurfaceAtInteraction(const geom::IntersectionEve
         return material.surfaceParamsAtCoordinates(intersectionEvent.localCoordinates, intersectionEvent.primitiveIndex);
     }
 
-    return _defaultMaterial.surfaceParamsAtCoordinates(intersectionEvent.localCoordinates, intersectionEvent.primitiveIndex);
+    return _defaultMaterial->surfaceParamsAtCoordinates(intersectionEvent.localCoordinates, intersectionEvent.primitiveIndex);
 }
 
 CoColor CoScene::environment(const geom::CoRay &ray) const {

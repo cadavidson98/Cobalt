@@ -6,22 +6,25 @@
 namespace cblt::render {
 
 // Material parameters based on the Disney Principled BSDF
-struct CoSurfaceParams {
-        vec4f baseColor;
-        float metallic;
-        float subsurface;
-        // TODO: sus! should use to derive IoR
-        float ior;
-        float specular;
-        float specularTint;
-        float specularTransmission;
-        float roughness;
-        float anisotropic;
-        float sheen;
-        float sheenTint;
-        float clearcoat;
-        float clearcoatGloss;
+template<typename vectorType, typename scalarType>
+struct CoPrincipledParams {
+    vectorType baseColor;
+    scalarType metallic;
+    scalarType subsurface;
+    // TODO: sus! should use to derive IoR
+    scalarType ior;
+    scalarType specular;
+    scalarType specularTint;
+    scalarType specularTransmission;
+    scalarType roughness;
+    scalarType anisotropic;
+    scalarType sheen;
+    scalarType sheenTint;
+    scalarType clearcoat;
+    scalarType clearcoatGloss;
 };
+
+using CoSurfaceParams = CoPrincipledParams<vec4f, float>;
 
 } // namespace cblt::render
 
