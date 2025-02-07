@@ -9,105 +9,105 @@
 namespace cblt::simd {
 
 struct vec3f {
-        __m128 xyz;
-        vec3f(float c = 0.f) {
-            xyz = _mm_setr_ps(c, c, c, 0.f);
-        }
+    __m128 xyz;
+    vec3f(float c = 0.f) {
+        xyz = _mm_setr_ps(c, c, c, 0.f);
+    }
 
-        vec3f(__m128 _xyz) {
-            xyz = _xyz;
-        }
+    vec3f(__m128 _xyz) {
+        xyz = _xyz;
+    }
 
-        vec3f(float x, float y, float z) {
-            xyz = _mm_setr_ps(x, y, z, 0.f);
-        }
+    vec3f(float x, float y, float z) {
+        xyz = _mm_setr_ps(x, y, z, 0.f);
+    }
 
-        std::array<float, 4> Values() const {
-            std::array<float, 4> values;
-            _mm_store_ps(values.data(), xyz);
-            return values;
-        };
+    std::array<float, 4> Values() const {
+        std::array<float, 4> values;
+        _mm_store_ps(values.data(), xyz);
+        return values;
+    };
 
-        float operator[](const size_t idx) const {
-            assert(idx < 3);
-            std::array<float, 4> values = Values();
-            return values[idx];
-        }
+    float operator[](const size_t idx) const {
+        assert(idx < 3);
+        std::array<float, 4> values = Values();
+        return values[idx];
+    }
 
-        vec3f &operator+=(const vec3f &b) {
-            xyz = _mm_add_ps(xyz, b.xyz);
-            return *this;
-        }
+    vec3f &operator+=(const vec3f &b) {
+        xyz = _mm_add_ps(xyz, b.xyz);
+        return *this;
+    }
 
-        vec3f &operator-=(const vec3f &b) {
-            xyz = _mm_sub_ps(xyz, b.xyz);
-            return *this;
-        }
+    vec3f &operator-=(const vec3f &b) {
+        xyz = _mm_sub_ps(xyz, b.xyz);
+        return *this;
+    }
 
-        vec3f &operator*=(const vec3f &rhs) {
-            xyz = _mm_mul_ps(xyz, rhs.xyz);
-            return *this;
-        }
+    vec3f &operator*=(const vec3f &rhs) {
+        xyz = _mm_mul_ps(xyz, rhs.xyz);
+        return *this;
+    }
 
-        vec3f &operator/=(const vec3f &rhs) {
-            xyz = _mm_div_ps(xyz, rhs.xyz);
-            return *this;
-        }
+    vec3f &operator/=(const vec3f &rhs) {
+        xyz = _mm_div_ps(xyz, rhs.xyz);
+        return *this;
+    }
 
-        friend vec3f operator+(vec3f a, const vec3f &b) {
-            a += b;
-            return a;
-        }
+    friend vec3f operator+(vec3f a, const vec3f &b) {
+        a += b;
+        return a;
+    }
 
-        friend vec3f operator-(vec3f a, const vec3f &b) {
-            a -= b;
-            return a;
-        }
+    friend vec3f operator-(vec3f a, const vec3f &b) {
+        a -= b;
+        return a;
+    }
 
-        friend vec3f operator*(vec3f a, const vec3f &b) {
-            a *= b;
-            return a;
-        }
+    friend vec3f operator*(vec3f a, const vec3f &b) {
+        a *= b;
+        return a;
+    }
 
-        friend vec3f operator/(vec3f a, const vec3f b) {
-            a /= b;
-            return a;
-        }
+    friend vec3f operator/(vec3f a, const vec3f b) {
+        a /= b;
+        return a;
+    }
 
-        friend vec3f operator*(vec3f a, float b) {
-            __m128 scalar = _mm_set1_ps(b);
-            return {_mm_mul_ps(a.xyz, scalar)};
-        }
+    friend vec3f operator*(vec3f a, float b) {
+        __m128 scalar = _mm_set1_ps(b);
+        return {_mm_mul_ps(a.xyz, scalar)};
+    }
 
-        friend vec3f operator/(vec3f a, float b) {
-            __m128 scalar = _mm_set1_ps(b);
-            return {_mm_div_ps(a.xyz, scalar)};
-        }
+    friend vec3f operator/(vec3f a, float b) {
+        __m128 scalar = _mm_set1_ps(b);
+        return {_mm_div_ps(a.xyz, scalar)};
+    }
 
-        friend vec3f operator*(float a, vec3f b) {
-            __m128 scalar = _mm_set1_ps(a);
-            return {_mm_mul_ps(b.xyz, scalar)};
-        }
+    friend vec3f operator*(float a, vec3f b) {
+        __m128 scalar = _mm_set1_ps(a);
+        return {_mm_mul_ps(b.xyz, scalar)};
+    }
 
-        friend bool operator==(const vec3f &a, const vec3f &b) {
-            const std::array<float, 4> lhsValues = a.Values();
-            const std::array<float, 4> rhsValues = b.Values();
-            return lhsValues[0] == rhsValues[0] && lhsValues[1] == rhsValues[1] && lhsValues[2] == rhsValues[2];
-        }
+    friend bool operator==(const vec3f &a, const vec3f &b) {
+        const std::array<float, 4> lhsValues = a.Values();
+        const std::array<float, 4> rhsValues = b.Values();
+        return lhsValues[0] == rhsValues[0] && lhsValues[1] == rhsValues[1] && lhsValues[2] == rhsValues[2];
+    }
 
-        friend float dot(const vec3f &lhs, const vec3f &rhs);
-        friend vec3f cross(const vec3f &lhs, const vec3f &rhs);
-        friend vec3f lerp(const vec3f &lhs, const vec3f &rhs, const float value);
+    friend float dot(const vec3f &lhs, const vec3f &rhs);
+    friend vec3f cross(const vec3f &lhs, const vec3f &rhs);
+    friend vec3f lerp(const vec3f &lhs, const vec3f &rhs, const float value);
 
-        friend vec3f min(const vec3f &lhs, const vec3f &rhs);
-        friend vec3f max(const vec3f &lhs, const vec3f &rhs);
+    friend vec3f min(const vec3f &lhs, const vec3f &rhs);
+    friend vec3f max(const vec3f &lhs, const vec3f &rhs);
 
-        friend float reduceMin(const vec3f &lhs);
-        friend float reduceMax(const vec3f &lhs);
+    friend float reduceMin(const vec3f &lhs);
+    friend float reduceMax(const vec3f &lhs);
 
-        friend vec3f abs(const vec3f &lhs);
+    friend vec3f abs(const vec3f &lhs);
 
-        friend vec3f shuffle(const vec3f lhs, size_t idx1, size_t idx2, size_t idx3);
+    friend vec3f shuffle(const vec3f lhs, size_t idx1, size_t idx2, size_t idx3);
 };
 
 inline float dot(const vec3f &lhs, const vec3f &rhs) {

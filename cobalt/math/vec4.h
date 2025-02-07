@@ -33,54 +33,54 @@ vec4<T> clamp(vec4<T> lhs, T min, T max);
 
 template<typename T>
 struct vec4 {
-        T x;
-        T y;
-        T z;
-        T w;
+    T x;
+    T y;
+    T z;
+    T w;
 
-        friend vec4<T> operator+ <>(vec4<T> lhs, vec4<T> rhs);
-        friend vec4<T> operator- <>(vec4<T> lhs, vec4<T> rhs);
-        friend vec4<T> operator* <>(vec4<T> lhs, vec4<T> rhs);
-        friend vec4<T> operator/ <>(vec4<T> lhs, vec4<T> rhs);
-        friend bool operator== <>(vec4<T> lhs, vec4<T> rhs);
+    friend vec4<T> operator+ <>(vec4<T> lhs, vec4<T> rhs);
+    friend vec4<T> operator- <>(vec4<T> lhs, vec4<T> rhs);
+    friend vec4<T> operator* <>(vec4<T> lhs, vec4<T> rhs);
+    friend vec4<T> operator/ <>(vec4<T> lhs, vec4<T> rhs);
+    friend bool operator== <>(vec4<T> lhs, vec4<T> rhs);
 
-        vec4<T> &operator+=(const vec4<T> &rhs) {
-            x += rhs.x;
-            y += rhs.y;
-            z += rhs.z;
-            w += rhs.w;
-            return *this;
-        };
+    vec4<T> &operator+=(const vec4<T> &rhs) {
+        x += rhs.x;
+        y += rhs.y;
+        z += rhs.z;
+        w += rhs.w;
+        return *this;
+    };
 
-        vec4<T> &operator-=(const vec4<T> &rhs) {
-            x -= rhs.x;
-            y -= rhs.y;
-            z -= rhs.z;
-            w -= rhs.w;
-            return *this;
-        };
+    vec4<T> &operator-=(const vec4<T> &rhs) {
+        x -= rhs.x;
+        y -= rhs.y;
+        z -= rhs.z;
+        w -= rhs.w;
+        return *this;
+    };
 
-        vec4<T> &operator*=(const vec4<T> &rhs) {
-            x *= rhs.x;
-            y *= rhs.y;
-            z *= rhs.z;
-            w *= rhs.w;
-            return *this;
-        };
+    vec4<T> &operator*=(const vec4<T> &rhs) {
+        x *= rhs.x;
+        y *= rhs.y;
+        z *= rhs.z;
+        w *= rhs.w;
+        return *this;
+    };
 
-        vec4<T> &operator/=(const vec4<T> &rhs) {
-            x /= rhs.x;
-            y /= rhs.y;
-            z /= rhs.z;
-            w /= rhs.w;
-            return *this;
-        };
+    vec4<T> &operator/=(const vec4<T> &rhs) {
+        x /= rhs.x;
+        y /= rhs.y;
+        z /= rhs.z;
+        w /= rhs.w;
+        return *this;
+    };
 
-        friend vec4<T> operator/ <>(vec4<T> lhs, T rhs);
-        friend vec4<T> operator* <>(vec4<T> lhs, T rhs);
-        friend vec4<T> operator* <>(T lhs, vec4<T> rhs);
+    friend vec4<T> operator/ <>(vec4<T> lhs, T rhs);
+    friend vec4<T> operator* <>(vec4<T> lhs, T rhs);
+    friend vec4<T> operator* <>(T lhs, vec4<T> rhs);
 
-        friend vec4<T> clamp<>(vec4<T> lhs, T min, T max);
+    friend vec4<T> clamp<>(vec4<T> lhs, T min, T max);
 };
 
 template<typename T>

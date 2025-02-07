@@ -1,8 +1,8 @@
 ---
 Language: Cpp
-AccessModifierOffset: 0
+AccessModifierOffset: -4
 AlignAfterOpenBracket: BlockIndent
-# AlignArrayOfStructures: Right
+AlignArrayOfStructures: Right
 AlignConsecutiveAssignments: 
   Enabled: false
 AlignConsecutiveBitFields:
@@ -60,7 +60,7 @@ EmptyLineAfterAccessModifier: Never
 EmptyLineBeforeAccessModifier: LogicalBlock
 FixNamespaceComments: true
 IncludeBlocks: Regroup
-IndentAccessModifiers: true
+IndentAccessModifiers: false
 IndentCaseBlocks: false
 IndentCaseLabels: false
 IndentWidth: 4

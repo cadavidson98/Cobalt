@@ -1,11 +1,10 @@
 #include "string_utilities.h"
 
 #include <gtest/gtest.h>
-
 #include <vector>
 
 namespace {
-    constexpr float kEpsilon = 1e-4f;
+constexpr float kEpsilon = 1e-4f;
 }
 
 TEST(CobaltCoreStringTests, TestSplit) {
@@ -48,10 +47,10 @@ TEST(CobaltCoreStringTests, TestSplit) {
         std::string_view testString = "1.5,3.4,7.4,10.3,";
         std::vector<float> floats = cblt::core::split<float>(testString, ',');
         EXPECT_EQ(floats.size(), 4);
-        EXPECT_NEAR(floats[0], 1.5f, kEpsilon); 
-        EXPECT_NEAR(floats[1], 3.4f, kEpsilon); 
-        EXPECT_NEAR(floats[2], 7.4f, kEpsilon); 
-        EXPECT_NEAR(floats[3], 10.3f, kEpsilon); 
+        EXPECT_NEAR(floats[0], 1.5f, kEpsilon);
+        EXPECT_NEAR(floats[1], 3.4f, kEpsilon);
+        EXPECT_NEAR(floats[2], 7.4f, kEpsilon);
+        EXPECT_NEAR(floats[3], 10.3f, kEpsilon);
     }
 }
 

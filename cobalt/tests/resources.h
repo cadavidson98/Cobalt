@@ -5,6 +5,6 @@ namespace cblt::test {
 
 static const char *kTestDataDir = "/home/cdavidson/Cobalt/cobalt/tests/TestData";
 
-}  // namespace cblt::test
+} // namespace cblt::test
 
-#endif  // CBLT_RENDER_TESTS_RESOURCES_H
+#endif // CBLT_RENDER_TESTS_RESOURCES_H

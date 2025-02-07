@@ -8,17 +8,20 @@
 
 namespace cblt::render {
 class CoLamberianDiffuse : public CoSurfaceFunction {
-    public:
-        CoColor
-        BSDF(const vec3f &omegaI, const vec3f &omegaO, const vec3f &normal, const CoSurfaceParams &surfaceParams)
-            const override {
-            const float NDotO = std::max(dot(omegaO, normal), 0.f);
-            return surfaceParams.baseColor;
-        };
+public:
+    CoColor BSDF(
+        const vec3f &omegaI,
+        const vec3f &omegaO,
+        const vec3f &normal,
+        const CoSurfaceParams &surfaceParams
+    ) const override {
+        const float NDotO = std::max(dot(omegaO, normal), 0.f);
+        return surfaceParams.baseColor;
+    };
 
-        bool isDiracDelta() const override {
-            return false;
-        };
+    bool isDiracDelta() const override {
+        return false;
+    };
 };
 } // namespace cblt::render
 

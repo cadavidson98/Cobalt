@@ -13,8 +13,8 @@
 #include "size_types.h"
 #include "system.h"
 
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <mutex>
 #include <string>
 
@@ -105,11 +105,14 @@ bool renderCommand(int argc, char **argv) {
         printProgress(totalProgress, message);
     };
 
-    std::shared_ptr<render::CoScene> defaultScene = render::CoSceneFactory::buildScene({
-        .fileName = tools::asset::kAssetsBaseDir + "teapot.xml",
-        .parentDirectory = tools::asset::kAssetsBaseDir,
-        .format = render::CoSceneFactory::SceneFormat::kMitsuba,
-    }, progressCallback);
+    std::shared_ptr<render::CoScene> defaultScene = render::CoSceneFactory::buildScene(
+        {
+            .fileName = tools::asset::kAssetsBaseDir + "teapot.xml",
+            .parentDirectory = tools::asset::kAssetsBaseDir,
+            .format = render::CoSceneFactory::SceneFormat::kMitsuba,
+        },
+        progressCallback
+    );
 
     if (!defaultScene) {
         return false;
@@ -122,11 +125,9 @@ bool renderCommand(int argc, char **argv) {
     static constexpr uint32_t kWidth = 800;
     static constexpr uint32_t kHeight = 800;
     std::shared_ptr<render::CoRenderTarget> renderTarget = render::CoRenderTarget::create({
-        .size =
-            {
-                kWidth,
-                kHeight,
-            },
+        .size = {
+                 kWidth, kHeight,
+                 },
     });
 
     if (!renderTarget) {
@@ -162,8 +163,9 @@ bool renderCommand(int argc, char **argv) {
             const geom::CoRay ray = camera->createRay(viewportToNDC({float(pixelX), float(pixelY)}));
             const bool hitMesh = defaultScene->closestIntersection(ray, intersectionEvent);
             if (hitMesh) {
-                const render::CoSurfaceParams surfaceParams = defaultScene->resolveSurfaceAtInteraction(intersectionEvent);
-                
+                const render::CoSurfaceParams surfaceParams =
+                    defaultScene->resolveSurfaceAtInteraction(intersectionEvent);
+
                 renderTarget->Write({pixelX, pixelY}, surfaceParams.baseColor);
             } else {
                 const render::CoColor environmentColor = defaultScene->environment(ray);
@@ -206,7 +208,7 @@ bool renderCommand(int argc, char **argv) {
         return false;
     }
 
-    std::cout<< "wrote image " << settings->outputFile << std::endl;
+    std::cout << "wrote image " << settings->outputFile << std::endl;
     return true;
 }
 

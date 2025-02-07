@@ -12,45 +12,45 @@
 namespace cblt::render {
 
 class CoTexture {
-    public:
-        struct CreateFromFileInfo {
-                std::string fileName;
-                std::string fileExtension;
-        };
+public:
+    struct CreateFromFileInfo {
+        std::string fileName;
+        std::string fileExtension;
+    };
 
-        static std::shared_ptr<CoTexture> create(const CreateFromFileInfo &createInfo);
+    static std::shared_ptr<CoTexture> create(const CreateFromFileInfo &createInfo);
 
-        ~CoTexture();
+    ~CoTexture();
 
-        vec2f size() const;
-        CoColor sample(const vec2f &uvCoord);
+    vec2f size() const;
+    CoColor sample(const vec2f &uvCoord);
 
-    private:
-        static constexpr std::array<const char *, 1> kValidFileTypes = {
-            "exr",
-        };
+private:
+    static constexpr std::array<const char *, 1> kValidFileTypes = {
+        "exr",
+    };
 
-        enum PixelFormat {
-            kPixelFormatRGBA16Float,
-            kPixelFormatRGBA8UInt,
-        };
+    enum PixelFormat {
+        kPixelFormatRGBA16Float,
+        kPixelFormatRGBA8UInt,
+    };
 
-        struct CreateFromBytesInfo {
-                uint8_t *bytes;
-                PixelFormat format;
-                vec2f dimensions;
-        };
+    struct CreateFromBytesInfo {
+        uint8_t *bytes;
+        PixelFormat format;
+        vec2f dimensions;
+    };
 
-        CoTexture() = delete;
-        CoTexture(const CreateFromBytesInfo &createInfo);
+    CoTexture() = delete;
+    CoTexture(const CreateFromBytesInfo &createInfo);
 
-        uint8_t *_textureData;
-        PixelFormat _textureFormat;
-        vec2f _textureSize;
+    uint8_t *_textureData;
+    PixelFormat _textureFormat;
+    vec2f _textureSize;
 
-        static bool _checkCreateInfo(const CreateFromFileInfo &createInfo);
+    static bool _checkCreateInfo(const CreateFromFileInfo &createInfo);
 
-        static std::shared_ptr<CoTexture> _loadFromEXR(const CreateFromFileInfo &createInfo);
+    static std::shared_ptr<CoTexture> _loadFromEXR(const CreateFromFileInfo &createInfo);
 };
 
 } // namespace

@@ -3,10 +3,10 @@
 
 namespace cblt {
 struct quatf {
-        float x;
-        float y;
-        float z;
-        float w;
+    float x;
+    float y;
+    float z;
+    float w;
 };
 } // namespace cblt
 

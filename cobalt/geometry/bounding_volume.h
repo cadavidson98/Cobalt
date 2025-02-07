@@ -6,53 +6,53 @@
 #include "ray.h"
 #include "size_types.h"
 
-#include <memory>
-#include <span>
-#include <vector>
-
 #include <cassert>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <numeric>
 #include <queue>
+#include <span>
+#include <vector>
 
 namespace cblt::geom {
 
 class CoPrimitiveStorage {
-    public:
-        CoPrimitiveStorage(size_t numPrimitives) {
-            _primitiveIndices.resize(numPrimitives);
-            std::iota(_primitiveIndices.begin(), _primitiveIndices.end(), 0);
-        }
-    protected:
-        std::vector<uint32_t> _primitiveIndices;
+public:
+    CoPrimitiveStorage(size_t numPrimitives) {
+        _primitiveIndices.resize(numPrimitives);
+        std::iota(_primitiveIndices.begin(), _primitiveIndices.end(), 0);
+    }
+
+protected:
+    std::vector<uint32_t> _primitiveIndices;
 };
 
 template<typename BoundingVolumeStorage>
 class CoBoundingVolume {
-    public:
-        enum class PartitionMethod {
-            Binary,
-            Midpoint,
-            SurfaceAreaHeuristic,
-        };
+public:
+    enum class PartitionMethod {
+        Binary,
+        Midpoint,
+        SurfaceAreaHeuristic,
+    };
 
-        struct CreateWithPrimitivesInfo {
-                std::shared_ptr<BoundingVolumeStorage> primitives;
-                uint8_t maxPrimsInLeaf = kMaxPrimitivesPerLeaf;
-                PartitionMethod partitionMethod = PartitionMethod::Midpoint;
-        };
+    struct CreateWithPrimitivesInfo {
+        std::shared_ptr<BoundingVolumeStorage> primitives;
+        uint8_t maxPrimsInLeaf = kMaxPrimitivesPerLeaf;
+        PartitionMethod partitionMethod = PartitionMethod::Midpoint;
+    };
 
-        CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions)
-            : primitivesPerLeaf{createOptions.maxPrimsInLeaf}, partitionMethod{createOptions.partitionMethod},
-              storage{createOptions.primitives} {
-            BuildBoundingVolumeTree(0, storage->NumPrimitives());
-        }
+    CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions)
+        : primitivesPerLeaf{createOptions.maxPrimsInLeaf}, partitionMethod{createOptions.partitionMethod},
+          storage{createOptions.primitives} {
+        BuildBoundingVolumeTree(0, storage->NumPrimitives());
+    }
 
-        ~CoBoundingVolume() {
-        }
+    ~CoBoundingVolume() {
+    }
 
-        bool IntersectClosest(const CoRay &ray, IntersectionEvent &intersectionEvent) const {
+    bool IntersectClosest(const CoRay &ray, IntersectionEvent &intersectionEvent) const {
 
         float closestHit = std::numeric_limits<float>::max();
         float treeMinTime = 0;
@@ -68,17 +68,23 @@ class CoBoundingVolume {
             }
 
             const BoundingVolumeNode &currentNode = boundingVolumeTree[currentNodeIdx];
-            if (rayAxisAlignedBoundingBoxIntersection(ray, currentNode.nodeBounds, treeMinTime, treeMaxTime) && treeMinTime < closestHit) {
+            if (rayAxisAlignedBoundingBoxIntersection(ray, currentNode.nodeBounds, treeMinTime, treeMaxTime) &&
+                treeMinTime < closestHit) {
                 if (currentNode.primitiveCount != 0) {
                     // check for primitive hits
                     const size_t primitiveEndIdx = currentNode.primitiveStartIdx + currentNode.primitiveCount;
-                    if (storage->PrimitivesIntersect(ray, currentNode.primitiveStartIdx, primitiveEndIdx, intersectionEvent)) {
+                    if (storage->PrimitivesIntersect(
+                            ray,
+                            currentNode.primitiveStartIdx,
+                            primitiveEndIdx,
+                            intersectionEvent
+                        )) {
                         closestHit = intersectionEvent.timeMin;
                     }
                     continue;
                 }
 
-                const size_t leftChildIdx = currentNodeIdx + 1; 
+                const size_t leftChildIdx = currentNodeIdx + 1;
                 nodeStack.push_back(currentNode.rightChildIdx);
                 nodeStack.push_back(leftChildIdx);
             }
@@ -87,26 +93,25 @@ class CoBoundingVolume {
         return closestHit < ray.maxDist;
     }
 
-    private:
-        static const size_t kInvalidIndex = -1;
-        static const uint8_t kMaxPrimitivesPerLeaf = 8;
+private:
+    static const size_t kInvalidIndex = -1;
+    static const uint8_t kMaxPrimitivesPerLeaf = 8;
 
-        struct BoundingVolumeNode {
-                CoAxisAlignedBoundingBox nodeBounds;
-                // left child index is current node index + 1
-                union {
-                        size_t rightChildIdx;
-                        size_t primitiveStartIdx;
-                };
-                uint8_t primitiveCount;
+    struct BoundingVolumeNode {
+        CoAxisAlignedBoundingBox nodeBounds;
+        // left child index is current node index + 1
+        union {
+            size_t rightChildIdx;
+            size_t primitiveStartIdx;
         };
+        uint8_t primitiveCount;
+    };
 
-        uint8_t primitivesPerLeaf;
-        PartitionMethod partitionMethod;
-        std::shared_ptr<BoundingVolumeStorage> storage;
+    uint8_t primitivesPerLeaf;
+    PartitionMethod partitionMethod;
+    std::shared_ptr<BoundingVolumeStorage> storage;
 
-        std::vector<BoundingVolumeNode> boundingVolumeTree;
-
+    std::vector<BoundingVolumeNode> boundingVolumeTree;
 
     void BuildBoundingVolumeTree(size_t startIdx, size_t endIdx) {
         if (startIdx > endIdx) {
@@ -144,18 +149,22 @@ class CoBoundingVolume {
 
         size_t splitIdx = startIdx;
         switch (partitionMethod) {
-        case PartitionMethod::Midpoint: {
+        case PartitionMethod::Midpoint : {
             const float splitValue = boundingCenter[maxIndex];
-            splitIdx = storage->Reorder(startIdx, endIdx, [splitValue, maxIndex](const CoAxisAlignedBoundingBox &primitiveBounds) {
-                const simd::vec3f aabbCenter = primitiveBounds.Center();
-                return aabbCenter[maxIndex] < splitValue;
-            });
+            splitIdx = storage->Reorder(
+                startIdx,
+                endIdx,
+                [splitValue, maxIndex](const CoAxisAlignedBoundingBox &primitiveBounds) {
+                    const simd::vec3f aabbCenter = primitiveBounds.Center();
+                    return aabbCenter[maxIndex] < splitValue;
+                }
+            );
             if (splitIdx != startIdx && splitIdx != endIdx) {
                 break;
             }
         }
-        case PartitionMethod::Binary:
-        default: {
+        case PartitionMethod::Binary :
+        default : {
             splitIdx = (endIdx + startIdx) >> 1;
         }
         }
@@ -172,7 +181,6 @@ class CoBoundingVolume {
         boundingVolumeTree[curNodeIdx - 1].rightChildIdx = boundingVolumeTree.size();
         BuildBoundingVolumeTree(splitIdx, endIdx);
     }
-
 };
 
 } // namespace cblt::geom

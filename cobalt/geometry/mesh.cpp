@@ -80,7 +80,10 @@ bool CoMesh::MeshStorage::PrimitivesIntersect(
                 _positions[faceIndex.y],
                 _positions[faceIndex.z],
                 _positions[faceIndex.w],
-                timeMin, timeMax, hitCoordinates);
+                timeMin,
+                timeMax,
+                hitCoordinates
+            );
             if (hitPatch && timeMin < event.timeMin) {
                 event.timeMin = timeMin;
                 event.localCoordinates = hitCoordinates;
@@ -93,7 +96,9 @@ bool CoMesh::MeshStorage::PrimitivesIntersect(
                 _positions[faceIndex.x],
                 _positions[faceIndex.y],
                 _positions[faceIndex.z],
-                timeMin, hitCoordinates);
+                timeMin,
+                hitCoordinates
+            );
             if (hitTriangle && timeMin < event.timeMin) {
                 event.timeMin = timeMin;
                 event.localCoordinates = hitCoordinates;
@@ -116,7 +121,7 @@ CoMesh::MeshStorage::_ComputePrimitiveBounds(size_t startIdx, size_t endIdx) con
 
         const vec4u &faceIndex = _indices[idx];
 
-        if (faceIndex.w != kInvalidIndex) { 
+        if (faceIndex.w != kInvalidIndex) {
             const simd::vec3f boxMin12 = simd::min(_positions[faceIndex.x], _positions[faceIndex.y]);
             const simd::vec3f boxMin34 = simd::min(_positions[faceIndex.z], _positions[faceIndex.w]);
             boxMin = simd::min(boxMin12, boxMin34);
@@ -149,10 +154,13 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
 }
 
 CoMesh::CoMesh(const CreateInfo &createInfo) {
-    _primitives = std::shared_ptr<MeshStorage>(new MeshStorage(createInfo.positions, createInfo.indices, createInfo.numIndices));
-    _accelerator = std::unique_ptr<MeshAccelerator>(new MeshAccelerator(MeshAccelerator::CreateWithPrimitivesInfo{
-        .primitives = _primitives,
-    }));
+    _primitives =
+        std::shared_ptr<MeshStorage>(new MeshStorage(createInfo.positions, createInfo.indices, createInfo.numIndices));
+    _accelerator = std::unique_ptr<MeshAccelerator>(new MeshAccelerator(
+        MeshAccelerator::CreateWithPrimitivesInfo{
+            .primitives = _primitives,
+        }
+    ));
 }
 
 CoMesh::~CoMesh() {
@@ -171,7 +179,8 @@ CoSurface CoMesh::resolveSurface(const IntersectionEvent &intersectionEvent) {
             _primitives->_positions[primitiveIndices.y],
             _primitives->_positions[primitiveIndices.z],
             _primitives->_positions[primitiveIndices.w],
-            intersectionEvent.localCoordinates);
+            intersectionEvent.localCoordinates
+        );
     }
     return CoSurface();
 }

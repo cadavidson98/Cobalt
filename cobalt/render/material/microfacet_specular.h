@@ -8,18 +8,18 @@
 namespace cblt::render {
 
 class CoMicrofacetSpecular : public CoSurfaceFunction {
-    public:
-        CoColor BSDF(
-            const vec3f &omegaI,
-            const vec3f &omegaO,
-            const vec3f &normal,
-            const CoColor &incidentRadiance,
-            const CoSurfaceParams &surfaceParams
-        ) const override;
+public:
+    CoColor BSDF(
+        const vec3f &omegaI,
+        const vec3f &omegaO,
+        const vec3f &normal,
+        const CoColor &incidentRadiance,
+        const CoSurfaceParams &surfaceParams
+    ) const override;
 
-        bool isDiracDelta() const override {
-            return false;
-        };
+    bool isDiracDelta() const override {
+        return false;
+    };
 };
 
 } // namespace cblt::render

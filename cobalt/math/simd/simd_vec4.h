@@ -15,102 +15,102 @@ enum : unsigned int {
 };
 
 struct vec4f {
-        union {
-                __m128 xyzw;
-                struct alignas(16) {
-                        float x;
-                        float y;
-                        float z;
-                        float w;
-                };
+    union {
+        __m128 xyzw;
+        struct alignas(16) {
+            float x;
+            float y;
+            float z;
+            float w;
         };
+    };
 
-        vec4f(__m128 _xyzw) {
-            xyzw = _xyzw;
-        }
+    vec4f(__m128 _xyzw) {
+        xyzw = _xyzw;
+    }
 
-        vec4f(float x, float y, float z, float w) {
-            xyzw = _mm_setr_ps(x, y, z, w);
-        }
+    vec4f(float x, float y, float z, float w) {
+        xyzw = _mm_setr_ps(x, y, z, w);
+    }
 
-        float operator[](const size_t idx) const {
-            assert(idx < 4);
-            const std::array<float, 4> vals = asArray();
-            return vals[idx];
-        }
+    float operator[](const size_t idx) const {
+        assert(idx < 4);
+        const std::array<float, 4> vals = asArray();
+        return vals[idx];
+    }
 
-        vec4f &operator+=(const vec4f &rhs) {
-            xyzw = _mm_add_ps(xyzw, rhs.xyzw);
-            return *this;
-        }
+    vec4f &operator+=(const vec4f &rhs) {
+        xyzw = _mm_add_ps(xyzw, rhs.xyzw);
+        return *this;
+    }
 
-        vec4f &operator-=(const vec4f &rhs) {
-            xyzw = _mm_sub_ps(xyzw, rhs.xyzw);
-            return *this;
-        }
+    vec4f &operator-=(const vec4f &rhs) {
+        xyzw = _mm_sub_ps(xyzw, rhs.xyzw);
+        return *this;
+    }
 
-        vec4f &operator*=(const vec4f &rhs) {
-            xyzw = _mm_mul_ps(xyzw, rhs.xyzw);
-            return *this;
-        }
+    vec4f &operator*=(const vec4f &rhs) {
+        xyzw = _mm_mul_ps(xyzw, rhs.xyzw);
+        return *this;
+    }
 
-        vec4f &operator/=(const vec4f &rhs) {
-            xyzw = _mm_div_ps(xyzw, rhs.xyzw);
-            return *this;
-        }
+    vec4f &operator/=(const vec4f &rhs) {
+        xyzw = _mm_div_ps(xyzw, rhs.xyzw);
+        return *this;
+    }
 
-        friend vec4f operator+(vec4f lhs, const vec4f &rhs) {
-            lhs += rhs;
-            return lhs;
-        }
+    friend vec4f operator+(vec4f lhs, const vec4f &rhs) {
+        lhs += rhs;
+        return lhs;
+    }
 
-        friend vec4f operator-(vec4f lhs, const vec4f &rhs) {
-            lhs -= rhs;
-            return lhs;
-        }
+    friend vec4f operator-(vec4f lhs, const vec4f &rhs) {
+        lhs -= rhs;
+        return lhs;
+    }
 
-        friend vec4f operator*(vec4f lhs, const vec4f &rhs) {
-            lhs *= rhs;
-            return lhs;
-        }
+    friend vec4f operator*(vec4f lhs, const vec4f &rhs) {
+        lhs *= rhs;
+        return lhs;
+    }
 
-        friend vec4f operator/(vec4f lhs, const vec4f &rhs) {
-            lhs /= rhs;
-            return lhs;
-        }
+    friend vec4f operator/(vec4f lhs, const vec4f &rhs) {
+        lhs /= rhs;
+        return lhs;
+    }
 
-        friend vec4f operator*(vec4f lhs, float rhs) {
-            const __m128 scalar = _mm_set1_ps(rhs);
-            return {_mm_mul_ps(lhs.xyzw, scalar)};
-        }
+    friend vec4f operator*(vec4f lhs, float rhs) {
+        const __m128 scalar = _mm_set1_ps(rhs);
+        return {_mm_mul_ps(lhs.xyzw, scalar)};
+    }
 
-        friend vec4f operator/(vec4f lhs, float rhs) {
-            const __m128 scalar = _mm_set1_ps(rhs);
-            return {_mm_div_ps(lhs.xyzw, scalar)};
-        }
+    friend vec4f operator/(vec4f lhs, float rhs) {
+        const __m128 scalar = _mm_set1_ps(rhs);
+        return {_mm_div_ps(lhs.xyzw, scalar)};
+    }
 
-        friend vec4f operator*(float lhs, vec4f rhs) {
-            const __m128 scalar = _mm_set1_ps(lhs);
-            return {_mm_mul_ps(rhs.xyzw, scalar)};
-        }
+    friend vec4f operator*(float lhs, vec4f rhs) {
+        const __m128 scalar = _mm_set1_ps(lhs);
+        return {_mm_mul_ps(rhs.xyzw, scalar)};
+    }
 
-        friend bool operator==(const vec4f &a, const vec4f &b) {
-            return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
-        }
+    friend bool operator==(const vec4f &a, const vec4f &b) {
+        return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
+    }
 
-        friend vec4f min(const vec4f &lhs, const vec4f &rhs);
+    friend vec4f min(const vec4f &lhs, const vec4f &rhs);
 
-        friend vec4f max(const vec4f &lhs, const vec4f &rhs);
+    friend vec4f max(const vec4f &lhs, const vec4f &rhs);
 
-        friend float reduceMin(const vec4f &lhs);
+    friend float reduceMin(const vec4f &lhs);
 
-        friend float reduceMax(const vec4f &lhs);
+    friend float reduceMax(const vec4f &lhs);
 
-        std::array<float, 4> asArray() const {
-            std::array<float, 4> arrayType;
-            _mm_store_ps(arrayType.data(), xyzw);
-            return arrayType;
-        }
+    std::array<float, 4> asArray() const {
+        std::array<float, 4> arrayType;
+        _mm_store_ps(arrayType.data(), xyzw);
+        return arrayType;
+    }
 };
 
 inline vec4f min(const vec4f &lhs, const vec4f &rhs) {

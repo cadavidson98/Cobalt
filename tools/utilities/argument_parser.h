@@ -2,6 +2,7 @@
 #define COBALT_CLI_PARSER_H
 
 #include "size_types.h"
+
 #include <optional>
 #include <string>
 #include <vector>

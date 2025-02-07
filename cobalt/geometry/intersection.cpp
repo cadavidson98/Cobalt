@@ -113,8 +113,8 @@ bool rayPatchIntersection(
     }
 
     struct PatchValues {
-            float time;
-            float v;
+        float time;
+        float v;
     };
 
     auto computePatchValues = [&ray, &position1, &position2, &position3, &position4](float u) {

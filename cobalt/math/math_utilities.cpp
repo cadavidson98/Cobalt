@@ -10,10 +10,10 @@ mat4f perspectiveProjection(float nearPlane, float farPlane, float hFov, float v
     const float depthRange = farPlane - nearPlane;
 
     return mat4f{
-        {1.f / halfWidth, 0.f, 0.f, 0.f},
-        {0.f, 1.f / halfHeight, 0.f, 0.f},
-        {0.f, 0.f, farPlane / depthRange, 1.f},
-        {0.f, 0.f, -(nearPlane * farPlane) / depthRange, 0.f},
+        {1.f / halfWidth,              0.f,                                  0.f, 0.f},
+        {            0.f, 1.f / halfHeight,                                  0.f, 0.f},
+        {            0.f,              0.f,                farPlane / depthRange, 1.f},
+        {            0.f,              0.f, -(nearPlane * farPlane) / depthRange, 0.f},
     };
 }
 
@@ -23,27 +23,27 @@ mat4f perspectiveProjectionInv(float nearPlane, float farPlane, float hFov, floa
     const float depthRange = farPlane - nearPlane;
 
     return mat4f{
-        {halfWidth, 0.f, 0.f, 0.f},
-        {0.f, halfHeight, 0.f, 0.f},
-        {0.f, 0.f, 0.f, depthRange / (-nearPlane * farPlane)},
-        {0.f, 0.f, 1.f, 1.f / nearPlane},
+        {halfWidth,        0.f, 0.f,                                  0.f},
+        {      0.f, halfHeight, 0.f,                                  0.f},
+        {      0.f,        0.f, 0.f, depthRange / (-nearPlane * farPlane)},
+        {      0.f,        0.f, 1.f,                      1.f / nearPlane},
     };
 }
 
 mat4f scaleMatrix(vec3f scale) {
     return mat4f{
-        vec4f{scale.x, 0.f, 0.f, 0.f},
-        vec4f{0.f, scale.y, 0.f, 0.f},
-        vec4f{0.f, 0.f, scale.z, 0.f},
-        vec4f{0.f, 0.f, 0.f, 1.f},
+        vec4f{scale.x,     0.f,     0.f, 0.f},
+        vec4f{    0.f, scale.y,     0.f, 0.f},
+        vec4f{    0.f,     0.f, scale.z, 0.f},
+        vec4f{    0.f,     0.f,     0.f, 1.f},
     };
 }
 
 mat4f translationMatrix(vec3f translation) {
     return mat4f{
-        vec4f{1.f, 0.f, 0.f, 0.f},
-        vec4f{0.f, 1.f, 0.f, 0.f},
-        vec4f{0.f, 0.f, 1.f, 0.f},
+        vec4f{          1.f,           0.f,           0.f, 0.f},
+        vec4f{          0.f,           1.f,           0.f, 0.f},
+        vec4f{          0.f,           0.f,           1.f, 0.f},
         vec4f{translation.x, translation.y, translation.z, 1.f},
     };
 }
@@ -60,11 +60,23 @@ mat4f rotationMatrix(vec3f axis, float angle) {
     const float yz = axis.y * axis.z;
     const float zz = axis.z * axis.z;
 
-    return mat4f {
-        vec4f{cosAngle + xx * oneMinusCos, xy * oneMinusCos + axis.z * sinAngle, xz * oneMinusCos - axis.y * sinAngle, 0.f},
-        vec4f{xy * oneMinusCos - axis.z * sinAngle, cosAngle + yy * oneMinusCos, yz * oneMinusCos + axis.x * sinAngle, 0.f},
-        vec4f{xz * oneMinusCos + axis.y * sinAngle, yz * oneMinusCos - axis.x * sinAngle, cosAngle + zz * oneMinusCos, 0.f},
-        vec4f{0.f, 0.f, 0.f, 1.f},
+    return mat4f{
+        vec4f{
+              cosAngle + xx * oneMinusCos,
+              xy * oneMinusCos + axis.z * sinAngle,
+              xz * oneMinusCos - axis.y * sinAngle,
+              0.f                                                    },
+        vec4f{
+              xy * oneMinusCos - axis.z * sinAngle,
+              cosAngle + yy * oneMinusCos,
+              yz * oneMinusCos + axis.x * sinAngle,
+              0.f                                                    },
+        vec4f{
+              xz * oneMinusCos + axis.y * sinAngle,
+              yz * oneMinusCos - axis.x * sinAngle,
+              cosAngle + zz * oneMinusCos,
+              0.f                                                    },
+        vec4f{                                 0.f,     0.f, 0.f, 1.f},
     };
 }
 

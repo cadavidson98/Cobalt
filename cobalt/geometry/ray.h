@@ -12,15 +12,15 @@ namespace cblt::geom {
 
 struct CoRay {
 
-        CoRay(const simd::vec3f &_pos, const simd::vec3f &_dir, float _maxDist)
-            : pos{_pos.xyz}, dir{_dir.xyz}, invDir{kOne / (dir)}, maxDist{_maxDist} {
-        }
+    CoRay(const simd::vec3f &_pos, const simd::vec3f &_dir, float _maxDist)
+        : pos{_pos.xyz}, dir{_dir.xyz}, invDir{kOne / (dir)}, maxDist{_maxDist} {
+    }
 
-        simd::vec3f pos;
-        simd::vec3f dir;
-        simd::vec3f invDir;
+    simd::vec3f pos;
+    simd::vec3f dir;
+    simd::vec3f invDir;
 
-        float maxDist;
+    float maxDist;
 };
 
 } // namespace cblt::geom

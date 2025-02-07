@@ -5,6 +5,6 @@ namespace cblt::cli {
 
 void printProgress(int percent, const char *status = nullptr);
 
-}  // namespace cblt::cli
+} // namespace cblt::cli
 
-#endif  // CBLT_CLI_PROGRESS_H
+#endif // CBLT_CLI_PROGRESS_H

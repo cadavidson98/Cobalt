@@ -24,7 +24,7 @@ enum CoLogLevel {
 
 void CoLogWrite(CoLogLevel, const char *trace, const char *message, ...);
 
-}  // namespace cblt::core
+} // namespace cblt::core
 
 #ifdef CBLT_LOG_DEBUG
 #define CoLogDebug(...) cblt::core::CoLogWrite(cblt::core::CoLogLevelDebug, __PRETTY_FUNCTION__, __VA_ARGS__)

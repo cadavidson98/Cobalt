@@ -4,17 +4,16 @@
 #error Only Linux Supported
 #endif
 
-#include <syslog.h>
-#include <cstring>
 #include <cstdarg>
-
+#include <cstring>
 #include <iostream>
 #include <string>
+#include <syslog.h>
 
 namespace cblt::core {
 
 class CoLogInternal {
-    public:
+public:
     CoLogInternal() {
         openlog("Cobalt", LOG_PID, LOG_USER);
     }
@@ -27,7 +26,7 @@ class CoLogInternal {
         syslog(level | LOG_USER, "%s: %s", trace, message);
     }
 
-    private:
+private:
 };
 
 static std::unique_ptr<CoLogInternal> gLog = nullptr;
@@ -74,4 +73,4 @@ void CoLogWrite(CoLogLevel level, const char *trace, const char *message, ...) {
     gLog->writeMessage(osLogLevel, trace, logMessage);
 }
 
-}  // namespace cblt::core
+} // namespace cblt::core

@@ -4,14 +4,14 @@
 namespace cblt::render {
 
 struct CoColor {
-        float r;
-        float g;
-        float b;
-        float a;
+    float r;
+    float g;
+    float b;
+    float a;
 };
 
 struct CoSpectrum {
-        float wavelengthNM;
+    float wavelengthNM;
 };
 
 } // namespace

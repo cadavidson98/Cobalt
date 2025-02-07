@@ -1,8 +1,8 @@
 #ifndef CBLT_GEOM_INTERPOLATION_H
 #define CBLT_GEOM_INTERPOLATION_H
 
-#include "vec2.h"
 #include "simd/simd_vec3.h"
+#include "vec2.h"
 
 namespace cblt::geom {
 
@@ -16,8 +16,9 @@ CoSurface interpolatePatch(
     const simd::vec3f &position2,
     const simd::vec3f &position3,
     const simd::vec3f &position4,
-    const vec2f localCoordinates);
+    const vec2f localCoordinates
+);
 
-}  // namespace cblt::geom
+} // namespace cblt::geom
 
-#endif  // CBLT_GEOM_INTERPOLATION_H
+#endif // CBLT_GEOM_INTERPOLATION_H

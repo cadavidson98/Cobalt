@@ -7,6 +7,6 @@ namespace cblt::core {
 
 uint64_t time();
 
-}  // namespace cblt
+} // namespace cblt::core
 
-#endif  // CBLT_SYSTEM_H
+#endif // CBLT_SYSTEM_H

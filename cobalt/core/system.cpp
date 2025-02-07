@@ -11,4 +11,4 @@ uint64_t time() {
     return (systemTime.tv_sec) * kSecondsToNanoSeconds + (systemTime.tv_nsec);
 }
 
-}  // namespace cblt
+} // namespace cblt::core

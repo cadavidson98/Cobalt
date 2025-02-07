@@ -1,12 +1,12 @@
 #ifndef CBLT_RENDER_SCENE_DEBUG_BUILDER_H
 #define CBLT_RENDER_SCENE_DEBUG_BUILDER_H
 
-#include <memory>
 #include <functional>
+#include <memory>
 
 namespace cblt::render {
-    class CoScene;
-}  // namespace cblt
+class CoScene;
+} // namespace cblt::render
 
 namespace cblt::tools {
 

@@ -7,9 +7,9 @@
 namespace cblt::render {
 
 struct CoTransform {
-        vec3f translation;
-        vec3f scale;
-        quatf rotation;
+    vec3f translation;
+    vec3f scale;
+    quatf rotation;
 };
 
 } // namespace

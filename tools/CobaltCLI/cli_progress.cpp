@@ -50,4 +50,4 @@ void printProgress(int percent, const char *status) {
     std::fflush(stdout);
 }
 
-}  // namespace cblt::cli
+} // namespace cblt::cli

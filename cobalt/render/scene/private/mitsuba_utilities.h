@@ -14,7 +14,7 @@ namespace cblt::geom {
 
 class CoMesh;
 
-}  // namespace cblt::geom
+} // namespace cblt::geom
 
 namespace cblt::render {
 
@@ -36,12 +36,10 @@ struct MitsubaScene {
     std::shared_ptr<CoTexture> environmentMap;
 };
 
-std::optional<MitsubaScene> readMitsuba(
-    const std::string &fileName,
-    const std::string &parentDirectory,
-    core::CoCallback &callback);
+std::optional<MitsubaScene>
+readMitsuba(const std::string &fileName, const std::string &parentDirectory, core::CoCallback &callback);
 
-}  // namespace utils
-}  // namespace cblt::render
+} // namespace utils
+} // namespace cblt::render
 
-#endif  // CBLT_RENDER_MITSUBA_UTILS_H
+#endif // CBLT_RENDER_MITSUBA_UTILS_H

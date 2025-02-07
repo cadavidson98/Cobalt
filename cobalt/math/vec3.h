@@ -1,8 +1,8 @@
 #ifndef CBLT_VEC3_H
 #define CBLT_VEC3_H
 
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
 
 namespace cblt {
 
@@ -35,14 +35,14 @@ vec3<T> normalize(const vec3<T> &vector);
 
 template<typename T>
 struct vec3 {
-        T x;
-        T y;
-        T z;
+    T x;
+    T y;
+    T z;
 
-        friend vec3<T> operator+ <>(const vec3<T> &lhs, const vec3<T> &rhs);
-        friend vec3<T> operator- <>(const vec3<T> &lhs, const vec3<T> &rhs);
-        friend vec3<T> operator/ <>(const vec3<T> &lhs, T rhs);
-        friend bool operator== <>(const vec3<T> lhs, const vec3<T> rhs);
+    friend vec3<T> operator+ <>(const vec3<T> &lhs, const vec3<T> &rhs);
+    friend vec3<T> operator- <>(const vec3<T> &lhs, const vec3<T> &rhs);
+    friend vec3<T> operator/ <>(const vec3<T> &lhs, T rhs);
+    friend bool operator== <>(const vec3<T> lhs, const vec3<T> rhs);
 };
 
 template<typename T>

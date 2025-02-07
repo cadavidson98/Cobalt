@@ -22,4 +22,4 @@ using size_t = unsigned long long;
 #endif
 // TODO: half type here
 
-#endif  // CBLT_CORE_SIZE_TYPES_H
+#endif // CBLT_CORE_SIZE_TYPES_H

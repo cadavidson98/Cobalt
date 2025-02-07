@@ -19,6 +19,6 @@ struct CoCallback {
     }
 };
 
-}  // cblt::core
+} // namespace cblt::core
 
-#endif  // CBLT_CORE_CALLBACK_h
+#endif // CBLT_CORE_CALLBACK_h

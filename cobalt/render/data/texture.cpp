@@ -102,15 +102,16 @@ std::shared_ptr<CoTexture> CoTexture::_loadFromEXR(const CreateFromFileInfo &cre
         inputFile.setFrameBuffer(pixelBuffer, 1, windowSize.x);
         inputFile.readPixels(window.min.y, window.max.y);
         inputFile.parts();
-        return std::shared_ptr<CoTexture>(new CoTexture(CreateFromBytesInfo{
-            .bytes = reinterpret_cast<uint8_t *>(pixelBuffer),
-            .format = kPixelFormatRGBA16Float,
-            .dimensions =
-                {
-                    float(windowSize.x),
-                    float(windowSize.y),
-                },
-        }));
+        return std::shared_ptr<CoTexture>(new CoTexture(
+            CreateFromBytesInfo{
+                .bytes = reinterpret_cast<uint8_t *>(pixelBuffer),
+                .format = kPixelFormatRGBA16Float,
+                .dimensions = {
+                               float(windowSize.x),
+                               float(windowSize.y),
+                               },
+        }
+        ));
     } catch (Iex::BaseExc &e) {
         CoLogError(e.what());
         return nullptr;

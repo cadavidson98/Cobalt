@@ -5,10 +5,10 @@
 
 namespace cblt::geom {
 struct CoQuad {
-        simd::vec3f position1;
-        simd::vec3f position2;
-        simd::vec3f position3;
-        simd::vec3f position4;
+    simd::vec3f position1;
+    simd::vec3f position2;
+    simd::vec3f position3;
+    simd::vec3f position4;
 };
 }; // namespace cblt::geom
 

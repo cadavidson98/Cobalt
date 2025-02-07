@@ -2,8 +2,7 @@
 
 namespace cblt::render {
 
-CoMaterial::CoMaterial(CoMaterialParams params)
-: _params{params} {
+CoMaterial::CoMaterial(CoMaterialParams params): _params{params} {
     if (std::holds_alternative<Ptex::PtexTexture *>(params.baseColor)) {
         Ptex::PtexTexture *texture = std::get<Ptex::PtexTexture *>(params.baseColor);
         const Ptex::PtexFilter::Options filterOptions;
@@ -35,12 +34,11 @@ CoSurfaceParams CoMaterial::surfaceParamsAtCoordinates(const vec2f uvCoords, uin
     };
 }
 
-CoMaterial::CoMaterial(CoMaterial&& other)
-: _params{other._params},  _filter{other._filter} {
+CoMaterial::CoMaterial(CoMaterial &&other): _params{other._params}, _filter{other._filter} {
     other._filter = nullptr;
 }
 
-CoMaterial &CoMaterial::operator=(CoMaterial&& other) {
+CoMaterial &CoMaterial::operator=(CoMaterial &&other) {
     _params = other._params;
     _filter = other._filter;
 
@@ -50,4 +48,4 @@ CoMaterial &CoMaterial::operator=(CoMaterial&& other) {
 
 // void CoMaterial::sampleMaterialAtCoordinate(const CoRay &ray?, vec2f localCoorindates, uint32_t faceIdx) const {}
 
-}  // namespace cblt:material
+} // namespace cblt::render

@@ -40,23 +40,23 @@ vec2<T> abs(vec2<T> lhs);
 
 template<typename T>
 struct vec2 {
-        T x;
-        T y;
+    T x;
+    T y;
 
-        vec2(T v = T(0)): x{v}, y{v} {};
-        vec2(T _x, T _y): x{_x}, y{_y} {};
+    vec2(T v = T(0)): x{v}, y{v} {};
+    vec2(T _x, T _y): x{_x}, y{_y} {};
 
-        friend vec2<T> operator+ <>(vec2<T> lhs, vec2<T> rhs);
-        friend vec2<T> operator- <>(vec2<T> lhs, vec2<T> rhs);
-        friend vec2<T> operator* <>(vec2<T> lhs, vec2<T> rhs);
-        friend vec2<T> operator/ <>(vec2<T> lhs, vec2<T> rhs);
-        friend bool operator== <>(vec2<T> lhs, vec2<T> rhs);
+    friend vec2<T> operator+ <>(vec2<T> lhs, vec2<T> rhs);
+    friend vec2<T> operator- <>(vec2<T> lhs, vec2<T> rhs);
+    friend vec2<T> operator* <>(vec2<T> lhs, vec2<T> rhs);
+    friend vec2<T> operator/ <>(vec2<T> lhs, vec2<T> rhs);
+    friend bool operator== <>(vec2<T> lhs, vec2<T> rhs);
 
-        friend vec2<T> operator/ <>(vec2<T> lhs, T rhs);
-        friend vec2<T> operator* <>(vec2<T> lhs, T rhs);
-        friend T lengthSqr<>(vec2<T> lhs);
-        friend vec2<T> clamp<>(vec2<T> lhs, T min, T max);
-        friend vec2<T> abs<>(vec2<T> lhs);
+    friend vec2<T> operator/ <>(vec2<T> lhs, T rhs);
+    friend vec2<T> operator* <>(vec2<T> lhs, T rhs);
+    friend T lengthSqr<>(vec2<T> lhs);
+    friend vec2<T> clamp<>(vec2<T> lhs, T min, T max);
+    friend vec2<T> abs<>(vec2<T> lhs);
 };
 
 template<typename T>

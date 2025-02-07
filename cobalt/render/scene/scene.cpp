@@ -2,8 +2,8 @@
 
 #include "color.h"
 #include "constants.h"
-#include "intersection.h"
 #include "interpolation.h"
+#include "intersection.h"
 #include "mesh.h"
 #include "texture.h"
 
@@ -28,7 +28,7 @@ std::shared_ptr<CoScene> CoScene::create(CoScene::CreateFromDataInfo &createInfo
 }
 
 CoScene::CoScene() {
-    const CoMaterial::CoMaterialParams defaultMaterialParams {
+    const CoMaterial::CoMaterialParams defaultMaterialParams{
         .baseColor = vec4f{1.f, 0.f, .5f, 1.f},
         .metallic = 0.f,
         .subsurface = 0.f,
@@ -73,10 +73,16 @@ CoSurfaceParams CoScene::resolveSurfaceAtInteraction(const geom::IntersectionEve
     if (primitive.materialIdx != kInvalidID) {
         // const geom::CoSurface surfaceProperties = _mesh->resolveSurface(intersectionEvent);
         const CoMaterial &material = _materials[primitive.materialIdx];
-        return material.surfaceParamsAtCoordinates(intersectionEvent.localCoordinates, intersectionEvent.primitiveIndex);
+        return material.surfaceParamsAtCoordinates(
+            intersectionEvent.localCoordinates,
+            intersectionEvent.primitiveIndex
+        );
     }
 
-    return _defaultMaterial->surfaceParamsAtCoordinates(intersectionEvent.localCoordinates, intersectionEvent.primitiveIndex);
+    return _defaultMaterial->surfaceParamsAtCoordinates(
+        intersectionEvent.localCoordinates,
+        intersectionEvent.primitiveIndex
+    );
 }
 
 CoColor CoScene::environment(const geom::CoRay &ray) const {

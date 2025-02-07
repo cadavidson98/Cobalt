@@ -14,55 +14,55 @@
 static constexpr float kEpsilon = 1e-4f;
 
 namespace cblt::geom::test {
-        struct BoxStorage {
-        std::vector<CoAxisAlignedBoundingBox> boxes;
-        BoxStorage() {
-            static const size_t numBoxes = 10;
-            boxes.reserve(numBoxes);
+struct BoxStorage {
+    std::vector<CoAxisAlignedBoundingBox> boxes;
+    BoxStorage() {
+        static const size_t numBoxes = 10;
+        boxes.reserve(numBoxes);
 
-            for (size_t idx = 0; idx < numBoxes; ++idx) {
-                simd::vec3f boxMin(idx, idx, idx);
-                simd::vec3f boxMax(idx + 1, idx + 1, idx + 1);
-                boxes.emplace_back(boxMin, boxMax);
-            }
+        for (size_t idx = 0; idx < numBoxes; ++idx) {
+            simd::vec3f boxMin(idx, idx, idx);
+            simd::vec3f boxMax(idx + 1, idx + 1, idx + 1);
+            boxes.emplace_back(boxMin, boxMax);
+        }
+    }
+
+    size_t NumPrimitives() const {
+        return boxes.size();
+    }
+
+    CoAxisAlignedBoundingBox PrimitiveBounds(size_t startIdx, size_t endIdx) const {
+        static constexpr float minFloat = std::numeric_limits<float>::lowest();
+        static constexpr float maxFloat = std::numeric_limits<float>::max();
+        CoAxisAlignedBoundingBox regionBounds = {
+            .min = simd::vec3f(maxFloat, maxFloat, maxFloat),
+            .max = simd::vec3f(minFloat, minFloat, minFloat),
+        };
+
+        for (size_t idx = startIdx; idx < endIdx; ++idx) {
+            regionBounds.min = simd::min(regionBounds.min, boxes[idx].min);
+            regionBounds.max = simd::max(regionBounds.max, boxes[idx].max);
         }
 
-        size_t NumPrimitives() const {
-            return boxes.size();
+        return regionBounds;
+    }
+
+    size_t Reorder(size_t startIdx, size_t endIdx, std::function<bool(const CoAxisAlignedBoundingBox &)> comparator) {
+        auto start = boxes.begin() + startIdx;
+        auto end = boxes.begin() + endIdx;
+        auto split = std::partition(start, end, comparator);
+        return startIdx + std::distance(start, split);
+    }
+
+    bool PrimitivesIntersect(const CoRay &ray, size_t startIdx, size_t endIdx, IntersectionEvent &event) const {
+        bool hit = false;
+        for (size_t idx = startIdx; idx < endIdx; ++idx) {
+            hit = rayAxisAlignedBoundingBoxIntersection(ray, boxes[idx], event.timeMin, event.timeMax) || hit;
         }
-
-        CoAxisAlignedBoundingBox PrimitiveBounds(size_t startIdx, size_t endIdx) const {
-            static constexpr float minFloat = std::numeric_limits<float>::lowest();
-            static constexpr float maxFloat = std::numeric_limits<float>::max();
-            CoAxisAlignedBoundingBox regionBounds = {
-                .min = simd::vec3f(maxFloat, maxFloat, maxFloat),
-                .max = simd::vec3f(minFloat, minFloat, minFloat),
-            };
-
-            for (size_t idx = startIdx; idx < endIdx; ++idx) {
-                regionBounds.min = simd::min(regionBounds.min, boxes[idx].min);
-                regionBounds.max = simd::max(regionBounds.max, boxes[idx].max);
-            }
-
-            return regionBounds;
-        }
-
-        size_t Reorder(size_t startIdx, size_t endIdx, std::function<bool(const CoAxisAlignedBoundingBox &)> comparator) {
-            auto start = boxes.begin() + startIdx;
-            auto end = boxes.begin() + endIdx;
-            auto split = std::partition(start, end, comparator);
-            return startIdx + std::distance(start, split);
-        }
-
-        bool PrimitivesIntersect(const CoRay &ray, size_t startIdx, size_t endIdx, IntersectionEvent &event) const {
-            bool hit = false;
-            for(size_t idx = startIdx; idx < endIdx; ++idx) {
-                hit = rayAxisAlignedBoundingBoxIntersection(ray, boxes[idx], event.timeMin, event.timeMax) || hit;
-            }
-            return hit;
-        }
-    };
-}
+        return hit;
+    }
+};
+} // namespace cblt::geom::test
 
 TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
     static const cblt::simd::vec3f origin(0.f, 0.f, 0.f);
@@ -184,8 +184,8 @@ TEST(CobaltCoreGeometryTests, TestSphereIntersect) {
 TEST(CobaltCoreGeometryTests, TestTriangleIntersect) {
     {
         static const cblt::geom::CoTriangle triangle{
-            .position1 = cblt::simd::vec3f{0.f, 1.f, 1.f},
-            .position2 = cblt::simd::vec3f{1.f, 0.f, 1.f},
+            .position1 = cblt::simd::vec3f{ 0.f, 1.f, 1.f},
+            .position2 = cblt::simd::vec3f{ 1.f, 0.f, 1.f},
             .position3 = cblt::simd::vec3f{-1.f, 0.f, 1.f},
         };
 
@@ -194,7 +194,14 @@ TEST(CobaltCoreGeometryTests, TestTriangleIntersect) {
 
         float hitTime;
         cblt::vec2f hitCoordinates;
-        const bool hit = cblt::geom::rayTriangleIntersection(ray, triangle.position1, triangle.position2, triangle.position3, hitTime, hitCoordinates);
+        const bool hit = cblt::geom::rayTriangleIntersection(
+            ray,
+            triangle.position1,
+            triangle.position2,
+            triangle.position3,
+            hitTime,
+            hitCoordinates
+        );
         EXPECT_TRUE(hit);
         EXPECT_NEAR(hitTime, 1.f, 1e-4f);
     }
@@ -229,7 +236,8 @@ TEST(CobaltCoreGeometryTests, TestCreateBoundingVolume) {
 
     using BoxAccelerator = cblt::geom::CoBoundingVolume<cblt::geom::test::BoxStorage>;
 
-    std::shared_ptr<cblt::geom::test::BoxStorage> primitives = std::shared_ptr<cblt::geom::test::BoxStorage>(new cblt::geom::test::BoxStorage);
+    std::shared_ptr<cblt::geom::test::BoxStorage> primitives =
+        std::shared_ptr<cblt::geom::test::BoxStorage>(new cblt::geom::test::BoxStorage);
 
     BoxAccelerator::CreateWithPrimitivesInfo createInfo{
         .primitives = primitives,

@@ -1,11 +1,9 @@
 #include "obj_utilities.h"
 
 #include "logging.h"
-
+#include "mesh.h"
 #include "size_types.h"
 #include "vec3.h"
-
-#include "mesh.h"
 
 #include <cstring>
 #include <fstream>
@@ -57,11 +55,11 @@ std::optional<MeshBuffersSizeInfo> scanObjFile(std::ifstream &meshFile) {
             return std::nullopt;
         }
 
-        if (std::strncmp(lineArguments, kPositionToken, kMaxLineLength) == 0) {         // vertex
+        if (std::strncmp(lineArguments, kPositionToken, kMaxLineLength) == 0) {      // vertex
             ++buffersSizeInfo.numPositions;
         } else if (std::strncmp(lineArguments, kNormalToken, kMaxLineLength) == 0) { // vertex normal
             ++buffersSizeInfo.numNormals;
-        } else if (std::strncmp(lineArguments, kFaceToken, kMaxLineLength) == 0) {  // face
+        } else if (std::strncmp(lineArguments, kFaceToken, kMaxLineLength) == 0) {   // face
             size_t numVerticesInFace = 0;
             while (std::strtok(nullptr, kObjTokens) != nullptr) {
                 ++numVerticesInFace;
@@ -116,7 +114,7 @@ cblt::vec3i parseIndices(const std::string &faceString) {
     return indices;
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 namespace cblt::render::utils {
 
@@ -171,13 +169,18 @@ std::shared_ptr<geom::CoMesh> readObjFile(const std::string &fileName) {
         // TODO: I think it is better to split the line here (on spaces),
         // then inside any other sub call
         char *lineInfo = std::strtok(objLine, kObjTokens);
-        if (std::strncmp(lineInfo, kPositionToken, kMaxLineLength) == 0) { // vertex
+        if (std::strncmp(lineInfo, kPositionToken, kMaxLineLength) == 0) {      // vertex
             positionsBuffer[positionIdx++] = stringToVec3();
         } else if (std::strncmp(lineInfo, kNormalToken, kMaxLineLength) == 0) { // vertex normal
             // TODO: need this?
-        } else if (std::strncmp(lineInfo, kFaceToken, kMaxLineLength) == 0) {  // face
+        } else if (std::strncmp(lineInfo, kFaceToken, kMaxLineLength) == 0) { // face
             char *indicesString = nullptr;
-            vec3i parsedIndices[4] = {{-1, -1, -1}, {-1, -1, -1}, {-1, -1, -1}, {-1, -1, -1}};
+            vec3i parsedIndices[4] = {
+                {-1, -1, -1},
+                {-1, -1, -1},
+                {-1, -1, -1},
+                {-1, -1, -1}
+            };
             size_t currentIndex = 0;
             while ((indicesString = std::strtok(nullptr, kObjTokens)) != nullptr) {
                 std::string indices(indicesString);
@@ -201,4 +204,4 @@ std::shared_ptr<geom::CoMesh> readObjFile(const std::string &fileName) {
     });
 }
 
-}  // namespace cblt::render::utils
+} // namespace cblt::render::utils

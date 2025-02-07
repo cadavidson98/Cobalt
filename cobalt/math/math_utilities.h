@@ -1,10 +1,9 @@
 #ifndef CBLT_CORE_MATH_UTILITIES
 #define CBLT_CORE_MATH_UTILITIES
 
+#include "constants.h"
 #include "mat4.h"
 #include "vec3.h"
-
-#include "constants.h"
 
 namespace cblt::utils {
 
@@ -27,7 +26,6 @@ template<typename T>
 constexpr T toDegrees(const T radians) {
     return radians * T(180) / T(kPI);
 }
-
 
 mat4f perspectiveProjection(float nearPlane, float farPlane, float hFov, float vFov);
 mat4f perspectiveProjectionInv(float nearPlane, float farPlane, float hFov, float vFov);
