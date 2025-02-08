@@ -3,10 +3,11 @@
 
 #include "bounding_volume.h"
 #include "interpolation.h"
-#include "simd/simd_vec3.h"
-#include "size_types.h"
-#include "vec3.h"
-#include "vec4.h"
+
+#include "core/size_types.h"
+#include "math/simd/simd_vec3.h"
+#include "math/vec3.h"
+#include "math/vec4.h"
 
 #include <functional>
 #include <memory>

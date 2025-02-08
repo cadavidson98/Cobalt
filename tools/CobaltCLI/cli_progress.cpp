@@ -1,8 +1,10 @@
 #include "cli_progress.h"
 
+#include <sys/ioctl.h>
+
 #include <cstdio>
 #include <cstring>
-#include <sys/ioctl.h>
+
 #include <unistd.h>
 
 namespace cblt::cli {

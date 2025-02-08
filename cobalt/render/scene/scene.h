@@ -2,9 +2,10 @@
 #define CBLT_RENDER_SCENE_H
 
 #include "Ptexture.h"
-#include "camera.h"
-#include "dynamic_array.h"
-#include "material.h"
+
+#include "core/dynamic_array.h"
+#include "render/data/camera.h"
+#include "render/material/material.h"
 
 #include <memory>
 #include <optional>

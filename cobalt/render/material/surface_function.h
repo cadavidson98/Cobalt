@@ -1,10 +1,11 @@
 #ifndef CBLT_RENDER_SURFACE_FUNC_H
 #define CBLT_RENDER_SURFACE_FUNC_H
 
-#include "color.h"
 #include "surface_params.h"
-#include "vec3.h"
-#include "vec4.h"
+
+#include "math/vec3.h"
+#include "math/vec4.h"
+#include "render/data/color.h"
 
 namespace cblt::render {
 

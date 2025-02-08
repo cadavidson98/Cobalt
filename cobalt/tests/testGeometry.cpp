@@ -5,9 +5,10 @@
 #include "sphere.h"
 #include "triangle.h"
 
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <chrono>
-#include <gtest/gtest.h>
 #include <iostream>
 #include <vector>
 

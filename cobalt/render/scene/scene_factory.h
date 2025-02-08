@@ -1,11 +1,11 @@
 #ifndef CBLT_RENDER_SCENE_BUILDER_H
 #define CBLT_RENDER_SCENE_BUILDER_H
 
-#include "callback.h"
-#include "dynamic_array.h"
-#include "mesh.h"
-#include "simd/simd_vec3.h"
-#include "vec4.h"
+#include "core/callback.h"
+#include "core/dynamic_array.h"
+#include "geometry/mesh.h"
+#include "math/simd/simd_vec3.h"
+#include "math/vec4.h"
 
 #include <memory>
 #include <optional>

@@ -4,7 +4,8 @@
 #include "bounding_box.h"
 #include "intersection.h"
 #include "ray.h"
-#include "size_types.h"
+
+#include "core/size_types.h"
 
 #include <cassert>
 #include <functional>

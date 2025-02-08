@@ -1,12 +1,12 @@
 #ifndef CBLT_RENDER_CAMERA_H
 #define CBLT_RENDER_CAMERA_H
 
-#include "mat4.h"
-#include "math_utilities.h"
-#include "ray.h"
-#include "size_types.h"
-#include "vec2.h"
-#include "vec3.h"
+#include "core/size_types.h"
+#include "geometry/ray.h"
+#include "math/mat4.h"
+#include "math/math_utilities.h"
+#include "math/vec2.h"
+#include "math/vec3.h"
 
 namespace cblt::render {
 

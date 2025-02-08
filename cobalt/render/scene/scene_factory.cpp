@@ -1,12 +1,13 @@
 #include "scene_factory.h"
 
-#include "logging.h"
+#include "scene.h"
+
+#include "core/logging.h"
+#include "math/simd/simd_vec3.h"
+#include "math/vec3.h"
+#include "math/vec4.h"
 #include "private/mitsuba_utilities.h"
 #include "private/obj_utilities.h"
-#include "scene.h"
-#include "simd/simd_vec3.h"
-#include "vec3.h"
-#include "vec4.h"
 
 #include <cstring>
 #include <fstream>

@@ -1,8 +1,9 @@
 #include "resources.h"
 #include "texture.h"
 
-#include <cstring>
 #include <gtest/gtest.h>
+
+#include <cstring>
 #include <iostream>
 
 TEST(CobaltRenderDataTests, TestLoadTextureFromEXR) {

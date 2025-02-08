@@ -1,10 +1,12 @@
 #include "texture.h"
 
-#include "OpenEXR/ImfChannelList.h"
-#include "OpenEXR/ImfRgbaFile.h"
-#include "logging.h"
 #include "texture_utilities.h"
-#include "vec4.h"
+
+#include "core/logging.h"
+#include "math/vec4.h"
+
+#include <OpenEXR/ImfChannelList.h>
+#include <OpenEXR/ImfRgbaFile.h>
 
 #include <algorithm>
 

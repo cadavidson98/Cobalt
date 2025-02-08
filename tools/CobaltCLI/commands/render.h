@@ -1,7 +1,7 @@
 #ifndef CBLT_CLI_RENDER_H
 #define CBLT_CLI_RENDER_H
 
-#include "size_types.h"
+#include "core/size_types.h"
 
 #include <optional>
 #include <string>

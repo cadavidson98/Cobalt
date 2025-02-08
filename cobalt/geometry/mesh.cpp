@@ -1,10 +1,11 @@
 #include "mesh.h"
 
 #include "intersection.h"
-#include "logging.h"
 #include "quad.h"
 #include "triangle.h"
-#include "vec3.h"
+
+#include "core/logging.h"
+#include "math/vec3.h"
 
 #include <fstream>
 #include <sstream>

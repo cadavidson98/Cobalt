@@ -1,7 +1,7 @@
 #ifndef CBLT_RENDER_OBJ_UTILS_H
 #define CBLT_RENDER_OBJ_UTILS_H
 
-#include "dynamic_array.h"
+#include "core/dynamic_array.h"
 
 #include <memory>
 #include <optional>

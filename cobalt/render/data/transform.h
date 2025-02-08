@@ -1,8 +1,8 @@
 #ifndef CBLT_TRANSFORM_H
 #define CBLT_TRANSFORM_H
 
-#include "quat.h"
-#include "vec3.h"
+#include "math/quat.h"
+#include "math/vec3.h"
 
 namespace cblt::render {
 

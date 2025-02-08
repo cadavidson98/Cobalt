@@ -1,7 +1,7 @@
 #ifndef CBLT_RENDER_SURFACE_PARAMS_H
 #define CBLT_RENDER_SURFACE_PARAMS_H
 
-#include "vec4.h"
+#include "math/vec4.h"
 
 namespace cblt::render {
 

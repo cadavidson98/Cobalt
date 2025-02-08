@@ -60,6 +60,26 @@ EmptyLineAfterAccessModifier: Never
 EmptyLineBeforeAccessModifier: LogicalBlock
 FixNamespaceComments: true
 IncludeBlocks: Regroup
+IncludeCategories:
+- Regex: '^"[^\/]+"'
+  Priority: 1
+  SortPriority: 1
+  CaseSensitive: true
+- Regex: '^".*"'
+  Priority: 2
+  SortPriority: 2
+  CaseSensitive: true
+  # generic libraries
+- Regex: '^<.*\/.*>'
+  Priority: 3
+  SortPriority: 3
+  CaseSensitive: true
+  # std library last
+- Regex: '^<([a-zA-z])+>'
+  Priority: 4
+  SortPriority: 4
+  CaseSensitive: true
+
 IndentAccessModifiers: false
 IndentCaseBlocks: false
 IndentCaseLabels: false

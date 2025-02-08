@@ -1,11 +1,12 @@
 #include "scene.h"
 
 #include "color.h"
-#include "constants.h"
-#include "interpolation.h"
-#include "intersection.h"
-#include "mesh.h"
 #include "texture.h"
+
+#include "geometry/interpolation.h"
+#include "geometry/intersection.h"
+#include "geometry/mesh.h"
+#include "math/constants.h"
 
 #include <cmath>
 #include <memory>

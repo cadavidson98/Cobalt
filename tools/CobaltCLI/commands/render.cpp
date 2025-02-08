@@ -1,17 +1,18 @@
 #include "render.h"
 
 #include "assets.h"
-#include "callback.h"
 #include "cli_progress.h"
-#include "color.h"
 #include "commands.h"
 #include "image.h"
-#include "ray.h"
-#include "render_target.h"
-#include "scene.h"
-#include "scene_factory.h"
-#include "size_types.h"
-#include "system.h"
+
+#include "core/callback.h"
+#include "core/size_types.h"
+#include "core/system.h"
+#include "geometry/ray.h"
+#include "render/data/color.h"
+#include "render/data/render_target.h"
+#include "render/scene/scene.h"
+#include "render/scene/scene_factory.h"
 
 #include <fstream>
 #include <iostream>

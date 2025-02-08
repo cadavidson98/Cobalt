@@ -3,8 +3,9 @@
 
 #include <array>
 #include <cassert>
-#include <immintrin.h>
 #include <limits>
+
+#include <immintrin.h>
 
 namespace cblt::simd {
 

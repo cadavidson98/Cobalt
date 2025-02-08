@@ -2,8 +2,9 @@
 #define CBLT_RENDER_TEXTURE_H
 
 #include "color.h"
-#include "size_types.h"
-#include "vec2.h"
+
+#include "core/size_types.h"
+#include "math/vec2.h"
 
 #include <array>
 #include <memory>

@@ -2,6 +2,7 @@
 #define CBLT_RENDER_RAYTRACER_H
 
 #include "render_target.h"
+
 #include "simd/simd_mat4.h"
 
 #include <functional>

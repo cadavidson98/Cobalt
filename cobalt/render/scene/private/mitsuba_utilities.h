@@ -1,8 +1,9 @@
 #ifndef CBLT_RENDER_MITSUBA_UTILS_H
 #define CBLT_RENDER_MITSUBA_UTILS_H
 
-#include "callback.h"
 #include "surface_params.h"
+
+#include "core/callback.h"
 
 #include <memory>
 #include <optional>

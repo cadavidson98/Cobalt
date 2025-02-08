@@ -1,6 +1,6 @@
 #include "image.h"
 
-#include "render_target.h"
+#include "render/data/render_target.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"

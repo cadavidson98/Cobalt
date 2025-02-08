@@ -15,4 +15,4 @@ set(COBALT_CORE_SOURCES
 
 target_compile_definitions(CobaltCore PUBLIC CBLT_LOG_DEBUG CBLT_LOG_INFO CBLT_LOG_WARN CBLT_LOG_ERROR)
 target_sources(CobaltCore PUBLIC ${COBALT_CORE_HEADERS} PRIVATE ${COBALT_CORE_SOURCES})
-target_include_directories(CobaltCore BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(CobaltCore BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

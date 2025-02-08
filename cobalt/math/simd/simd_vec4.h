@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cassert>
+
 #include <immintrin.h>
 
 namespace cblt::simd {

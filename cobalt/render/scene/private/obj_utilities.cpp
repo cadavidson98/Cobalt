@@ -1,9 +1,9 @@
 #include "obj_utilities.h"
 
-#include "logging.h"
-#include "mesh.h"
-#include "size_types.h"
-#include "vec3.h"
+#include "core/logging.h"
+#include "core/size_types.h"
+#include "geometry/mesh.h"
+#include "math/vec3.h"
 
 #include <cstring>
 #include <fstream>

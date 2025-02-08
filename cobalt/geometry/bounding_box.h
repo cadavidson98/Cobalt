@@ -2,7 +2,8 @@
 #define CBLT_GEOM_BOUNDING_BOX_H
 
 #include "ray.h"
-#include "simd/simd_vec4.h"
+
+#include "math/simd/simd_vec4.h"
 
 #include <limits>
 

@@ -2,10 +2,11 @@
 #define CBLT_RENDER_MATERIAL_H
 
 #include "Ptexture.h"
-#include "interpolation.h"
 #include "surface_function.h"
 #include "surface_params.h"
-#include "vec2.h"
+
+#include "geometry/interpolation.h"
+#include "math/vec2.h"
 
 #include <memory>
 #include <variant>

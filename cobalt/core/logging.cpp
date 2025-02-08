@@ -8,6 +8,7 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+
 #include <syslog.h>
 
 namespace cblt::core {

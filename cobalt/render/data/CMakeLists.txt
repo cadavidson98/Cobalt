@@ -9,4 +9,4 @@ set(COBALT_RENDER_DATA_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/texture.cpp)
 
 target_sources(CobaltRender PUBLIC ${COBALT_RENDER_DATA_HEADERS} PRIVATE ${COBALT_RENDER_DATA_SOURCES})
-target_include_directories(CobaltRender AFTER PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(CobaltRender AFTER PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

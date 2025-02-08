@@ -1,7 +1,7 @@
 #ifndef CBLT_GEOM_QUAD_H
 #define CBLT_GEOM_QUAD_H
 
-#include "simd/simd_vec4.h"
+#include "math/simd/simd_vec4.h"
 
 namespace cblt::geom {
 struct CoQuad {

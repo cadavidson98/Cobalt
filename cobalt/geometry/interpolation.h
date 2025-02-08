@@ -1,8 +1,8 @@
 #ifndef CBLT_GEOM_INTERPOLATION_H
 #define CBLT_GEOM_INTERPOLATION_H
 
-#include "simd/simd_vec3.h"
-#include "vec2.h"
+#include "math/simd/simd_vec3.h"
+#include "math/vec2.h"
 
 namespace cblt::geom {
 

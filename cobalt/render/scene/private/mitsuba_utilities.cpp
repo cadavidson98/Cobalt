@@ -1,18 +1,20 @@
 #include "mitsuba_utilities.h"
 
 #include "camera.h"
-#include "logging.h"
-#include "math_utilities.h"
-#include "mesh.h"
 #include "obj_utilities.h"
-#include "string_utilities.h"
 #include "texture.h"
-#include "vec3.h"
+
+#include "core/logging.h"
+#include "core/string_utilities.h"
+#include "geometry/mesh.h"
+#include "math/math_utilities.h"
+#include "math/vec3.h"
 
 #include <libxml2/libxml/parser.h>
 #include <libxml2/libxml/tree.h>
 #include <libxml2/libxml/xmlmemory.h>
 #include <libxml2/libxml/xpath.h>
+
 #include <memory>
 
 namespace cblt::render::utils {
@@ -273,6 +275,8 @@ loadMaterial(xmlNodePtr materialNode, xmlXPathContextPtr context, const MitsubaS
         CoLogError("unsupported material type");
         return std::nullopt;
     }
+
+    return std::nullopt;
 }
 
 std::shared_ptr<geom::CoMesh> loadMesh(
