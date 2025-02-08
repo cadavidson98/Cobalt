@@ -6,3 +6,4 @@
 *.ptx filter=lfs diff=lfs merge=lfs -text
 *.rib filter=lfs diff=lfs merge=lfs -text
 tools/assets/* filter=lfs diff=lfs merge=lfs -text
+*.xml filter=lfs diff=lfs merge=lfs -text
