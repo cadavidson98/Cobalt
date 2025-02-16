@@ -17,7 +17,7 @@ std::shared_ptr<CoScene> CoScene::create(CoScene::CreateFromDataInfo &createInfo
     std::shared_ptr<CoScene> scene = std::shared_ptr<CoScene>(new CoScene);
     scene->_camera = createInfo.camera;
     scene->_environmentMap = createInfo.environmentMap;
-    scene->_mesh = createInfo.mesh;
+    scene->_meshes = std::move(createInfo.meshes);
     scene->_materials = std::move(createInfo.materials);
     // TODO: needs to move to builder?
     scene->_scenePrimitives = CoDynamicArray<PrimitiveComponents>(1);
@@ -29,8 +29,8 @@ std::shared_ptr<CoScene> CoScene::create(CoScene::CreateFromDataInfo &createInfo
 }
 
 CoScene::CoScene() {
-    const CoMaterial::CoMaterialParams defaultMaterialParams{
-        .baseColor = vec4f{1.f, 0.f, .5f, 1.f},
+    const CoMaterial::Properties defaultMaterialProperties{
+        .baseColor = CoSpectrum(),
         .metallic = 0.f,
         .subsurface = 0.f,
         .ior = 1.4,
@@ -45,7 +45,7 @@ CoScene::CoScene() {
         .clearcoatGloss = 0.f,
     };
 
-    _defaultMaterial = std::make_shared<CoMaterial>(defaultMaterialParams);
+    _defaultMaterial = std::make_shared<CoMaterial>(defaultMaterialProperties);
 }
 
 CoScene::~CoScene() {
@@ -59,11 +59,12 @@ std::shared_ptr<CoCamera> CoScene::camera() const {
 }
 
 bool CoScene::closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const {
-    if (_mesh->intersects(ray, intersectionEvent)) {
-        intersectionEvent.geometryIndex = 0;
-        return true;
+    for (size_t idx = 0; idx < _meshes.size(); ++idx) {
+        if (_meshes[idx].mesh->intersects(ray, intersectionEvent)) {
+            intersectionEvent.geometryIndex = 0;
+            return true;
+        }
     }
-
     return false;
 }
 

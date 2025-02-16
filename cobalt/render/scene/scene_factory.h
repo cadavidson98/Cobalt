@@ -19,7 +19,6 @@ class CoMaterial;
 class CoSceneFactory {
 public:
     enum class SceneFormat {
-        kObj,
         kMitsuba,
     };
 
@@ -39,7 +38,6 @@ public:
 
 protected:
     static std::shared_ptr<CoScene> _loadMitsubaScene(const CreateInfo &createInfo, core::CoCallback &callback);
-    static std::shared_ptr<CoScene> _loadObjScene(const CreateInfo &createInfo, core::CoCallback &callback);
 };
 
 } // namespace cblt::render

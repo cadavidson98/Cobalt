@@ -4,6 +4,7 @@
 #include "core/size_types.h"
 #include "math/vec2.h"
 #include "math/vec4.h"
+#include "render/data/color.h"
 
 #include <memory>
 
@@ -29,8 +30,8 @@ public:
     static std::shared_ptr<CoRenderTarget> create(const CreateInfo &createInfo);
     ~CoRenderTarget();
 
-    void Write(const vec2u &idx, const vec4f &value);
-    const vec4f &at(const vec2u idx) const;
+    void write(const vec2u &idx, const CoColor &color);
+    const CoColor &at(const vec2u idx) const;
 
     vec2u size() const;
     RenderTargetFormat format() const;
@@ -48,14 +49,11 @@ private:
     static size_t _CalculateIndex(const vec2u &idx, const vec2u &size, RenderTargetTiling tiling);
 
     // TODO: need to template or use generic bytes (uchar)
-    vec4f *renderTargetBytes = nullptr;
+    CoColor *renderTargetBytes = nullptr;
     RenderTargetFormat renderTargetFormat = RenderTargetFormatRGBA32Float;
     RenderTargetTiling renderTargetTiling = RenderTargetTilingLinear;
     vec2u renderTargetSize = {0, 0};
-
-}; // class
-   // CoRenderTarget
-} // namespace
-  // cblt::render
+};
+} // namespace cblt::render
 
 #endif // COBALT_RENDER_RENDERTARGET_H

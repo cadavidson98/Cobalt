@@ -1,5 +1,6 @@
 #include "image.h"
 
+#include "render/data/color.h"
 #include "render/data/render_target.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -52,13 +53,13 @@ bool Image::write(const WriteInfo &writeInfo) {
 
     const float linearToGrayPoint = std::pow(2.f, std::clamp(kExposure + 2.47393f, -20.f, 20.f));
 
-    const auto floatToUchar = [linearToGrayPoint](const vec4f &vec) {
+    const auto floatToUchar = [linearToGrayPoint](const render::CoColor &color) {
         static constexpr float kFloatToUChar = 255.f;
         return vec4u8{
-            gamma(vec.x, linearToGrayPoint),
-            gamma(vec.y, linearToGrayPoint),
-            gamma(vec.z, linearToGrayPoint),
-            uint8_t(std::clamp(kFloatToUChar * vec.w, 0.f, 255.f)),
+            gamma(color.r, linearToGrayPoint),
+            gamma(color.g, linearToGrayPoint),
+            gamma(color.b, linearToGrayPoint),
+            uint8_t(std::clamp(kFloatToUChar * color.a, 0.f, 255.f)),
         };
     };
 
@@ -68,7 +69,7 @@ bool Image::write(const WriteInfo &writeInfo) {
         for (uint32_t y = 0; y < imageSize.y; ++y) {
             for (uint32_t x = 0; x < imageSize.x; ++x) {
                 const size_t index = y * imageSize.x + x;
-                const vec4f &color = _renderTarget->at({x, y});
+                const render::CoColor &color = _renderTarget->at({x, y});
                 imageBytes[index] = floatToUchar(color);
             }
         }

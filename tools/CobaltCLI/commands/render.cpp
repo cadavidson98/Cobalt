@@ -167,10 +167,10 @@ bool renderCommand(int argc, char **argv) {
                 const render::CoSurfaceParams surfaceParams =
                     defaultScene->resolveSurfaceAtInteraction(intersectionEvent);
 
-                renderTarget->Write({pixelX, pixelY}, surfaceParams.baseColor);
+                renderTarget->write({pixelX, pixelY}, surfaceParams.baseColor.rgbColor());
             } else {
                 const render::CoColor environmentColor = defaultScene->environment(ray);
-                renderTarget->Write(
+                renderTarget->write(
                     {pixelX, pixelY},
                     {
                         environmentColor.r,

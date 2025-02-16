@@ -28,10 +28,15 @@ using CoUUID = uint32_t;
 
 class CoScene {
 public:
+    struct GeometryComponent {
+        std::shared_ptr<geom::CoMesh> mesh;
+        mat4f transform;
+    };
+
     struct CreateFromDataInfo {
         std::shared_ptr<CoCamera> camera;
-        std::shared_ptr<geom::CoMesh> mesh;
         std::shared_ptr<CoTexture> environmentMap;
+        CoDynamicArray<GeometryComponent> meshes;
         CoDynamicArray<CoMaterial> materials;
         Ptex::PtexCache *ptexTextures;
     };
@@ -50,20 +55,24 @@ public:
 private:
     CoScene();
 
-    struct PrimitiveComponents {
-        uint32_t materialIdx;
-    };
-
     static constexpr CoUUID kInvalidID = CoUUID(~0);
+
+    struct PrimitiveComponents {
+        CoUUID geometryIdx = kInvalidID;
+        CoUUID materialIdx = kInvalidID;
+    };
 
     std::shared_ptr<CoMaterial> _defaultMaterial;
 
     std::shared_ptr<CoCamera> _camera;
     std::shared_ptr<CoTexture> _environmentMap;
     Ptex::PtexCache *_ptexTextures;
-    std::shared_ptr<geom::CoMesh> _mesh;
-    CoDynamicArray<CoMaterial> _materials;
+
     CoDynamicArray<PrimitiveComponents> _scenePrimitives;
+    CoDynamicArray<GeometryComponent> _meshes;
+    CoDynamicArray<CoMaterial> _materials;
+
+    friend class CoSceneFactory;
 }; // CoScene
 
 } // namespace render

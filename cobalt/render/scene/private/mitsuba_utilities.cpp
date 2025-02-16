@@ -1,13 +1,11 @@
 #include "mitsuba_utilities.h"
 
-#include "camera.h"
-#include "obj_utilities.h"
-#include "texture.h"
+#include "color.h"
 
 #include "core/logging.h"
 #include "core/string_utilities.h"
-#include "geometry/mesh.h"
 #include "math/math_utilities.h"
+#include "math/vec2.h"
 #include "math/vec3.h"
 
 #include <libxml2/libxml/parser.h>
@@ -15,6 +13,7 @@
 #include <libxml2/libxml/xmlmemory.h>
 #include <libxml2/libxml/xpath.h>
 
+#include <cassert>
 #include <memory>
 
 namespace cblt::render::utils {
@@ -88,6 +87,9 @@ struct MitsubaSchema {
     xmlChar *dieletricName = xmlCharStrdup("dielectric");
     xmlChar *roughDielectricName = xmlCharStrdup("roughdielectric");
     xmlChar *reflectanceName = xmlCharStrdup(".//*/[@name='reflectance']");
+    xmlChar *diffuseReflectanceName = xmlCharStrdup(".//*/[@name='diffuse_reflectance']");
+    xmlChar *specularReflectanceName = xmlCharStrdup(".//*/[@name='specular_reflectance']");
+    xmlChar *specularTransmittanceName = xmlCharStrdup(".//*/[@name='specular_transmittance']");
     xmlChar *rgbName = xmlCharStrdup("rgb");
     xmlChar *spectrumName = xmlCharStrdup("spectrum");
     xmlChar *textureName = xmlCharStrdup("texture");
@@ -123,6 +125,9 @@ struct MitsubaSchema {
         xmlFree(dieletricName);
         xmlFree(roughDielectricName);
         xmlFree(reflectanceName);
+        xmlFree(diffuseReflectanceName);
+        xmlFree(specularReflectanceName);
+        xmlFree(specularTransmittanceName);
         xmlFree(rgbName);
         xmlFree(spectrumName);
         xmlFree(textureName);
@@ -208,7 +213,8 @@ mat4f loadTransform(xmlNodePtr transformNode, xmlXPathContextPtr context, const 
     return transform;
 }
 
-std::shared_ptr<CoCamera> loadCamera(xmlNodePtr cameraNode, xmlXPathContextPtr context, const MitsubaSchema &schema) {
+std::optional<MitsubaCamera>
+loadCamera(xmlNodePtr cameraNode, xmlXPathContextPtr context, const MitsubaSchema &schema) {
     xmlResource<xmlXPathObject> transform(xmlXPathNodeEval(cameraNode, schema.transformExpression, context));
     xmlNodeSetPtr transformNode = transform->nodesetval;
 
@@ -220,66 +226,59 @@ std::shared_ptr<CoCamera> loadCamera(xmlNodePtr cameraNode, xmlXPathContextPtr c
     xmlResource<xmlXPathObject> fovPath(xmlXPathNodeEval(cameraNode, schema.fovName, context));
     if (fovPath->nodesetval == NULL) {
         CoLogError("Missing Field of View for camera");
-        return nullptr;
+        return std::nullopt;
     }
     const float fov = cblt::utils::toRadians(xmlXPathCastNodeToNumber(*fovPath->nodesetval->nodeTab));
 
-    const CoCamera::CreateFromProjectionInfo createInfo{
-        .hFov = fov,
-        .vFov = fov,
-        .cameraToWorld = cameraTransform,
+    return MitsubaCamera{
+        .fov = fov,
+        .transform = cameraTransform,
     };
-
-    return std::shared_ptr<CoCamera>(new CoCamera(createInfo));
 }
 
-std::optional<MitsubaMaterial>
+std::shared_ptr<MitsubaBSDF>
 loadMaterial(xmlNodePtr materialNode, xmlXPathContextPtr context, const MitsubaSchema &schema) {
     xmlResource<xmlChar> materialType(xmlGetProp(materialNode, schema.typeName));
     if (!materialType) {
         CoLogError("unsupported material type");
-        return std::nullopt;
+        return nullptr;
     }
 
-    if (xmlStrEqual(materialType.get(), schema.diffuseName)) {
-        xmlResource<xmlXPathObject> reflectanceObject(xmlXPathNodeEval(materialNode, schema.reflectanceName, context));
+    auto getSpectrum = [&schema, context](xmlNodePtr node, xmlChar *reflectanceName) -> std::optional<CoSpectrum> {
+        // TODO: need the xmlResource wrapper?
+        xmlResource<xmlXPathObject> reflectanceObject(xmlXPathNodeEval(node, reflectanceName, context));
         if (!reflectanceObject || !reflectanceObject->nodesetval) {
-            CoLogError("Missing reflectance for Diffuse BSDF");
             return std::nullopt;
         }
 
-        const xmlNodePtr reflectanceNode = reflectanceObject->nodesetval->nodeTab[0];
+        xmlNodePtr reflectanceNode = reflectanceObject->nodesetval->nodeTab[0];
         const xmlChar *reflectanceSource = reflectanceNode->name;
         if (xmlStrEqual(reflectanceSource, schema.rgbName)) {
             xmlResource<xmlChar> valueProperty(xmlGetProp(reflectanceNode, schema.valueName));
             const char *valueString = reinterpret_cast<const char *>(valueProperty.get());
             const std::vector<float> rgbValues = cblt::core::split<float>(valueString, ' ');
-            return MitsubaMaterial{
-                .baseColor = vec4f(rgbValues[0], rgbValues[1], rgbValues[2], 1.f),
-            };
-        } else if (xmlStrEqual(reflectanceSource, schema.textureName)) {
-            xmlResource<xmlXPathObject> fileNameProperty(xmlXPathNodeEval(reflectanceNode, schema.fileName, context));
-            xmlResource<xmlChar> fileName = xmlXPathCastToString(fileNameProperty.get());
-            return MitsubaMaterial{
-                .baseColor = MitsubaTexture{
-                                            .fileName = std::string(reinterpret_cast<char *>(fileName.get())),
-                                            },
-            };
+            return CoSpectrum(CoColor(rgbValues[0], rgbValues[1], rgbValues[2], 1.f));
         }
 
-    } else if (xmlStrEqual(materialType.get(), schema.dieletricName)) {
+        return std::nullopt;
+    };
 
-    } else if (xmlStrEqual(materialType.get(), schema.roughDielectricName)) {
-
+    if (xmlStrEqual(materialType.get(), schema.diffuseName)) {
+        std::optional<CoSpectrum> diffuseReflectance = getSpectrum(materialNode, schema.reflectanceName);
+        if (!diffuseReflectance) {
+            CoLogError("Missing reflectance for Diffuse BSDF");
+            return nullptr;
+        }
+        return std::shared_ptr<MitsubaBSDF>(new MitsubaDiffuse(std::move(*diffuseReflectance)));
     } else {
         CoLogError("unsupported material type");
-        return std::nullopt;
+        return nullptr;
     }
 
-    return std::nullopt;
+    return nullptr;
 }
 
-std::shared_ptr<geom::CoMesh> loadMesh(
+std::optional<MitsubaMesh> loadMesh(
     const std::string &parentDirectory,
     xmlNodePtr meshNode,
     xmlXPathContextPtr context,
@@ -288,14 +287,14 @@ std::shared_ptr<geom::CoMesh> loadMesh(
     xmlResource<xmlChar> meshType = xmlGetProp(meshNode, schema.typeName);
     if (!meshType || !xmlStrEqual(meshType.get(), schema.objTypeName)) {
         CoLogError("Unsupported Mesh type '%s'", reinterpret_cast<const char *>(meshType.get()));
-        return nullptr;
+        return std::nullopt;
     }
 
     xmlResource<xmlXPathObject> fileNode(xmlXPathNodeEval(meshNode, schema.fileName, context));
     xmlChar *fileNameString(xmlXPathCastToString(fileNode.get()));
     if (!fileNameString) {
         CoLogError("Missing Filename for mesh");
-        return nullptr;
+        return std::nullopt;
     }
 
     xmlResource<xmlXPathObject> transform(xmlXPathNodeEval(meshNode, schema.transformExpression, context));
@@ -306,15 +305,65 @@ std::shared_ptr<geom::CoMesh> loadMesh(
     }
 
     std::string meshFileName = reinterpret_cast<char *>(fileNameString);
-    return readObjFile(parentDirectory + meshFileName);
+    return MitsubaMesh{
+        .fileName = meshFileName,
+        .transform = meshTransform,
+        .material = nullptr,
+    };
 }
 
 } // anonymous namespace
 
-std::optional<MitsubaScene>
-readMitsuba(const std::string &fileName, const std::string &parentDirectory, core::CoCallback &callback) {
+MitsubaDiffuse::MitsubaDiffuse(CoSpectrum reflectance): _reflectance{reflectance} {
+}
+
+MitsubaBSDF::Properties MitsubaDiffuse::properties() const {
+    return MitsubaBSDF::Properties{
+        .baseColor = _reflectance,
+    };
+}
+
+MitsubaDielectric::MitsubaDielectric(
+    CoSpectrum specularReflectance,
+    CoSpectrum specularTransmission,
+    vec2f roughness,
+    float interiorIOR,
+    float exteriorIOR,
+    bool isThin
+)
+    : _specularReflectance{specularReflectance}, _specularTransmission{specularTransmission}, _roughness{roughness},
+      _interiorIOR{interiorIOR}, _exteriorIOR{exteriorIOR}, _isThin{isThin} {
+}
+
+MitsubaBSDF::Properties MitsubaDielectric::properties() const {
+    return MitsubaBSDF::Properties{};
+}
+
+MitsubaConductor::MitsubaConductor(CoSpectrum specularReflectance, vec2f roughness, float IOR)
+    : _specularReflectance{specularReflectance}, _roughness{roughness}, _IOR{IOR} {
+}
+
+MitsubaBSDF::Properties MitsubaConductor::properties() const {
+    return MitsubaBSDF::Properties{};
+}
+
+MitsubaPlastic::MitsubaPlastic(
+    CoSpectrum diffuseReflectance,
+    CoSpectrum specularReflectance,
+    vec2f roughness,
+    float interiorIOR,
+    float exteriorIOR
+)
+    : _diffuseReflectance{diffuseReflectance}, _specularReflectance{specularReflectance}, _roughness{roughness},
+      _interiorIOR{interiorIOR}, _exteriorIOR{exteriorIOR} {
+}
+
+MitsubaBSDF::Properties MitsubaPlastic::properties() const {
+    return MitsubaBSDF::Properties{};
+}
+
+std::optional<MitsubaScene> readMitsuba(const std::string &fileName, const std::string &parentDirectory) {
     xmlInitParser();
-    callback.pump("Parsing scene file");
     xmlDocPtr mitsubaDOM = xmlParseFile(fileName.c_str());
     if (!mitsubaDOM) {
         CoLogError("XML Parsing error occured while reading %s", fileName.c_str());
@@ -345,14 +394,12 @@ readMitsuba(const std::string &fileName, const std::string &parentDirectory, cor
         return std::nullopt;
     }
 
-    callback.pump("loading camera", 5);
-    std::shared_ptr<CoCamera> camera = loadCamera(sensorNodes->nodeTab[0], xpathContext, schema);
+    std::optional<MitsubaCamera> camera = loadCamera(sensorNodes->nodeTab[0], xpathContext, schema);
     if (!camera) {
         return std::nullopt;
     }
 
-    callback.pump("loading lights", 5);
-    std::shared_ptr<CoTexture> environmentMap = nullptr;
+    MitsubaTexture environmentMap;
     xmlNodeSetPtr emitterNodes = emittersObject->nodesetval;
     const size_t numEmitters(emitterNodes->nodeNr);
     for (size_t idx = 0; idx < numEmitters; ++idx) {
@@ -367,37 +414,31 @@ readMitsuba(const std::string &fileName, const std::string &parentDirectory, cor
                 continue;
             }
             char *fileName = reinterpret_cast<char *>(fileNameString);
-            environmentMap = CoTexture::create({
-                .fileName = parentDirectory + fileName,
-                .fileExtension = cblt::core::fileExtension(std::string_view(fileName)),
-            });
-
-            if (environmentMap) {
-                break;
-            }
+            environmentMap.fileName = parentDirectory + fileName;
+            environmentMap.fileExtension = cblt::core::fileExtension(std::string_view(fileName));
+            break;
         }
     }
 
-    callback.pump("loading meshes", 20);
     xmlNodeSetPtr meshNodes = meshesObject->nodesetval;
 
     const size_t numMeshes(meshNodes->nodeNr);
-    std::vector<std::shared_ptr<geom::CoMesh>> meshes(numMeshes);
+    std::vector<MitsubaMesh> meshes(numMeshes);
 
     for (size_t idx = 0; idx < numMeshes; ++idx) {
         xmlNodePtr meshNode = meshNodes->nodeTab[idx];
-        std::shared_ptr<geom::CoMesh> mesh = loadMesh(parentDirectory, meshNode, xpathContext, schema);
+        std::optional<MitsubaMesh> mesh = loadMesh(parentDirectory, meshNode, xpathContext, schema);
         if (!mesh) {
             return std::nullopt;
         }
-        meshes[idx] = std::move(mesh);
+        meshes[idx] = std::move(*mesh);
     }
 
     xmlFreeDoc(mitsubaDOM);
     xmlCleanupParser();
 
     return MitsubaScene{
-        .camera = std::move(camera),
+        .camera = std::move(*camera),
         .meshes = std::move(meshes),
         .environmentMap = std::move(environmentMap),
     };

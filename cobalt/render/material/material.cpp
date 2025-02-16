@@ -1,48 +1,65 @@
 #include "material.h"
 
+#include "render/data/texture.h"
+
 namespace cblt::render {
 
-CoMaterial::CoMaterial(CoMaterialParams params): _params{params} {
-    if (std::holds_alternative<Ptex::PtexTexture *>(params.baseColor)) {
-        Ptex::PtexTexture *texture = std::get<Ptex::PtexTexture *>(params.baseColor);
-        const Ptex::PtexFilter::Options filterOptions;
-        const Ptex::PtexTexture::Info textureInfo = texture->getInfo();
-        _filter = Ptex::PtexFilter::getFilter(texture, filterOptions);
+/// Material Node
+
+template<typename constantType>
+CoMaterialNode<constantType>::CoMaterialNode(constantType constant): _value{constant}, _valueType{Input::kConstant} {
+}
+
+template<typename constantType>
+CoMaterialNode<constantType>::CoMaterialNode(std::shared_ptr<class CoTexture> texture)
+    : _value{texture}, _valueType{Input::kTexture} {
+}
+
+template<typename constantType>
+constantType CoMaterialNode<constantType>::output(vec2f uv, uint32_t faceIdx) const {
+    switch (_valueType) {
+    case Input::kTexture :
+    case Input::kConstant :
+        return std::get<1>(_value);
+        // std::shared_ptr<CoTexture> texture = std::get<0>(_value);
+        // return texture->sample(uv);
     }
+    return constantType();
+}
+
+template class CoMaterialNode<CoSpectrum>;
+template class CoMaterialNode<float>;
+
+/// Material
+
+CoMaterial::CoMaterial(const CoMaterial::Properties &parameters): _parameters{parameters} {
 }
 
 CoSurfaceParams CoMaterial::surfaceParamsAtCoordinates(const vec2f uvCoords, uint32_t faceIdx) const {
-    vec4f color{0.f, 0.f, 0.f, 1.f};
-    if (_filter) {
-        _filter->eval(&color.x, 0, 1, faceIdx, uvCoords.x, uvCoords.y, .125f, 0.f, 0.f, .125f);
-    }
 
     return CoSurfaceParams{
-        .baseColor = color,
-        .metallic = _params.metallic,
-        .subsurface = _params.subsurface,
-        .ior = _params.ior,
-        .specular = _params.specular,
-        .specularTint = _params.specularTint,
-        .specularTransmission = _params.specularTransmission,
-        .roughness = _params.roughness,
-        .anisotropic = _params.anisotropic,
-        .sheen = _params.sheen,
-        .sheenTint = _params.sheenTint,
-        .clearcoat = _params.clearcoat,
-        .clearcoatGloss = _params.clearcoatGloss,
+        .baseColor = _parameters.baseColor.output(uvCoords, faceIdx),
+        .metallic = _parameters.metallic.output(uvCoords, faceIdx),
+        .subsurface = _parameters.subsurface.output(uvCoords, faceIdx),
+        .ior = _parameters.ior.output(uvCoords, faceIdx),
+        .specular = _parameters.specular.output(uvCoords, faceIdx),
+        .specularTint = _parameters.specularTint.output(uvCoords, faceIdx),
+        .specularTransmission = _parameters.specularTransmission.output(uvCoords, faceIdx),
+        .roughness = _parameters.roughness.output(uvCoords, faceIdx),
+        .anisotropic = _parameters.anisotropic.output(uvCoords, faceIdx),
+        .sheen = _parameters.sheen.output(uvCoords, faceIdx),
+        .sheenTint = _parameters.sheenTint.output(uvCoords, faceIdx),
+        .clearcoat = _parameters.clearcoat.output(uvCoords, faceIdx),
+        .clearcoatGloss = _parameters.clearcoatGloss.output(uvCoords, faceIdx),
     };
 }
 
-CoMaterial::CoMaterial(CoMaterial &&other): _params{other._params}, _filter{other._filter} {
-    other._filter = nullptr;
+CoMaterial::CoMaterial(CoMaterial &&other): _parameters{other._parameters} {
 }
 
 CoMaterial &CoMaterial::operator=(CoMaterial &&other) {
-    _params = other._params;
-    _filter = other._filter;
+    _parameters = other._parameters;
 
-    other._filter = nullptr;
     return *this;
 }
 

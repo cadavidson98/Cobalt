@@ -15,9 +15,9 @@ CoRenderTarget::~CoRenderTarget() {
     delete[] renderTargetBytes;
 }
 
-void CoRenderTarget::Write(const vec2u &renderTargetIdx, const vec4f &value) {
+void CoRenderTarget::write(const vec2u &renderTargetIdx, const CoColor &color) {
     size_t idx = CoRenderTarget::_CalculateIndex(renderTargetIdx, renderTargetSize, renderTargetTiling);
-    renderTargetBytes[idx] = value;
+    renderTargetBytes[idx] = color;
 }
 
 CoRenderTarget::CoRenderTarget() {
@@ -29,7 +29,7 @@ bool CoRenderTarget::Init(const CoRenderTarget::CreateInfo &createInfo) {
     }
 
     const size_t numPixels = size_t(createInfo.size.x) * size_t(createInfo.size.y);
-    vec4f *bytes = new vec4f[numPixels];
+    CoColor *bytes = new CoColor[numPixels];
     if (!numPixels) {
         return false;
     }
@@ -81,7 +81,7 @@ uint8_t *CoRenderTarget::data() const {
     return reinterpret_cast<uint8_t *>(renderTargetBytes);
 }
 
-const vec4f &CoRenderTarget::at(const vec2u idx) const {
+const CoColor &CoRenderTarget::at(const vec2u idx) const {
     return renderTargetBytes[_CalculateIndex(idx, renderTargetSize, renderTargetTiling)];
 }
 

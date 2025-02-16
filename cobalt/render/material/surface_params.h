@@ -2,13 +2,14 @@
 #define CBLT_RENDER_SURFACE_PARAMS_H
 
 #include "math/vec4.h"
+#include "render/data/color.h"
 
 namespace cblt::render {
 
 // Material parameters based on the Disney Principled BSDF
-template<typename vectorType, typename scalarType>
-struct CoPrincipledParams {
-    vectorType baseColor;
+template<typename colorType, typename scalarType>
+struct CoPrincipledParameters {
+    colorType baseColor;
     scalarType metallic;
     scalarType subsurface;
     // TODO: sus! should use to derive IoR
@@ -24,7 +25,7 @@ struct CoPrincipledParams {
     scalarType clearcoatGloss;
 };
 
-using CoSurfaceParams = CoPrincipledParams<vec4f, float>;
+using CoSurfaceParams = CoPrincipledParameters<CoSpectrum, float>;
 
 } // namespace cblt::render
 

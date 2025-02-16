@@ -1,7 +1,6 @@
 #ifndef CBLT_RENDER_MATERIAL_H
 #define CBLT_RENDER_MATERIAL_H
 
-#include "Ptexture.h"
 #include "surface_function.h"
 #include "surface_params.h"
 
@@ -13,14 +12,30 @@
 
 namespace cblt::render {
 
+// tagged union to represent various material arguments, as opposed to using inheritance
+template<typename constantType>
+class CoMaterialNode {
+public:
+    enum class Input {
+        kConstant,
+        kTexture,
+    };
+
+    CoMaterialNode(constantType constant);
+    CoMaterialNode(std::shared_ptr<class CoTexture> texture);
+
+    constantType output(vec2f uv, uint32_t faceIdx) const;
+
+private:
+    std::variant<std::shared_ptr<class CoTexture>, constantType> _value;
+    Input _valueType;
+};
+
 class CoMaterial {
 public:
-    template<typename parameterType>
-    using ParameterSlot = std::variant<Ptex::PtexTexture *, parameterType>;
+    using Properties = CoPrincipledParameters<CoMaterialNode<CoSpectrum>, CoMaterialNode<float>>;
 
-    using CoMaterialParams = CoPrincipledParams<ParameterSlot<vec4f>, float>;
-
-    CoMaterial(CoMaterialParams params);
+    CoMaterial(const Properties &parameters);
     CoSurfaceParams surfaceParamsAtCoordinates(const vec2f uvCoords, uint32_t faceIdx) const;
 
     CoMaterial(CoMaterial &&other);
@@ -31,8 +46,7 @@ private:
     CoMaterial(CoMaterial &) = delete;
     CoMaterial &operator=(CoMaterial &) = delete;
 
-    CoMaterialParams _params;
-    Ptex::PtexFilter *_filter;
+    Properties _parameters;
 };
 
 } // namespace cblt::render
