@@ -6,7 +6,8 @@ set(COBALT_RENDER_SCENE_HEADERS
 
 set(COBALT_RENDER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/private/mitsuba_utilities.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/private/obj_utilities.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/private/obj_utilities.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/private/xml_utilities.h)
 
 set(COBALT_RENDER_SCENE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/scene.cpp
