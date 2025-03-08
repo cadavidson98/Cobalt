@@ -42,6 +42,10 @@ inline std::string fileExtension(const std::string_view fileName) {
     return std::string(fileName.substr(extensionPos + 1));
 }
 
+inline std::string appendFileToPath(const std::string_view path, const std::string_view fileName) {
+    return std::string(path) + '/' + std::string(fileName);
+}
+
 } // namespace cblt::core
 
 #endif // CBLT_CORE_STRING_UTILITIES_H

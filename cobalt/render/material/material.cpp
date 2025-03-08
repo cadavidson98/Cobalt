@@ -10,17 +10,17 @@ template<typename constantType>
 CoMaterialNode<constantType>::CoMaterialNode(constantType constant): _value{constant}, _valueType{Input::kConstant} {
 }
 
-template<typename constantType>
-CoMaterialNode<constantType>::CoMaterialNode(std::shared_ptr<class CoTexture> texture)
-    : _value{texture}, _valueType{Input::kTexture} {
-}
+// template<typename constantType>
+// CoMaterialNode<constantType>::CoMaterialNode(std::shared_ptr<class CoTexture> texture)
+//     : _value{texture}, _valueType{Input::kTexture} {
+// }
 
 template<typename constantType>
 constantType CoMaterialNode<constantType>::output(vec2f uv, uint32_t faceIdx) const {
     switch (_valueType) {
     case Input::kTexture :
     case Input::kConstant :
-        return std::get<1>(_value);
+        return _value;
         // std::shared_ptr<CoTexture> texture = std::get<0>(_value);
         // return texture->sample(uv);
     }
@@ -31,6 +31,27 @@ template class CoMaterialNode<CoSpectrum>;
 template class CoMaterialNode<float>;
 
 /// Material
+
+namespace {
+static const CoMaterial::Properties kDefaultProperties = {
+    .baseColor = CoMaterialNode(CoSpectrum(CoColor(1.f, 1.f, 1.f))),
+    .metallic = 0.f,
+    .subsurface = 0.f,
+    .ior = 1.4f,
+    .specular = 0.f,
+    .specularTint = 0.f,
+    .specularTransmission = 0.f,
+    .roughness = 0.f,
+    .anisotropic = 0.f,
+    .sheen = 0.f,
+    .sheenTint = 0.f,
+    .clearcoat = 0.f,
+    .clearcoatGloss = 0.f,
+};
+};
+
+CoMaterial::CoMaterial(): _parameters{kDefaultProperties} {
+}
 
 CoMaterial::CoMaterial(const CoMaterial::Properties &parameters): _parameters{parameters} {
 }
@@ -52,15 +73,6 @@ CoSurfaceParams CoMaterial::surfaceParamsAtCoordinates(const vec2f uvCoords, uin
         .clearcoat = _parameters.clearcoat.output(uvCoords, faceIdx),
         .clearcoatGloss = _parameters.clearcoatGloss.output(uvCoords, faceIdx),
     };
-}
-
-CoMaterial::CoMaterial(CoMaterial &&other): _parameters{other._parameters} {
-}
-
-CoMaterial &CoMaterial::operator=(CoMaterial &&other) {
-    _parameters = other._parameters;
-
-    return *this;
 }
 
 // void CoMaterial::sampleMaterialAtCoordinate(const CoRay &ray?, vec2f localCoorindates, uint32_t faceIdx) const {}

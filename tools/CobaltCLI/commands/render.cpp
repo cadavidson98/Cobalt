@@ -64,10 +64,7 @@ std::optional<CoCLIParams> parseArguments(int numArgs, char **argv) {
         std::string command(argv[arg]);
         if (command.compare("-i") == 0U || command.compare("--input") == 0U) {
             std::string inputFileName = argv[++arg];
-            // check for extension
-            size_t extensionPos = inputFileName.find_last_of('.');
-            assert(extensionPos != std::string::npos);
-            std::string fileType = inputFileName.substr(extensionPos);
+            params.inputFile = inputFileName;
             continue;
         } else if (command.compare("-o") == 0U || command.compare("--output") == 0U) {
             params.outputFile = argv[++arg];
@@ -108,7 +105,7 @@ bool renderCommand(int argc, char **argv) {
 
     std::shared_ptr<render::CoScene> defaultScene = render::CoSceneFactory::buildScene(
         {
-            .fileName = tools::asset::kAssetsBaseDir + "teapot.xml",
+            .fileName = settings->inputFile,
             .parentDirectory = tools::asset::kAssetsBaseDir,
             .format = render::CoSceneFactory::SceneFormat::kMitsuba,
         },

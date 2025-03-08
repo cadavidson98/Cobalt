@@ -4,6 +4,7 @@
 #include "size_types.h"
 
 #include <utility>
+#include <variant>
 
 namespace cblt {
 
@@ -12,7 +13,7 @@ class CoDynamicArray final {
 public:
     CoDynamicArray(size_t capacity = 0ul): _size{capacity} {
         if (_size > 0) {
-            _array = reinterpret_cast<T *>(new Byte[sizeof(T) * _size]);
+            _array = new Storage[_size];
         }
     }
 
@@ -44,11 +45,15 @@ public:
     }
 
     T &operator[](size_t idx) {
-        return _array[idx];
+        return _array[idx].value;
     }
 
     const T &operator[](size_t idx) const {
-        return _array[idx];
+        return _array[idx].value;
+    }
+
+    T *data() {
+        return _array[0].value;
     }
 
     size_t size() const {
@@ -58,7 +63,13 @@ public:
 private:
     using Byte = unsigned char;
 
-    T *_array = nullptr;
+    union Storage {
+        std::monostate monostate = {};
+        T value;
+        ~Storage() {};
+    };
+
+    Storage *_array = nullptr;
 
     size_t _size = 0;
 

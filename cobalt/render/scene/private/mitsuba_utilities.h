@@ -24,87 +24,15 @@ struct MitsubaTexture {
 };
 
 template<typename constantType>
-using MitsubaSlot = std::variant<MitsubaTexture, constantType>;
+using MitsubaSlot = std::variant<constantType, MitsubaTexture>;
 
 class MitsubaBSDF {
 public:
     using Properties = CoPrincipledParameters<MitsubaSlot<CoSpectrum>, MitsubaSlot<float>>;
 
+    virtual std::string referenceID() const = 0;
     virtual Properties properties() const = 0;
     virtual ~MitsubaBSDF() = default;
-};
-
-class MitsubaDiffuse final : public MitsubaBSDF {
-public:
-    MitsubaDiffuse(CoSpectrum reflectance);
-    virtual ~MitsubaDiffuse() = default;
-
-    virtual Properties properties() const override;
-
-private:
-    CoSpectrum _reflectance;
-};
-
-struct MitsubaDielectric final : public MitsubaBSDF {
-public:
-    MitsubaDielectric(
-        CoSpectrum specularReflectance,
-        CoSpectrum specularTransmission,
-        vec2f roughness,
-        float interiorIOR,
-        float exteriorIOR,
-        bool isThin
-    );
-    virtual ~MitsubaDielectric() = default;
-
-    virtual Properties properties() const override;
-
-private:
-    CoSpectrum _specularReflectance;
-    CoSpectrum _specularTransmission;
-    // anisotropic roughness coefficients (alpha in distribution)
-    vec2f _roughness;
-    float _interiorIOR;
-    float _exteriorIOR;
-    // use thin material approximation
-    bool _isThin;
-};
-
-struct MitsubaConductor final : public MitsubaBSDF {
-public:
-    MitsubaConductor(CoSpectrum specularReflectance, vec2f roughness, float IOR);
-    virtual ~MitsubaConductor() = default;
-
-    virtual Properties properties() const override;
-
-private:
-    CoSpectrum _specularReflectance;
-    // anisotropic roughness coefficients (alpha in distribution)
-    vec2f _roughness;
-    // TODO: complex values for conductor ior
-    float _IOR;
-};
-
-struct MitsubaPlastic final : public MitsubaBSDF {
-public:
-    MitsubaPlastic(
-        CoSpectrum diffuseReflectance,
-        CoSpectrum specularReflectance,
-        vec2f roughness,
-        float interiorIOR,
-        float exteriorIOR
-    );
-    virtual ~MitsubaPlastic() = default;
-
-    virtual Properties properties() const override;
-
-private:
-    CoSpectrum _diffuseReflectance;
-    CoSpectrum _specularReflectance;
-    // anisotropic roughness coefficients (alpha in distribution)
-    vec2f _roughness;
-    float _interiorIOR;
-    float _exteriorIOR;
 };
 
 struct MitsubaCamera {
@@ -113,21 +41,26 @@ struct MitsubaCamera {
     // TODO: film size?
 };
 
+struct MitsubaEmitter {
+    MitsubaTexture emissionMap = {};
+};
+
 struct MitsubaMesh {
     std::string fileName = "";
     std::string fileExtension = "";
     mat4f transform = {};
-    std::shared_ptr<MitsubaBSDF> material = nullptr;
+    std::variant<std::shared_ptr<MitsubaBSDF>, std::string> material;
 };
 
-struct MitsubaScene {
-    MitsubaCamera camera;
-    std::vector<std::shared_ptr<MitsubaBSDF>> materials;
-    std::vector<MitsubaMesh> meshes;
-    MitsubaTexture environmentMap;
+class MitsubaDelegate {
+public:
+    virtual bool readMesh(const MitsubaMesh &mesh) = 0;
+    virtual bool readBsdf(std::shared_ptr<MitsubaBSDF> bsdf) = 0;
+    virtual bool readEmitter(const MitsubaEmitter &emitter) = 0;
+    virtual bool readSensor(const MitsubaCamera &camera) = 0;
 };
 
-std::optional<MitsubaScene> readMitsuba(const std::string &fileName, const std::string &parentDirectory);
+bool readMitsuba(const std::string_view fileName, std::shared_ptr<MitsubaDelegate> delegate);
 
 } // namespace cblt::render::utils
 

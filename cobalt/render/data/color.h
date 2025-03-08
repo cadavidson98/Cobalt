@@ -26,7 +26,7 @@ public:
     CoColor rgbColor() const;
 
 private:
-    std::vector<Sample> samples;
+    CoColor _color;
 };
 
 } // namespace cblt::render

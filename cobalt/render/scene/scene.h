@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace cblt {
 
@@ -28,21 +29,6 @@ using CoUUID = uint32_t;
 
 class CoScene {
 public:
-    struct GeometryComponent {
-        std::shared_ptr<geom::CoMesh> mesh;
-        mat4f transform;
-    };
-
-    struct CreateFromDataInfo {
-        std::shared_ptr<CoCamera> camera;
-        std::shared_ptr<CoTexture> environmentMap;
-        CoDynamicArray<GeometryComponent> meshes;
-        CoDynamicArray<CoMaterial> materials;
-        Ptex::PtexCache *ptexTextures;
-    };
-
-    static std::shared_ptr<CoScene> create(CreateFromDataInfo &createInfo);
-
     std::shared_ptr<CoCamera> camera() const;
 
     bool closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const;
@@ -53,26 +39,46 @@ public:
     ~CoScene();
 
 private:
-    CoScene();
-
-    static constexpr CoUUID kInvalidID = CoUUID(~0);
-
     struct PrimitiveComponents {
         CoUUID geometryIdx = kInvalidID;
         CoUUID materialIdx = kInvalidID;
     };
 
+    struct GeometryComponent {
+        std::shared_ptr<geom::CoMesh> mesh;
+        mat4f transform;
+    };
+
+    struct CreateFromDataInfo {
+        std::shared_ptr<CoCamera> camera;
+        std::shared_ptr<CoTexture> environmentMap;
+        std::span<CoMaterial> materials;
+        std::span<PrimitiveComponents> primitives;
+        std::span<GeometryComponent> meshes;
+        Ptex::PtexCache *ptexTextures;
+    };
+
+    static CoUUID nextUUID();
+    static std::shared_ptr<CoScene> create(const CreateFromDataInfo &createInfo);
+
+    CoScene();
+
+    // TODO: try using '0' as the invalid ID instead of 2^32 - 1; ZII reasons, or bool reasons?
+    static constexpr CoUUID kInvalidID = CoUUID(~0);
+    static std::atomic<CoUUID> _nextID;
+
     std::shared_ptr<CoMaterial> _defaultMaterial;
 
     std::shared_ptr<CoCamera> _camera;
     std::shared_ptr<CoTexture> _environmentMap;
-    Ptex::PtexCache *_ptexTextures;
+    Ptex::PtexCache *_ptexTextures = nullptr;
 
-    CoDynamicArray<PrimitiveComponents> _scenePrimitives;
-    CoDynamicArray<GeometryComponent> _meshes;
-    CoDynamicArray<CoMaterial> _materials;
+    std::vector<PrimitiveComponents> _scenePrimitives;
+    std::vector<GeometryComponent> _meshes;
+    std::vector<CoMaterial> _materials;
 
     friend class CoSceneFactory;
+    friend class CoSceneFactoryDelegate;
 }; // CoScene
 
 } // namespace render

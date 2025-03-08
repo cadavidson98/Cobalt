@@ -4,6 +4,7 @@
 #include "texture.h"
 
 #include "core/logging.h"
+#include "core/string_utilities.h"
 #include "math/simd/simd_vec3.h"
 #include "math/vec3.h"
 #include "math/vec4.h"
@@ -15,6 +16,172 @@
 #include <unordered_map>
 
 namespace cblt::render {
+
+class CoSceneFactoryDelegate : public utils::MitsubaDelegate {
+public:
+    bool readMesh(const utils::MitsubaMesh &mesh) override {
+        std::shared_ptr<geom::CoMesh> cobaltMesh;
+        if (mesh.fileExtension == "obj") {
+            cobaltMesh = utils::readObjFile(core::appendFileToPath(_rootDirectory, mesh.fileName));
+        }
+
+        if (!cobaltMesh) {
+            return false;
+        }
+
+        CoUUID materialID = CoScene::kInvalidID;
+
+        if (std::holds_alternative<std::string>(mesh.material)) {
+            auto materialIter = _materialMap.find(std::get<std::string>(mesh.material));
+            if (materialIter == _materialMap.end()) {
+                return false;
+            }
+
+            materialID = materialIter->second;
+        } else {
+            if (!readBsdf(std::get<std::shared_ptr<utils::MitsubaBSDF>>(mesh.material))) {
+                return false;
+            }
+            materialID = _lastMaterialID;
+        }
+
+        const CoUUID geometryID = CoScene::nextUUID();
+
+        _geometry.push_back(
+            CoScene::GeometryComponent{
+                .mesh = cobaltMesh,
+                .transform = mesh.transform,
+            }
+        );
+
+        _primitives.push_back(
+            CoScene::PrimitiveComponents{
+                .geometryIdx = geometryID,
+                .materialIdx = materialID,
+            }
+        );
+        return true;
+    }
+
+    bool readBsdf(std::shared_ptr<utils::MitsubaBSDF> bsdf) override {
+        auto makeFloatNode = [](const std::variant<float, utils::MitsubaTexture> &value) -> CoMaterialNode<float> {
+            if (std::holds_alternative<float>(value)) {
+                return CoMaterialNode(std::get<float>(value));
+            }
+
+            throw std::runtime_error("Texture not yet supported");
+            // TODO: cache texture
+        };
+
+        auto makeSpectrumNode =
+            [](const std::variant<CoSpectrum, utils::MitsubaTexture> &value) -> CoMaterialNode<CoSpectrum> {
+            if (std::holds_alternative<CoSpectrum>(value)) {
+                return CoMaterialNode(std::get<CoSpectrum>(value));
+            }
+
+            throw std::runtime_error("Texture not yet supported");
+            // TODO: cache texture
+        };
+
+        const utils::MitsubaBSDF::Properties principledParameters = bsdf->properties();
+
+        const CoMaterial::Properties materialProperties{
+            .baseColor = makeSpectrumNode(principledParameters.baseColor),
+            .metallic = makeFloatNode(principledParameters.metallic),
+            .subsurface = makeFloatNode(principledParameters.subsurface),
+            .ior = makeFloatNode(principledParameters.ior),
+            .specular = makeFloatNode(principledParameters.specular),
+            .specularTint = makeFloatNode(principledParameters.specularTint),
+            .specularTransmission = makeFloatNode(principledParameters.specularTransmission),
+            .roughness = makeFloatNode(principledParameters.roughness),
+            .anisotropic = makeFloatNode(principledParameters.anisotropic),
+            .sheen = makeFloatNode(principledParameters.sheen),
+            .sheenTint = makeFloatNode(principledParameters.sheenTint),
+            .clearcoat = makeFloatNode(principledParameters.clearcoat),
+            .clearcoatGloss = makeFloatNode(principledParameters.clearcoatGloss),
+        };
+
+        _materials.push_back(CoMaterial(materialProperties));
+
+        _lastMaterialID = CoScene::nextUUID();
+
+        const std::string materialID = bsdf->referenceID();
+        if (materialID.length()) {
+            _materialMap.emplace(materialID, _lastMaterialID);
+        }
+
+        return true;
+    }
+
+    bool readEmitter(const utils::MitsubaEmitter &emitter) override {
+        if (_environmentMap) {
+            CoLogInfo("Environment Map already loaded. Skipping.");
+            return true;
+        }
+
+        std::shared_ptr<CoTexture> emissionMap = nullptr;
+        if (emitter.emissionMap) {
+            emissionMap = CoTexture::create({
+                .fileName = cblt::core::appendFileToPath(_rootDirectory, emitter.emissionMap.fileName),
+                .fileExtension = emitter.emissionMap.fileExtension,
+            });
+
+            if (!emissionMap) {
+                return false;
+            }
+        }
+
+        _environmentMap = emissionMap;
+        return true;
+    }
+
+    bool readSensor(const utils::MitsubaCamera &sensor) override {
+        if (_camera) {
+            CoLogInfo("Camera already loaded. Skipping.");
+            return true;
+        }
+
+        const CoCamera::CreateFromProjectionInfo cameraInfo{
+            .hFov = sensor.fov,
+            .vFov = sensor.fov,
+            .cameraToWorld = sensor.transform,
+        };
+
+        _camera = std::make_shared<CoCamera>(cameraInfo);
+        return true;
+    }
+
+    CoSceneFactoryDelegate(core::CoCallback &callback, std::string_view rootDirectory)
+        : _progressCallback{callback}, _rootDirectory{rootDirectory} {
+    }
+
+    std::shared_ptr<CoScene> scene() {
+        CoScene::CreateFromDataInfo createInfo{
+            .camera = _camera,
+            .environmentMap = _environmentMap,
+            .materials = _materials,
+            .primitives = _primitives,
+            .meshes = _geometry,
+            .ptexTextures = nullptr,
+        };
+
+        return CoScene::create(createInfo);
+    }
+
+private:
+    std::reference_wrapper<core::CoCallback> _progressCallback;
+    std::string _rootDirectory;
+
+    CoUUID _lastMaterialID = CoScene::kInvalidID;
+
+    std::vector<CoScene::PrimitiveComponents> _primitives = {};
+    std::vector<CoScene::GeometryComponent> _geometry = {};
+    std::vector<CoMaterial> _materials = {};
+    std::shared_ptr<CoCamera> _camera = {};
+    std::shared_ptr<CoTexture> _environmentMap = {};
+
+    std::unordered_map<std::string, CoUUID> _materialMap = {};
+};
 
 std::shared_ptr<CoScene>
 CoSceneFactory::buildScene(const CoSceneFactory::CreateInfo &createInfo, core::CoCallback &callback) {
@@ -28,105 +195,16 @@ CoSceneFactory::buildScene(const CoSceneFactory::CreateInfo &createInfo, core::C
 std::shared_ptr<CoScene>
 CoSceneFactory::_loadMitsubaScene(const CoSceneFactory::CreateInfo &createInfo, core::CoCallback &callback) {
     callback.pump("Parsing scene file");
-    std::optional<utils::MitsubaScene> mitsubaScene =
-        utils::readMitsuba(createInfo.fileName, *createInfo.parentDirectory);
-    if (!mitsubaScene) {
+    std::shared_ptr<CoSceneFactoryDelegate> delegate =
+        std::make_shared<CoSceneFactoryDelegate>(callback, createInfo.parentDirectory.value_or(""));
+
+    if (!utils::readMitsuba(createInfo.fileName, delegate)) {
         return nullptr;
     }
 
     callback.pump("building scene", 100);
 
-    std::shared_ptr<CoCamera> camera = std::shared_ptr<CoCamera>(new CoCamera({
-        .hFov = mitsubaScene->camera.fov,
-        .vFov = mitsubaScene->camera.fov,
-        .cameraToWorld = mitsubaScene->camera.transform,
-    }));
-
-    std::shared_ptr<CoTexture> environmentMap = nullptr;
-    if (mitsubaScene->environmentMap) {
-        environmentMap = CoTexture::create({
-            .fileName = mitsubaScene->environmentMap.fileName,
-            .fileExtension = mitsubaScene->environmentMap.fileExtension,
-        });
-    }
-
-    Ptex::PtexCache *ptexCache = nullptr;
-    uint64_t materialIdx = 0;
-    std::unordered_map<std::shared_ptr<utils::MitsubaBSDF>, uint64_t> materialMap = {};
-
-    CoDynamicArray<CoMaterial> materials(mitsubaScene->materials.size());
-
-    auto makeNode = []<typename T>(const std::variant<utils::MitsubaTexture, T> &value) -> CoMaterialNode<T> {
-        if (std::holds_alternative<T>(value)) {
-            return CoMaterialNode(std::get<T>(value));
-        }
-
-        // TODO: cache texture
-    };
-
-    for (const std::shared_ptr<utils::MitsubaBSDF> &bsdf : mitsubaScene->materials) {
-        // make material
-        // if (material.texture && material.texture.fileExtension == "ptex") {
-        //     if (!ptexCache) {
-        //         ptexCache = Ptex::PtexCache::create();
-        //     }
-        //     Ptex::String errorString;
-        //     Ptex::PtexTexture *texture = ptexCache->get(material.texture.fileName.c_str(), errorString);
-        // }
-
-        const utils::MitsubaBSDF::Properties principledParameters = bsdf->properties();
-
-        CoMaterial::Properties materialProperties{
-            .baseColor = makeNode(principledParameters.baseColor),
-            .metallic = makeNode(principledParameters.metallic),
-            .subsurface = makeNode(principledParameters.subsurface),
-            .ior = makeNode(principledParameters.ior),
-            .specular = makeNode(principledParameters.specular),
-            .specularTint = makeNode(principledParameters.specularTint),
-            .specularTransmission = makeNode(principledParameters.specularTransmission),
-            .roughness = makeNode(principledParameters.roughness),
-            .anisotropic = makeNode(principledParameters.anisotropic),
-            .sheen = makeNode(principledParameters.sheen),
-            .sheenTint = makeNode(principledParameters.sheenTint),
-            .clearcoat = makeNode(principledParameters.clearcoat),
-            .clearcoatGloss = makeNode(principledParameters.clearcoatGloss),
-        };
-
-        materials[materialIdx] = CoMaterial(materialProperties);
-        ++materialIdx;
-        // materialMap.emplace(&material, ++materialIdx);
-    }
-
-    // make meshes
-    uint32_t meshIdx = 0;
-    CoDynamicArray<CoScene::GeometryComponent> geometry(mitsubaScene->meshes.size());
-    for (const utils::MitsubaMesh &mesh : mitsubaScene->meshes) {
-        // load geometry
-        std::shared_ptr<geom::CoMesh> instanceMesh = nullptr;
-        if (mesh.fileExtension == "obj") {
-            instanceMesh = utils::readObjFile(mesh.fileName);
-            if (!instanceMesh) {
-                return nullptr;
-            }
-        }
-        // get material
-
-        // make instance
-        geometry[++meshIdx] = CoScene::GeometryComponent{
-            .mesh = instanceMesh,
-            .transform = mesh.transform,
-        };
-    }
-
-    CoScene::CreateFromDataInfo sceneInfo{
-        .camera = std::move(camera),
-        .environmentMap = std::move(environmentMap),
-        .meshes = std::move(geometry),
-        .materials = std::move(materials),
-        .ptexTextures = ptexCache,
-    };
-
-    return CoScene::create(sceneInfo);
+    return delegate->scene();
 }
 
 } // namespace cblt::render

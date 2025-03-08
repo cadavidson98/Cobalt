@@ -22,12 +22,12 @@ public:
     };
 
     CoMaterialNode(constantType constant);
-    CoMaterialNode(std::shared_ptr<class CoTexture> texture);
+    // CoMaterialNode(std::shared_ptr<class CoTexture> texture);
 
     constantType output(vec2f uv, uint32_t faceIdx) const;
 
 private:
-    std::variant<std::shared_ptr<class CoTexture>, constantType> _value;
+    constantType _value;
     Input _valueType;
 };
 
@@ -35,17 +35,12 @@ class CoMaterial {
 public:
     using Properties = CoPrincipledParameters<CoMaterialNode<CoSpectrum>, CoMaterialNode<float>>;
 
+    CoMaterial();
     CoMaterial(const Properties &parameters);
     CoSurfaceParams surfaceParamsAtCoordinates(const vec2f uvCoords, uint32_t faceIdx) const;
 
-    CoMaterial(CoMaterial &&other);
-    CoMaterial &operator=(CoMaterial &&other);
-
     // void sampleMaterialAtCoordinate(const CoRay &ray?, vec2f localCoorindates, uint32_t faceIdx) const;
 private:
-    CoMaterial(CoMaterial &) = delete;
-    CoMaterial &operator=(CoMaterial &) = delete;
-
     Properties _parameters;
 };
 

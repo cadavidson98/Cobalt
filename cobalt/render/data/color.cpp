@@ -5,7 +5,7 @@ namespace cblt::render {
 CoSpectrum::CoSpectrum() {
 }
 
-CoSpectrum::CoSpectrum(const CoColor &color) {
+CoSpectrum::CoSpectrum(const CoColor &color): _color{color} {
 }
 
 float CoSpectrum::reflectance(float wavelengthNM) const {
@@ -13,7 +13,7 @@ float CoSpectrum::reflectance(float wavelengthNM) const {
 }
 
 CoColor CoSpectrum::rgbColor() const {
-    return CoColor{};
+    return _color;
 }
 
 } // namespace cblt::render

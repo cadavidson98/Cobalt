@@ -4,11 +4,30 @@
 #include <libxml2/libxml/parser.h>
 #include <libxml2/libxml/tree.h>
 #include <libxml2/libxml/xmlmemory.h>
+#include <libxml2/libxml/xmlreader.h>
 #include <libxml2/libxml/xpath.h>
 
 namespace cblt::render::utils {
 
-template<typename T>
+struct xmlDeleter {
+    void operator()(void *ptr) {
+        xmlFree(ptr);
+    }
+};
+
+struct xmlDocDeleter {
+    void operator()(xmlDoc *ptr) {
+        xmlFreeDoc(ptr);
+    }
+};
+
+struct xmlTextReaderDeleter {
+    void operator()(xmlTextReader *ptr) {
+        xmlFreeTextReader(ptr);
+    }
+};
+
+template<typename T, class Deleter = xmlDeleter>
 struct xmlResource {
 public:
     xmlResource(T *raw): _value{raw} {
@@ -16,7 +35,7 @@ public:
 
     ~xmlResource() {
         if (_value) {
-            xmlFree(_value);
+            _deleter(_value);
         }
     }
 
@@ -45,6 +64,7 @@ public:
 
 private:
     T *_value = nullptr;
+    Deleter _deleter;
 };
 
 class xmlString {
@@ -70,6 +90,10 @@ public:
     friend bool operator==(const xmlString &lhs, const xmlString &rhs);
     friend bool operator!=(const xmlString &lhs, const xmlString &rhs);
 
+    bool contains(const xmlString &substring) {
+        return xmlStrstr(_string.get(), substring._string.get());
+    }
+
 private:
     xmlResource<xmlChar> _string;
 
@@ -86,6 +110,10 @@ public:
 
     friend bool operator==(const xmlString_view &lhs, const xmlString_view &rhs);
     friend bool operator!=(const xmlString_view &lhs, const xmlString_view &rhs);
+
+    bool contains(const xmlString_view substring) {
+        return xmlStrstr(_stringView, substring._stringView);
+    }
 
 private:
     const xmlChar *_stringView;
