@@ -7,6 +7,17 @@ namespace cblt::core {
 
 uint64_t time();
 
+struct CoDateTime {
+    uint16_t year;
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+};
+
+CoDateTime dateAndTime();
+
 } // namespace cblt::core
 
 #endif // CBLT_SYSTEM_H

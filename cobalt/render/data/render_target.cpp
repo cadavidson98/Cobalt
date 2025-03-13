@@ -2,47 +2,9 @@
 
 namespace cblt::render {
 
-std::shared_ptr<CoRenderTarget> CoRenderTarget::create(const CoRenderTarget::CreateInfo &createInfo) {
-    std::shared_ptr<CoRenderTarget> renderTarget = std::shared_ptr<CoRenderTarget>(new CoRenderTarget);
-    if (!renderTarget->Init(createInfo)) {
-        return nullptr;
-    }
+namespace {
 
-    return renderTarget;
-}
-
-CoRenderTarget::~CoRenderTarget() {
-    delete[] renderTargetBytes;
-}
-
-void CoRenderTarget::write(const vec2u &renderTargetIdx, const CoColor &color) {
-    size_t idx = CoRenderTarget::_CalculateIndex(renderTargetIdx, renderTargetSize, renderTargetTiling);
-    renderTargetBytes[idx] = color;
-}
-
-CoRenderTarget::CoRenderTarget() {
-}
-
-bool CoRenderTarget::Init(const CoRenderTarget::CreateInfo &createInfo) {
-    if (!_CheckCreateInfo(createInfo)) {
-        return false;
-    }
-
-    const size_t numPixels = size_t(createInfo.size.x) * size_t(createInfo.size.y);
-    CoColor *bytes = new CoColor[numPixels];
-    if (!numPixels) {
-        return false;
-    }
-
-    renderTargetBytes = bytes;
-    renderTargetSize = createInfo.size;
-    renderTargetFormat = createInfo.format;
-    renderTargetTiling = createInfo.tiling;
-
-    return true;
-}
-
-bool CoRenderTarget::_CheckCreateInfo(const CoRenderTarget::CreateInfo &createInfo) {
+bool checkCreateInfo(const CoRenderTarget::CreateInfo &createInfo) {
     if (createInfo.size.x == 0 || createInfo.size.y == 0) {
         return false;
     }
@@ -50,39 +12,46 @@ bool CoRenderTarget::_CheckCreateInfo(const CoRenderTarget::CreateInfo &createIn
     return true;
 }
 
-size_t CoRenderTarget::_CalculateIndex(const vec2u &idx, const vec2u &size, RenderTargetTiling tiling) {
-    if (tiling == RenderTargetTilingLinear) {
-        return size_t(idx.y) * size_t(size.x) + size_t(idx.x);
-    } else if (tiling == RenderTargetTilingOptimal) {
-        // find the tile
-        const vec2u tileIdx = {idx.x / kTileSize, idx.y / kTileSize};
-        const vec2u pixelOffset = {idx.x % kTileSize, idx.y % kTileSize};
-        const size_t tilesPerRow = size.x / kTileSize;
-        const size_t tileOffset = tilesPerRow * tileIdx.y + tileIdx.x;
+} // namespace
 
-        return tileOffset * kPixelsPerTile + pixelOffset.y * kTileSize + pixelOffset.x;
+std::shared_ptr<CoRenderTarget> CoRenderTarget::create(const CoRenderTarget::CreateInfo &createInfo) {
+    if (!checkCreateInfo(createInfo)) {
+        return nullptr;
     }
-    return 0;
+
+    std::shared_ptr<CoRenderTarget> renderTarget = std::shared_ptr<CoRenderTarget>(new CoRenderTarget(createInfo.size));
+
+    return renderTarget;
+}
+
+CoRenderTarget::~CoRenderTarget() {
+    delete[] _renderTargetBytes;
+}
+
+void CoRenderTarget::write(const vec2u &renderTargetIdx, const CoColor &color) {
+    size_t idx = renderTargetIdx.x + renderTargetIdx.y * _renderTargetSize.x;
+    _renderTargetBytes[idx] = color;
+}
+
+CoRenderTarget::CoRenderTarget(const vec2u &size): _renderTargetSize{size} {
+
+    const size_t numPixels = size_t(size.x) * size_t(size.y);
+    CoColor *bytes = new CoColor[numPixels];
+
+    _renderTargetBytes = bytes;
+    _renderTargetSize = size;
 }
 
 vec2u CoRenderTarget::size() const {
-    return renderTargetSize;
+    return _renderTargetSize;
 }
 
-CoRenderTarget::RenderTargetFormat CoRenderTarget::format() const {
-    return renderTargetFormat;
-}
-
-CoRenderTarget::RenderTargetTiling CoRenderTarget::tiling() const {
-    return renderTargetTiling;
-}
-
-uint8_t *CoRenderTarget::data() const {
-    return reinterpret_cast<uint8_t *>(renderTargetBytes);
+std::span<const CoColor> CoRenderTarget::data() const {
+    return std::span<const CoColor>(_renderTargetBytes, _renderTargetSize.x * _renderTargetSize.y);
 }
 
 const CoColor &CoRenderTarget::at(const vec2u idx) const {
-    return renderTargetBytes[_CalculateIndex(idx, renderTargetSize, renderTargetTiling)];
+    return _renderTargetBytes[idx.x + idx.y * _renderTargetSize.x];
 }
 
 } // namespace

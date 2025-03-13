@@ -1,5 +1,7 @@
 #include "system.h"
 
+#include <cassert>
+
 #include <time.h>
 
 namespace cblt::core {
@@ -9,6 +11,22 @@ uint64_t time() {
     timespec systemTime;
     clock_gettime(CLOCK_THREAD_CPUTIME_ID, &systemTime);
     return (systemTime.tv_sec) * kSecondsToNanoSeconds + (systemTime.tv_nsec);
+}
+
+CoDateTime dateAndTime() {
+    timespec posixTime;
+    clock_gettime(CLOCK_REALTIME, &posixTime);
+
+    tm *posixDateTime = gmtime(&posixTime.tv_sec);
+    assert(posixDateTime && "date time must be not null");
+    return CoDateTime{
+        .year = uint16_t(posixDateTime->tm_year + 1900),
+        .month = uint8_t(posixDateTime->tm_mon),
+        .day = uint8_t(posixDateTime->tm_mday),
+        .hour = uint8_t(posixDateTime->tm_hour),
+        .minute = uint8_t(posixDateTime->tm_min),
+        .second = uint8_t(posixDateTime->tm_sec),
+    };
 }
 
 } // namespace cblt::core

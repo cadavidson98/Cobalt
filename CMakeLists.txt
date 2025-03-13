@@ -5,7 +5,5 @@ project(Cobalt LANGUAGES C CXX)
 
 # add cobalt renderer
 add_subdirectory(cobalt)
-# add external libraries
-add_subdirectory(extern)
 # add tools
 add_subdirectory(tools)

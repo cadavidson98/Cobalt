@@ -3,7 +3,7 @@
 #include "assets.h"
 #include "cli_progress.h"
 #include "commands.h"
-#include "image.h"
+#include "image_writer.h"
 
 #include "core/callback.h"
 #include "core/size_types.h"
@@ -187,18 +187,10 @@ bool renderCommand(int argc, char **argv) {
 
     std::cout << "Rendered image in " << (renderEndTime - renderStartTime) * 1e-9 << " s\n";
 
-    std::shared_ptr<Image> renderImage = Image::create({
-        .renderTarget = renderTarget,
-    });
-
-    if (!renderImage) {
-        std::cerr << "no image" << std::endl;
-        return false;
-    }
-
-    const bool wrote = renderImage->write({
-        .filePath = settings->outputFile,
-        .extension = "png",
+    const bool wrote = writeImage({
+        .fileName = settings->outputFile,
+        .type = ImageType::kEXR,
+        .renderTarget = *renderTarget.get(),
     });
 
     if (!wrote) {
