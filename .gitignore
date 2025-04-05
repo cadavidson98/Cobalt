@@ -35,3 +35,6 @@
 
 # Vs code files
 .vscode
+
+#clangd
+.cache/

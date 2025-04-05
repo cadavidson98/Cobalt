@@ -2,6 +2,7 @@
 #define CBLT_CORE_STRING_UTILITIES_H
 
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -15,7 +16,7 @@ inline std::vector<T> split(const std::string_view valuesString, char delim) {
         const size_t endIndex = valuesString.find_first_of(delim, index);
         const std::string_view value = valuesString.substr(index, endIndex - index);
 
-        index = std::min(valuesString.length(), endIndex) + 1;
+        index = (endIndex == std::string_view::npos) ? valuesString.length() : endIndex + 1;
 
         if (value.length() == 0) {
             continue;

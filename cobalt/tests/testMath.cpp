@@ -1,12 +1,11 @@
-#include "mat4.h"
-#include "vec2.h"
-#include "vec3.h"
-#include "vec4.h"
-
-#include "simd/simd_mat3.h"
-#include "simd/simd_mat4.h"
-#include "simd/simd_vec3.h"
-#include "simd/simd_vec4.h"
+#include "math/mat4.h"
+#include "math/simd/simd_mat3.h"
+#include "math/simd/simd_mat4.h"
+#include "math/simd/simd_vec3.h"
+#include "math/simd/simd_vec4.h"
+#include "math/vec2.h"
+#include "math/vec3.h"
+#include "math/vec4.h"
 
 #include <gtest/gtest.h>
 

@@ -1,123 +1,132 @@
 #include "texture.h"
 
+#include "color.h"
 #include "texture_utilities.h"
 
 #include "core/logging.h"
 #include "math/vec4.h"
 
 #include <OpenEXR/ImfChannelList.h>
-#include <OpenEXR/ImfRgbaFile.h>
+#include <OpenEXR/ImfRgba.h>
 
 #include <algorithm>
+#include <cassert>
+#include <span>
+
+#include <half.h>
 
 namespace cblt::render {
 
-std::shared_ptr<CoTexture> CoTexture::create(const CreateFromFileInfo &createInfo) {
-    if (!_checkCreateInfo(createInfo)) {
-        return nullptr;
+namespace {
+
+bool checkCreateInfo(const CoTexture::CreateFromBytesInfo &createInfo) {
+    if (!createInfo.bytes) {
+        CoLogError("'bytes' must be nonnull");
+        return false;
     }
 
-    if (createInfo.fileExtension == "exr") {
-        return _loadFromEXR(createInfo);
+    if (createInfo.format == CoPixelFormat::Invalid) {
+        CoLogError("pixel format must not be 'Invalid'");
+        return false;
     }
 
-    CoLogError("Unsupported texture format");
-    return nullptr;
-}
-
-vec2f CoTexture::size() const {
-    return _textureSize;
-}
-
-CoColor CoTexture::sample(const vec2f &uvCoord) {
-    // rescale to image space
-    const vec2f texel = uvCoord * _textureSize;
-    if (std::clamp(texel.x, 0.f, _textureSize.x - 1.f) != texel.x ||
-        std::clamp(texel.y, 0.f, _textureSize.y - 1.f) != texel.y) {
-        return CoColor{0.f, 0.f, 0.f, 0.f};
-    }
-
-    vec4f textureColor = vec4f{0.f, 0.f, 0.f, 0.f};
-    switch (_textureFormat) {
-    case kPixelFormatRGBA16Float : {
-        const Imf::Rgba *textureDataFloat16 = reinterpret_cast<Imf::Rgba *>(_textureData);
-        const vec2i nearestTexel = {int(std::round(texel.x)), int(std::round(texel.y))};
-        static constexpr int kNeighborhood = 3;
-        static constexpr int kHalfNeighborhood = kNeighborhood >> 1;
-        const vec2i start = vec2i(nearestTexel.x - kHalfNeighborhood, nearestTexel.y - kHalfNeighborhood);
-        const vec2i end = vec2i(nearestTexel.x + kHalfNeighborhood + 1, nearestTexel.y + kHalfNeighborhood + 1);
-        for (int yTexel = std::max(0, start.y); yTexel < std::min(int(_textureSize.y), end.y); ++yTexel) {
-            for (int xTexel = std::max(0, start.x); xTexel < std::min(int(_textureSize.x), end.x); ++xTexel) {
-                const vec2f neighborTexel{float(xTexel), float(yTexel)};
-                const Imf::Rgba &color = textureDataFloat16[yTexel * uint32_t(_textureSize.x) + xTexel];
-
-                const vec4f neighborColor{
-                    float(color.r),
-                    float(color.g),
-                    float(color.b),
-                    float(color.a),
-                };
-
-                const vec4f scaledColor = tentFilter(neighborTexel, texel, neighborColor);
-                textureColor = textureColor + scaledColor;
-            }
-        }
-
-        break;
-    }
-    }
-
-    const vec4f clampedColor = clamp(textureColor, 0.f, 1.f);
-    return CoColor{textureColor.x, textureColor.y, textureColor.z, textureColor.w};
-}
-
-CoTexture::CoTexture(const CreateFromBytesInfo &createInfo) {
-    _textureData = createInfo.bytes;
-    _textureFormat = createInfo.format;
-    _textureSize = createInfo.dimensions;
-}
-
-CoTexture::~CoTexture() {
-    delete[] static_cast<uint8_t *>(_textureData);
-}
-
-bool CoTexture::_checkCreateInfo(const CreateFromFileInfo &createInfo) {
-    if (std::find(kValidFileTypes.begin(), kValidFileTypes.end(), createInfo.fileExtension) == kValidFileTypes.end()) {
-        CoLogError("Invalid file type");
+    if (createInfo.dimensions.x == 0.f || createInfo.dimensions.y == 0) {
+        CoLogError("'dimensions' must be greater than 0");
         return false;
     }
 
     return true;
 }
 
-std::shared_ptr<CoTexture> CoTexture::_loadFromEXR(const CreateFromFileInfo &createInfo) {
-    // TODO: make array of half4 as it will support loading EXR trivially and API agnostic
-    Imf::Rgba *pixelBuffer = nullptr;
-    try {
-        Imf::RgbaInputFile inputFile(createInfo.fileName.c_str(), 1);
+template<typename T, uint32_t windowSize = 3>
+CoColor
+sampleNeighborhood(std::span<const T> data, const uint32_t numChannels, const vec2u textureSize, const vec2u center) {
 
-        const Imath::Box2i window = inputFile.dataWindow();
-        const Imath::V2i windowSize(window.max.x - window.min.x + 1, window.max.y - window.min.y + 1);
-        pixelBuffer = new Imf::Rgba[windowSize.x * windowSize.y];
-        const int dx = window.min.x;
-        const int dy = window.min.y;
-        inputFile.setFrameBuffer(pixelBuffer, 1, windowSize.x);
-        inputFile.readPixels(window.min.y, window.max.y);
-        inputFile.parts();
-        return std::shared_ptr<CoTexture>(new CoTexture(
-            CreateFromBytesInfo{
-                .bytes = reinterpret_cast<uint8_t *>(pixelBuffer),
-                .format = kPixelFormatRGBA16Float,
-                .dimensions = {
-                               float(windowSize.x),
-                               float(windowSize.y),
-                               },
+    const uint32_t maxIdx = numChannels * textureSize.x * textureSize.y;
+
+    const uint32_t halfWindow = windowSize >> 1;
+    const vec2f centerFloat = {float(center.x), float(center.y)};
+
+    vec4f sampleColor = {0.f, 0.f, 0.f, 0.f};
+
+    const vec2i start = vec2i(center.x - halfWindow, center.y - halfWindow);
+    const vec2i end = vec2i(center.x + halfWindow + 1, center.y + halfWindow + 1);
+
+    for (int32_t yTexel = std::max(0, start.y); yTexel < std::min(int32_t(textureSize.y), end.y); ++yTexel) {
+        for (int32_t xTexel = std::max(0, start.x); xTexel < std::min(int32_t(textureSize.x), end.x); ++xTexel) {
+            const vec2f neighborTexel{float(xTexel), float(yTexel)};
+            const uint32_t index = (yTexel * uint32_t(textureSize.x) + xTexel) * numChannels;
+
+            assert(index < maxIdx);
+
+            const float base(data[index]);
+
+            const vec4f neighborColor{
+                base,
+                numChannels > 1 ? float(data[index + 1]) : 0.f,
+                numChannels > 2 ? float(data[index + 2]) : 0.f,
+                numChannels > 3 ? float(data[index + 3]) : 0.f,
+            };
+
+            const vec4f scaledColor = tentFilter(neighborTexel, centerFloat, neighborColor);
+            sampleColor = sampleColor + scaledColor;
         }
-        ));
-    } catch (Iex::BaseExc &e) {
-        CoLogError(e.what());
+    }
+
+    return CoColor(sampleColor.x, sampleColor.y, sampleColor.z, sampleColor.w);
+}
+
+} // anonymous namespace
+
+CoTexture::CoTexture(const CreateFromBytesInfo &createInfo) {
+    _textureData = createInfo.bytes;
+    _textureSize = createInfo.dimensions;
+    _textureFormat = createInfo.format;
+
+    _numChannels = createInfo.numChannels;
+}
+
+CoTexture::~CoTexture() {
+}
+
+vec2u CoTexture::size() const {
+    return _textureSize;
+}
+
+CoColor CoTexture::sample(const vec2f &uvCoord) const {
+    // rescale to image space
+    if (std::clamp(uvCoord.x, 0.f, 1.f) != uvCoord.x || std::clamp(uvCoord.y, 0.f, 1.f) != uvCoord.y) {
+        return CoColor{0.f, 0.f, 0.f, 0.f};
+    }
+
+    const vec2f texel = uvCoord * vec2f{float(_textureSize.x), float(_textureSize.y)};
+    const vec2u nearestTexel = {uint32_t(std::round(texel.x)), uint32_t(std::round(texel.y))};
+
+    const size_t numTexels = _textureSize.x * _textureSize.y;
+
+    CoColor textureColor = CoColor{0.f, 0.f, 0.f, 0.f};
+    switch (_textureFormat) {
+    case CoPixelFormat::Half : {
+        std::span<const Imath::half> samples(static_cast<const Imath::half *>(_textureData.get()), numTexels);
+        textureColor = sampleNeighborhood(samples, _numChannels, _textureSize, nearestTexel);
+    }
+    case CoPixelFormat::Float : {
+        std::span<const float> samples(static_cast<const float *>(_textureData.get()), numTexels);
+        textureColor = sampleNeighborhood(samples, _numChannels, _textureSize, nearestTexel);
+    }
+    case CoPixelFormat::Invalid :
+    default : break;
+    }
+
+    return textureColor;
+}
+
+std::shared_ptr<CoTexture> CoTexture::create(const CreateFromBytesInfo &createInfo) {
+    if (!checkCreateInfo(createInfo)) {
         return nullptr;
     }
+
+    return std::shared_ptr<CoTexture>(new CoTexture(createInfo));
 }
 
 } // namespace cblt::render

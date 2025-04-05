@@ -1,6 +1,7 @@
 #ifndef CBLT_GEOM_INTERSECTION_H
 #define CBLT_GEOM_INTERSECTION_H
 
+#include "core/size_types.h"
 #include "math/simd/simd_vec3.h"
 #include "math/vec2.h"
 

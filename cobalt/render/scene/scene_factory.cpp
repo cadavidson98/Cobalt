@@ -1,5 +1,6 @@
 #include "scene_factory.h"
 
+#include "image_reader.h"
 #include "scene.h"
 #include "texture.h"
 
@@ -12,7 +13,6 @@
 #include "private/obj_utilities.h"
 
 #include <cstring>
-#include <fstream>
 #include <unordered_map>
 
 namespace cblt::render {
@@ -47,19 +47,15 @@ public:
 
         const CoUUID geometryID = CoScene::nextUUID();
 
-        _geometry.push_back(
-            CoScene::GeometryComponent{
-                .mesh = cobaltMesh,
-                .transform = mesh.transform,
-            }
-        );
+        _geometry.push_back(CoScene::GeometryComponent{
+            .mesh = cobaltMesh,
+            .transform = mesh.transform,
+        });
 
-        _primitives.push_back(
-            CoScene::PrimitiveComponents{
-                .geometryIdx = geometryID,
-                .materialIdx = materialID,
-            }
-        );
+        _primitives.push_back(CoScene::PrimitiveComponents{
+            .geometryIdx = geometryID,
+            .materialIdx = materialID,
+        });
         return true;
     }
 
@@ -73,8 +69,8 @@ public:
             // TODO: cache texture
         };
 
-        auto makeSpectrumNode =
-            [](const std::variant<CoSpectrum, utils::MitsubaTexture> &value) -> CoMaterialNode<CoSpectrum> {
+        auto makeSpectrumNode = [](const std::variant<CoSpectrum, utils::MitsubaTexture> &value
+                                ) -> CoMaterialNode<CoSpectrum> {
             if (std::holds_alternative<CoSpectrum>(value)) {
                 return CoMaterialNode(std::get<CoSpectrum>(value));
             }
@@ -121,9 +117,8 @@ public:
 
         std::shared_ptr<CoTexture> emissionMap = nullptr;
         if (emitter.emissionMap) {
-            emissionMap = CoTexture::create({
-                .fileName = cblt::core::appendFileToPath(_rootDirectory, emitter.emissionMap.fileName),
-                .fileExtension = emitter.emissionMap.fileExtension,
+            emissionMap = readImage({
+                .fileName = core::appendFileToPath(_rootDirectory, emitter.emissionMap.fileName),
             });
 
             if (!emissionMap) {

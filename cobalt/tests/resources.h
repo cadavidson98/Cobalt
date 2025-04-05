@@ -3,7 +3,7 @@
 
 namespace cblt::test {
 
-static const char *kTestDataDir = "/home/cdavidson/Cobalt/cobalt/tests/TestData";
+static const char *kTestDataDir = "/home/cole/dev/Cobalt/cobalt/tests/TestData";
 
 } // namespace cblt::test
 

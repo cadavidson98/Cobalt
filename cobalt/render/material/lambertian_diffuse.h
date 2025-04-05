@@ -9,12 +9,8 @@
 namespace cblt::render {
 class CoLamberianDiffuse : public CoSurfaceFunction {
 public:
-    CoColor BSDF(
-        const vec3f &omegaI,
-        const vec3f &omegaO,
-        const vec3f &normal,
-        const CoSurfaceParams &surfaceParams
-    ) const override {
+    CoColor BSDF(const vec3f &omegaI, const vec3f &omegaO, const vec3f &normal, const CoSurfaceParams &surfaceParams)
+        const override {
         const float NDotO = std::max(dot(omegaO, normal), 0.f);
         return surfaceParams.baseColor;
     };

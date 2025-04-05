@@ -1,4 +1,4 @@
-#include "string_utilities.h"
+#include "core/string_utilities.h"
 
 #include <gtest/gtest.h>
 
@@ -10,15 +10,15 @@ constexpr float kEpsilon = 1e-4f;
 
 TEST(CobaltCoreStringTests, TestSplit) {
     {
-        std::string_view testString = "abc def ghi";
-        std::vector<std::string> strings = cblt::core::split(testString, ' ');
+        const std::string testString = "abc def ghi";
+        std::vector<std::string> strings = cblt::core::split<std::string>(testString, ' ');
         EXPECT_EQ(strings.size(), size_t(3));
         EXPECT_EQ(strings[0], "abc");
         EXPECT_EQ(strings[1], "def");
         EXPECT_EQ(strings[2], "ghi");
     }
     {
-        std::string_view testString = "1/2/3 4//5 6/7/";
+        const std::string testString = "1/2/3 4//5 6/7/";
         std::vector<std::string> groups = cblt::core::split<std::string>(testString, ' ');
         EXPECT_EQ(groups.size(), 3);
         EXPECT_EQ(groups[0], "1/2/3");
@@ -45,7 +45,7 @@ TEST(CobaltCoreStringTests, TestSplit) {
         }
     }
     {
-        std::string_view testString = "1.5,3.4,7.4,10.3,";
+        const std::string testString = "1.5,3.4,7.4,10.3,";
         std::vector<float> floats = cblt::core::split<float>(testString, ',');
         EXPECT_EQ(floats.size(), 4);
         EXPECT_NEAR(floats[0], 1.5f, kEpsilon);

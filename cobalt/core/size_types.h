@@ -20,6 +20,9 @@ using uint64_t = unsigned long long;
 #else
 using size_t = unsigned long long;
 #endif
-// TODO: half type here
 
+// TODO: half type here
+using float16_t = _Float16;
+using float32_t = float;
+using float64_t = double;
 #endif // CBLT_CORE_SIZE_TYPES_H

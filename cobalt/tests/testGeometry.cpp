@@ -1,9 +1,9 @@
-#include "bounding_box.h"
-#include "bounding_volume.h"
-#include "intersection.h"
-#include "ray.h"
-#include "sphere.h"
-#include "triangle.h"
+#include "geometry/bounding_box.h"
+#include "geometry/bounding_volume.h"
+#include "geometry/intersection.h"
+#include "geometry/ray.h"
+#include "geometry/sphere.h"
+#include "geometry/triangle.h"
 
 #include <gtest/gtest.h>
 

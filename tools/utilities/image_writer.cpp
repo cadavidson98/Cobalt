@@ -8,16 +8,16 @@
 #include <OpenEXR/ImfRgbaFile.h>
 
 extern "C" {
+// clang-format off
 #define PNG_NO_USE_READ_MACROS
+#include <setjmp.h>
 #include <png.h>
+// clang-format on
 }
 
 #include <cmath>
-#include <csetjmp>
 #include <cstdio>
 #include <cstring>
-#include <fstream>
-#include <stdexcept>
 #include <vector>
 
 namespace cblt::cli {
@@ -58,7 +58,7 @@ float gamma(float linear) {
 
     grayPointValue = (grayPointValue > 1.f) ? 1.f + knee(grayPointValue - 1, 0.184874f) : grayPointValue;
 
-    return std::pow(grayPointValue, 0.4545f) * 84.66f;
+    return grayPointValue * 17116.5f;
 }
 
 bool writePng(const WriteInfo &writeInfo) {

@@ -22,7 +22,8 @@
             "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-                "CMAKE_CXX_FLAGS": "-march=native"
+                "CMAKE_CXX_FLAGS": "-march=native",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
             }
         },
         {

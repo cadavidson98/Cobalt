@@ -157,11 +157,9 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
 CoMesh::CoMesh(const CreateInfo &createInfo) {
     _primitives =
         std::shared_ptr<MeshStorage>(new MeshStorage(createInfo.positions, createInfo.indices, createInfo.numIndices));
-    _accelerator = std::unique_ptr<MeshAccelerator>(new MeshAccelerator(
-        MeshAccelerator::CreateWithPrimitivesInfo{
-            .primitives = _primitives,
-        }
-    ));
+    _accelerator = std::unique_ptr<MeshAccelerator>(new MeshAccelerator(MeshAccelerator::CreateWithPrimitivesInfo{
+        .primitives = _primitives,
+    }));
 }
 
 CoMesh::~CoMesh() {

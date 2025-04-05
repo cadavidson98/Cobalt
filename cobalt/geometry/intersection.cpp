@@ -6,6 +6,8 @@
 #include "sphere.h"
 #include "triangle.h"
 
+#include "core/size_types.h"
+
 #include <algorithm>
 #include <cmath>
 

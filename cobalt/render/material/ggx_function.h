@@ -1,8 +1,8 @@
 #ifndef CBLT_RENDER_GGX_FUNCTION_H
 #define CBLT_RENDER_GGX_FUNCTION_H
 
-#include "constants.h"
-#include "math_utilities.h"
+#include "math/constants.h"
+#include "math/math_utilities.h"
 
 namespace cblt::render {
 

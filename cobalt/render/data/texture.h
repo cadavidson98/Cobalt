@@ -6,55 +6,46 @@
 #include "core/size_types.h"
 #include "math/vec2.h"
 
-#include <array>
+#include <Imath/half.h>
+
 #include <memory>
-#include <string>
 
 namespace cblt::render {
 
+enum class CoPixelFormat {
+    Invalid = 0,
+    Float,
+    Half,
+};
+
 class CoTexture {
 public:
-    struct CreateFromFileInfo {
-        std::string fileName;
-        std::string fileExtension;
+    struct CreateFromBytesInfo {
+        std::shared_ptr<const void> bytes;
+        CoPixelFormat format;
+        uint32_t numChannels;
+        vec2u dimensions;
     };
 
-    static std::shared_ptr<CoTexture> create(const CreateFromFileInfo &createInfo);
+    static std::shared_ptr<CoTexture> create(const CreateFromBytesInfo &createInfo);
 
     ~CoTexture();
 
-    vec2f size() const;
-    CoColor sample(const vec2f &uvCoord);
+    vec2u size() const;
+    CoColor sample(const vec2f &uvCoord) const;
 
 private:
-    static constexpr std::array<const char *, 1> kValidFileTypes = {
-        "exr",
-    };
-
-    enum PixelFormat {
-        kPixelFormatRGBA16Float,
-        kPixelFormatRGBA8UInt,
-    };
-
-    struct CreateFromBytesInfo {
-        uint8_t *bytes;
-        PixelFormat format;
-        vec2f dimensions;
-    };
-
     CoTexture() = delete;
     CoTexture(const CreateFromBytesInfo &createInfo);
 
-    uint8_t *_textureData;
-    PixelFormat _textureFormat;
-    vec2f _textureSize;
+    std::shared_ptr<const void> _textureData;
 
-    static bool _checkCreateInfo(const CreateFromFileInfo &createInfo);
+    vec2u _textureSize;
 
-    static std::shared_ptr<CoTexture> _loadFromEXR(const CreateFromFileInfo &createInfo);
+    CoPixelFormat _textureFormat;
+    uint32_t _numChannels;
 };
 
-} // namespace
-  // cblt::render
+} // namespace cblt::render
 
 #endif // CBLT_RENDER_TEXTURE_H
