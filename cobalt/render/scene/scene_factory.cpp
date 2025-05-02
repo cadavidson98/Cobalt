@@ -7,9 +7,7 @@
 
 #include "core/logging.h"
 #include "core/string_utilities.h"
-#include "math/simd/simd_vec3.h"
-#include "math/vec3.h"
-#include "math/vec4.h"
+#include "math/math_types.h"
 #include "private/mitsuba_utilities.h"
 #include "private/obj_utilities.h"
 

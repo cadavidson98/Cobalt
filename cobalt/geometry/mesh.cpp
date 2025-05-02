@@ -3,7 +3,7 @@
 #include "intersection.h"
 
 #include "math/interpolation.h"
-#include "math/vec3.h"
+#include "math/math_types.h"
 
 namespace cblt::geom {
 

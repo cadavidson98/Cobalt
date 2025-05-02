@@ -4,9 +4,7 @@
 #include "bounding_volume.h"
 
 #include "core/size_types.h"
-#include "math/simd/simd_vec3.h"
-#include "math/vec3.h"
-#include "math/vec4.h"
+#include "math/math_types.h"
 
 #include <functional>
 #include <memory>

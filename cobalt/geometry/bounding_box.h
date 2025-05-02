@@ -3,7 +3,7 @@
 
 #include "ray.h"
 
-#include "math/simd/simd_vec4.h"
+#include "math/math_types.h"
 
 #include <limits>
 

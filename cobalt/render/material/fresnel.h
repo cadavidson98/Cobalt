@@ -1,7 +1,7 @@
 #ifndef CBLT_RENDER_FRESNEL_H
 #define CBLT_RENDER_FRESNEL_H
 
-#include "math_utils.h"
+#include "math/math_utilities.h"
 
 #include <cmath>
 

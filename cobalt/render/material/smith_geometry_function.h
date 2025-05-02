@@ -1,8 +1,8 @@
 #ifndef CBLT_RENDER_SMITH_GEOMETRY_H
 #define CBLT_RENDER_SMITH_GEOMETRY_H
 
+#include "math/math_types.h"
 #include "math/math_utilities.h"
-#include "math/vec3.h"
 
 #include <cmath>
 

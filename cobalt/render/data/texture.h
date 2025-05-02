@@ -4,7 +4,7 @@
 #include "color.h"
 
 #include "core/size_types.h"
-#include "math/vec2.h"
+#include "math/math_types.h"
 
 #include <Imath/half.h>
 

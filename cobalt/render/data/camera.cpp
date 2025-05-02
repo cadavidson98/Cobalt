@@ -1,7 +1,7 @@
 #include "camera.h"
 
+#include "math/math_types.h"
 #include "math/math_utilities.h"
-#include "math/vec3.h"
 
 namespace cblt::render {
 CoCamera::CoCamera(const CreateFromProjectionInfo &createInfo) {

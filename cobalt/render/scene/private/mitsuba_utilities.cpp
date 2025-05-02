@@ -5,9 +5,8 @@
 
 #include "core/logging.h"
 #include "core/string_utilities.h"
+#include "math/math_types.h"
 #include "math/math_utilities.h"
-#include "math/vec2.h"
-#include "math/vec3.h"
 
 #include <libxml2/libxml/tree.h>
 #include <libxml2/libxml/xmlmemory.h>

@@ -4,16 +4,15 @@
 #include "texture_utilities.h"
 
 #include "core/logging.h"
-#include "math/vec4.h"
+#include "math/math_types.h"
 
+#include <Imath/half.h>
 #include <OpenEXR/ImfChannelList.h>
 #include <OpenEXR/ImfRgba.h>
 
 #include <algorithm>
 #include <cassert>
 #include <span>
-
-#include <half.h>
 
 namespace cblt::render {
 

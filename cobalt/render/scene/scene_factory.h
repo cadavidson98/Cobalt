@@ -4,8 +4,7 @@
 #include "core/callback.h"
 #include "core/dynamic_array.h"
 #include "geometry/mesh.h"
-#include "math/simd/simd_vec3.h"
-#include "math/vec4.h"
+#include "math/math_types.h"
 
 #include <memory>
 #include <optional>

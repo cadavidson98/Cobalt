@@ -1,7 +1,7 @@
 #ifndef CBLT_GEOM_RAY_H
 #define CBLT_GEOM_RAY_H
 
-#include "math/simd/simd_vec3.h"
+#include "math/math_types.h"
 
 namespace {
 const cblt::simd::vec3f kOne(1.f, 1.f, 1.f);

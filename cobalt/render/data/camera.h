@@ -3,10 +3,8 @@
 
 #include "core/size_types.h"
 #include "geometry/ray.h"
-#include "math/mat4.h"
+#include "math/math_types.h"
 #include "math/math_utilities.h"
-#include "math/vec2.h"
-#include "math/vec3.h"
 
 namespace cblt::render {
 

@@ -1,8 +1,8 @@
 #ifndef CBLT_RENDER_TEXTURE_UTILITIES_H
 #define CBLT_RENDER_TEXTURE_UTILITIES_H
 
+#include "math/math_types.h"
 #include "math/math_utilities.h"
-#include "math/vec2.h"
 
 #include <cmath>
 

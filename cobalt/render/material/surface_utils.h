@@ -1,9 +1,9 @@
 #ifndef CBLT_RENDER_SURFACE_HELPERS_H
 #define CBLT_RENDER_SURFACE_HELPERS_H
 
-#include "constants.h"
-#include "math_utils.h"
-#include "vec3.h"
+#include "math/constants.h"
+#include "math/math_types.h"
+#include "math/math_utils.h"
 
 namespace cblt::render {
 

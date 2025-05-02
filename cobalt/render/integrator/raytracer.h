@@ -3,7 +3,7 @@
 
 #include "render_target.h"
 
-#include "simd/simd_mat4.h"
+#include "math/math_types.h"
 
 #include <functional>
 #include <memory>

@@ -8,12 +8,12 @@
 #include "math/vec4.h"
 
 #include <Imath/ImathBox.h>
+#include <Imath/half.h>
 #include <OpenEXR/ImfChannelList.h>
+#include <OpenEXR/ImfFrameBuffer.h>
 #include <OpenEXR/ImfInputFile.h>
+#include <OpenEXR/ImfPixelType.h>
 
-#include <ImfFrameBuffer.h>
-#include <ImfPixelType.h>
-#include <half.h>
 #include <pngconf.h>
 
 extern "C" {

@@ -1,8 +1,7 @@
-#ifndef CBLT_TRANSFORM_H
-#define CBLT_TRANSFORM_H
+#ifndef CBLT_RENDER_TRANSFORM_H
+#define CBLT_RENDER_TRANSFORM_H
 
-#include "math/quat.h"
-#include "math/vec3.h"
+#include "math/math_types.h"
 
 namespace cblt::render {
 
@@ -15,4 +14,4 @@ struct CoTransform {
 } // namespace
   // cblt::render
 
-#endif // CBLT_TRANSFORM_H
+#endif // CBLT_RENDER_TRANSFORM_H

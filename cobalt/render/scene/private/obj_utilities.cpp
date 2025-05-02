@@ -3,7 +3,7 @@
 #include "core/logging.h"
 #include "core/size_types.h"
 #include "geometry/mesh.h"
-#include "math/vec3.h"
+#include "math/math_types.h"
 
 #include <cstring>
 #include <fstream>

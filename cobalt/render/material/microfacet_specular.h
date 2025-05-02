@@ -3,7 +3,8 @@
 
 #include "surface_function.h"
 #include "surface_params.h"
-#include "vec3.h"
+
+#include "math/math_types.h"
 
 namespace cblt::render {
 

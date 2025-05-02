@@ -2,8 +2,7 @@
 #define COBALT_RENDER_RENDERTARGET_H
 
 #include "core/size_types.h"
-#include "math/vec2.h"
-#include "math/vec4.h"
+#include "math/math_types.h"
 #include "render/data/color.h"
 
 #include <memory>

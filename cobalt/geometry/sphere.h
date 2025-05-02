@@ -1,7 +1,7 @@
 #ifndef CBLT_GEOM_SPHERE_H
 #define CBLT_GEOM_SPHERE_H
 
-#include "math/simd/simd_vec3.h"
+#include "math/math_types.h"
 
 namespace cblt::geom {
 
