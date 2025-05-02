@@ -1,9 +1,11 @@
 #include "scene.h"
 
 #include "color.h"
+#include "resolver.h"
 #include "texture.h"
+#include "texture_cache.h"
 
-#include "geometry/interpolation.h"
+#include "core/logging.h"
 #include "geometry/intersection.h"
 #include "geometry/mesh.h"
 #include "math/constants.h"
@@ -17,22 +19,13 @@ namespace cblt::render {
 
 std::atomic<CoUUID> CoScene::_nextID = std::atomic<CoUUID>(0);
 
-std::shared_ptr<CoScene> CoScene::create(const CoScene::CreateFromDataInfo &createInfo) {
-    std::shared_ptr<CoScene> scene = std::shared_ptr<CoScene>(new CoScene);
-    scene->_camera = createInfo.camera;
-    scene->_environmentMap = createInfo.environmentMap;
-    scene->_scenePrimitives.reserve(createInfo.primitives.size());
-    scene->_meshes.reserve(createInfo.meshes.size());
-    scene->_materials.reserve(createInfo.materials.size());
-
-    std::copy(createInfo.primitives.begin(), createInfo.primitives.end(), std::back_inserter(scene->_scenePrimitives));
-    std::copy(createInfo.meshes.begin(), createInfo.meshes.end(), std::back_inserter(scene->_meshes));
-    std::copy(createInfo.materials.begin(), createInfo.materials.end(), std::back_inserter(scene->_materials));
+std::shared_ptr<CoScene> CoScene::create(const CoScene::CreateInfo &createInfo) {
+    std::shared_ptr<CoScene> scene = std::shared_ptr<CoScene>(new CoScene(createInfo));
 
     return scene;
 }
 
-CoScene::CoScene() {
+CoScene::CoScene(const CreateInfo &createInfo) {
     const CoMaterial::Properties defaultMaterialProperties{
         .baseColor = CoSpectrum(),
         .metallic = 0.f,
@@ -49,13 +42,27 @@ CoScene::CoScene() {
         .clearcoatGloss = 0.f,
     };
 
+    // TODO: promote selecting default material to initialization; then we don't need an 'if' statement here
     _defaultMaterial = std::make_shared<CoMaterial>(defaultMaterialProperties);
+
+    _camera = createInfo.camera;
+    _environmentMap = createInfo.environmentMap;
+    _scenePrimitives.reserve(createInfo.primitives.size());
+    _geometries.reserve(createInfo.meshes.size());
+    _materials.reserve(createInfo.materials.size());
+
+    std::copy(createInfo.primitives.begin(), createInfo.primitives.end(), std::back_inserter(_scenePrimitives));
+    std::copy(createInfo.meshes.begin(), createInfo.meshes.end(), std::back_inserter(_geometries));
+    std::copy(createInfo.materials.begin(), createInfo.materials.end(), std::back_inserter(_materials));
+
+    static constexpr size_t kGBToMB = 1024;
+    _textureCache = CoTextureCache::create({
+        .baseDirectory = createInfo.options.baseDirectory,
+        .cacheSizeMB = 2 * kGBToMB,
+    });
 }
 
 CoScene::~CoScene() {
-    if (_ptexTextures) {
-        _ptexTextures->release();
-    }
 }
 
 CoUUID CoScene::nextUUID() {
@@ -67,32 +74,39 @@ std::shared_ptr<CoCamera> CoScene::camera() const {
 }
 
 bool CoScene::closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const {
-    for (size_t idx = 0; idx < _meshes.size(); ++idx) {
-        if (_meshes[idx].mesh->intersects(ray, intersectionEvent)) {
-            intersectionEvent.geometryIndex = 0;
+    for (size_t idx = 0; idx < _scenePrimitives.size(); ++idx) {
+        if (_scenePrimitives[idx].geometryIdx == kInvalidID) {
+            continue;
+        }
+
+        const CoUUID &geometryIdx = _scenePrimitives[idx].geometryIdx;
+
+        if (_geometries[geometryIdx].mesh->intersects(ray, intersectionEvent)) {
+            intersectionEvent.geometryIndex = idx;
             return true;
         }
     }
     return false;
 }
 
-CoSurfaceParams CoScene::resolveSurfaceAtInteraction(const geom::IntersectionEvent &intersectionEvent) const {
+std::optional<CoSurfaceParams> CoScene::resolveSurfaceAtInteraction(const geom::IntersectionEvent &intersectionEvent
+) const {
     assert(_scenePrimitives.size());
 
-    const PrimitiveComponents &primitive = _scenePrimitives[intersectionEvent.geometryIndex];
-    if (primitive.materialIdx != kInvalidID) {
-        // const geom::CoSurface surfaceProperties = _mesh->resolveSurface(intersectionEvent);
-        const CoMaterial &material = _materials[primitive.materialIdx];
-        return material.surfaceParamsAtCoordinates(
-            intersectionEvent.localCoordinates,
-            intersectionEvent.primitiveIndex
-        );
+    const Primitive &primitive = _scenePrimitives[intersectionEvent.geometryIndex];
+
+    if (primitive.geometryIdx == kInvalidID || primitive.materialIdx == kInvalidID) {
+        CoLogError("Primitive cannot be resolved: missing material and/or geometry components");
+        return std::nullopt;
     }
 
-    return _defaultMaterial->surfaceParamsAtCoordinates(
-        intersectionEvent.localCoordinates,
-        intersectionEvent.primitiveIndex
-    );
+    const GeometryComponent &geometry = _geometries[primitive.geometryIdx];
+    const MaterialComponent &material = _materials[primitive.materialIdx];
+
+    const std::optional<CoResolvedSurface> surface =
+        material.resolver->resolve(*geometry.mesh, *material.surface, intersectionEvent);
+
+    return surface ? std::make_optional<CoSurfaceParams>(surface->surfaceParams) : std::nullopt;
 }
 
 CoColor CoScene::environment(const geom::CoRay &ray) const {

@@ -121,7 +121,7 @@ namespace cblt::render::utils {
 std::shared_ptr<geom::CoMesh> readObjFile(const std::string &fileName) {
     std::ifstream meshFile(fileName);
     if (!meshFile.good()) {
-        CoLogError("Failed to open mesh file %s", fileName);
+        CoLogError("Failed to open mesh file %s", fileName.c_str());
         return nullptr;
     }
 

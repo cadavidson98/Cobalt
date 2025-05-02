@@ -2,7 +2,6 @@
 #define CBLT_CORE_MESH_H
 
 #include "bounding_volume.h"
-#include "interpolation.h"
 
 #include "core/size_types.h"
 #include "math/simd/simd_vec3.h"
@@ -11,8 +10,6 @@
 
 #include <functional>
 #include <memory>
-#include <optional>
-#include <string>
 
 namespace cblt::geom {
 
@@ -21,6 +18,18 @@ struct IntersectionEvent;
 
 class CoMesh {
 public:
+    enum class VertexAttribute {
+        kPosition,
+        kNormal,
+        kUV,
+    };
+
+    struct Vertex {
+        vec3f position;
+        vec3f normal;
+        vec2f textureCoords;
+    };
+
     struct CreateInfo {
         simd::vec3f *positions;
         size_t numVertices;
@@ -32,8 +41,10 @@ public:
 
     ~CoMesh();
 
-    bool intersects(const CoRay &ray, IntersectionEvent &intersectionEvent);
-    CoSurface resolveSurface(const IntersectionEvent &intersectionEvent);
+    bool hasAttribute(const VertexAttribute attribute) const;
+
+    bool intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) const;
+    Vertex resolveSurface(const IntersectionEvent &intersectionEvent) const;
 
 private:
     class MeshStorage : public CoPrimitiveStorage {

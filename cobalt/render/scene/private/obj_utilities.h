@@ -1,10 +1,7 @@
 #ifndef CBLT_RENDER_OBJ_UTILS_H
 #define CBLT_RENDER_OBJ_UTILS_H
 
-#include "core/dynamic_array.h"
-
 #include <memory>
-#include <optional>
 #include <string>
 
 namespace cblt::geom {

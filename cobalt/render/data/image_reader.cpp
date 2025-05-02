@@ -1,6 +1,6 @@
 #include "image_reader.h"
 
-#include "texture.h"
+#include "byte_texture.h"
 
 #include "core/logging.h"
 #include "core/size_types.h"
@@ -186,7 +186,7 @@ std::shared_ptr<render::CoTexture> readPng(const ReadInfo &readInfo) {
         return nullptr;
     }
 
-    return CoTexture::create({
+    return CoByteTexture::create({
         .bytes = textureData,
         .format = CoPixelFormat::Float,
         .numChannels = numChannels,
@@ -270,7 +270,7 @@ std::shared_ptr<render::CoTexture> readExr(const ReadInfo &readInfo) {
         return nullptr;
     }
 
-    return CoTexture::create({
+    return CoByteTexture::create({
         .bytes = textureData,
         .format = CoPixelFormat::Half,
         .numChannels = numChannels,

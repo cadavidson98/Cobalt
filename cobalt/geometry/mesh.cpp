@@ -1,14 +1,9 @@
 #include "mesh.h"
 
 #include "intersection.h"
-#include "quad.h"
-#include "triangle.h"
 
-#include "core/logging.h"
+#include "math/interpolation.h"
 #include "math/vec3.h"
-
-#include <fstream>
-#include <sstream>
 
 namespace cblt::geom {
 
@@ -165,23 +160,51 @@ CoMesh::CoMesh(const CreateInfo &createInfo) {
 CoMesh::~CoMesh() {
 }
 
-bool CoMesh::intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) {
+bool CoMesh::hasAttribute(const CoMesh::VertexAttribute vertexAttribute) const {
+    return true;
+}
+
+bool CoMesh::intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) const {
     assert(_accelerator && "missing accelerator");
     return _accelerator->IntersectClosest(ray, intersectionEvent);
 }
 
-CoSurface CoMesh::resolveSurface(const IntersectionEvent &intersectionEvent) {
-    const vec4u primitiveIndices = _primitives->_indices[intersectionEvent.primitiveIndex];
-    if (primitiveIndices.w != uint32_t(-1)) {
-        return interpolatePatch(
-            _primitives->_positions[primitiveIndices.x],
-            _primitives->_positions[primitiveIndices.y],
-            _primitives->_positions[primitiveIndices.z],
-            _primitives->_positions[primitiveIndices.w],
+CoMesh::Vertex CoMesh::resolveSurface(const IntersectionEvent &intersectionEvent) const {
+    const vec4u &faceIndex = _primitives->_indices[intersectionEvent.primitiveIndex];
+    if (faceIndex.w != MeshStorage::kInvalidIndex) {
+        const simd::vec3f position = math::bilinearInterpolation(
+            _primitives->_positions[faceIndex.x],
+            _primitives->_positions[faceIndex.y],
+            _primitives->_positions[faceIndex.z],
+            _primitives->_positions[faceIndex.w],
             intersectionEvent.localCoordinates
         );
+
+        const std::array<float, 4> values = position.Values();
+
+        return Vertex{
+            .position = {values[0], values[1], values[2]},
+            .normal = {},
+            .textureCoords = {},
+        };
+    } else {
+        const vec2f ab = intersectionEvent.localCoordinates;
+        const vec3f barycentricCoordinates = {ab.x, ab.y, 1.f - ab.x - ab.y};
+        const simd::vec3f position = math::barycentricInterpolation(
+            _primitives->_positions[faceIndex.x],
+            _primitives->_positions[faceIndex.y],
+            _primitives->_positions[faceIndex.z],
+            barycentricCoordinates
+        );
+
+        const std::array<float, 4> values = position.Values();
+
+        return Vertex{
+            .position = {values[0], values[1], values[2]},
+            .normal = {},
+            .textureCoords = {},
+        };
     }
-    return CoSurface();
 }
 
 } // namespace cblt::geom

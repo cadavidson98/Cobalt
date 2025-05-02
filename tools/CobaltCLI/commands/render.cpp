@@ -6,6 +6,7 @@
 #include "image_writer.h"
 
 #include "core/callback.h"
+#include "core/logging.h"
 #include "core/size_types.h"
 #include "core/system.h"
 #include "geometry/ray.h"
@@ -162,10 +163,11 @@ bool renderCommand(int argc, char **argv) {
             const geom::CoRay ray = camera->createRay(viewportToNDC({float(pixelX), float(pixelY)}));
             const bool hitMesh = defaultScene->closestIntersection(ray, intersectionEvent);
             if (hitMesh) {
-                const render::CoSurfaceParams surfaceParams =
+                const std::optional<render::CoSurfaceParams> surfaceParams =
                     defaultScene->resolveSurfaceAtInteraction(intersectionEvent);
-
-                renderTarget->write({pixelX, pixelY}, surfaceParams.baseColor.rgbColor());
+                if (surfaceParams) {
+                    renderTarget->write({pixelX, pixelY}, surfaceParams->baseColor.rgbColor());
+                }
             } else {
                 const render::CoColor environmentColor = defaultScene->environment(ray);
                 renderTarget->write(

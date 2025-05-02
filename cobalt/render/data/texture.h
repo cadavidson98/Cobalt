@@ -8,8 +8,6 @@
 
 #include <Imath/half.h>
 
-#include <memory>
-
 namespace cblt::render {
 
 enum class CoPixelFormat {
@@ -20,30 +18,13 @@ enum class CoPixelFormat {
 
 class CoTexture {
 public:
-    struct CreateFromBytesInfo {
-        std::shared_ptr<const void> bytes;
-        CoPixelFormat format;
-        uint32_t numChannels;
-        vec2u dimensions;
-    };
+    virtual ~CoTexture() = default;
 
-    static std::shared_ptr<CoTexture> create(const CreateFromBytesInfo &createInfo);
+    virtual CoPixelFormat format() const = 0;
+    virtual vec2u size() const = 0;
+    virtual size_t size_bytes() const = 0;
 
-    ~CoTexture();
-
-    vec2u size() const;
-    CoColor sample(const vec2f &uvCoord) const;
-
-private:
-    CoTexture() = delete;
-    CoTexture(const CreateFromBytesInfo &createInfo);
-
-    std::shared_ptr<const void> _textureData;
-
-    vec2u _textureSize;
-
-    CoPixelFormat _textureFormat;
-    uint32_t _numChannels;
+    virtual CoColor sample(const vec2f &uvCoord) const = 0;
 };
 
 } // namespace cblt::render

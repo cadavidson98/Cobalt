@@ -2,7 +2,8 @@ find_package(LibXml2 REQUIRED)
 
 set(COBALT_RENDER_SCENE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/scene.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scene_factory.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/scene_factory.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/texture_cache.h)
 
 set(COBALT_RENDER_PRIVATE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/private/mitsuba_utilities.h
@@ -12,6 +13,7 @@ set(COBALT_RENDER_PRIVATE_HEADERS
 set(COBALT_RENDER_SCENE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/scene.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scene_factory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/texture_cache.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/private/mitsuba_utilities.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/private/obj_utilities.cpp)
 

@@ -9,6 +9,7 @@ target_include_directories(CobaltRender PRIVATE ${OpenEXR_includedir})
 target_link_libraries(CobaltRender PUBLIC CobaltCore CobaltMath CobaltGeometry OpenEXR::OpenEXR Ptex png)
 
 add_subdirectory(data)
+# add_subdirectory(graph)
 add_subdirectory(material)
 add_subdirectory(utilities)
 add_subdirectory(scene)

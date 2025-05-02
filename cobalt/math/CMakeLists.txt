@@ -2,6 +2,7 @@ add_library(CobaltMath STATIC)
 
 set(COBALT_MATH_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/constants.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/interpolation.h
     ${CMAKE_CURRENT_SOURCE_DIR}/mat4.h
     ${CMAKE_CURRENT_SOURCE_DIR}/vec2.h
     ${CMAKE_CURRENT_SOURCE_DIR}/vec3.h

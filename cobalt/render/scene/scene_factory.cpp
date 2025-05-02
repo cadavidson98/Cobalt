@@ -1,6 +1,7 @@
 #include "scene_factory.h"
 
 #include "image_reader.h"
+#include "resolver.h"
 #include "scene.h"
 #include "texture.h"
 
@@ -45,14 +46,14 @@ public:
             materialID = _lastMaterialID;
         }
 
-        const CoUUID geometryID = CoScene::nextUUID();
+        const CoUUID geometryID = _geometry.size();
 
         _geometry.push_back(CoScene::GeometryComponent{
             .mesh = cobaltMesh,
             .transform = mesh.transform,
         });
 
-        _primitives.push_back(CoScene::PrimitiveComponents{
+        _primitives.push_back(CoScene::Primitive{
             .geometryIdx = geometryID,
             .materialIdx = materialID,
         });
@@ -97,9 +98,21 @@ public:
             .clearcoatGloss = makeFloatNode(principledParameters.clearcoatGloss),
         };
 
-        _materials.push_back(CoMaterial(materialProperties));
+        std::shared_ptr<CoResolver> resolver = _uvResolver;
+        if (std::holds_alternative<utils::MitsubaTexture>(principledParameters.baseColor)) {
+            const utils::MitsubaTexture texture = std::get<utils::MitsubaTexture>(principledParameters.baseColor);
+            const std::string fileType = core::fileExtension(texture.fileName);
+            if (fileType == "ptx") {
+                resolver = _ptextureResolver;
+            }
+        }
 
-        _lastMaterialID = CoScene::nextUUID();
+        _lastMaterialID = _materials.size();
+
+        _materials.push_back({
+            .surface = std::shared_ptr<CoMaterial>(new CoMaterial(materialProperties)),
+            .resolver = resolver,
+        });
 
         const std::string materialID = bsdf->referenceID();
         if (materialID.length()) {
@@ -148,16 +161,17 @@ public:
 
     CoSceneFactoryDelegate(core::CoCallback &callback, std::string_view rootDirectory)
         : _progressCallback{callback}, _rootDirectory{rootDirectory} {
+        _uvResolver = std::shared_ptr<CoResolver>(new CoProjectionResolver);
+        _ptextureResolver = std::shared_ptr<CoResolver>(new CoPTextureResolver);
     }
 
     std::shared_ptr<CoScene> scene() {
-        CoScene::CreateFromDataInfo createInfo{
+        CoScene::CreateInfo createInfo{
             .camera = _camera,
             .environmentMap = _environmentMap,
-            .materials = _materials,
             .primitives = _primitives,
             .meshes = _geometry,
-            .ptexTextures = nullptr,
+            .materials = _materials,
         };
 
         return CoScene::create(createInfo);
@@ -169,11 +183,15 @@ private:
 
     CoUUID _lastMaterialID = CoScene::kInvalidID;
 
-    std::vector<CoScene::PrimitiveComponents> _primitives = {};
+    std::vector<CoScene::Primitive> _primitives = {};
     std::vector<CoScene::GeometryComponent> _geometry = {};
-    std::vector<CoMaterial> _materials = {};
+    std::vector<CoScene::MaterialComponent> _materials = {};
+
     std::shared_ptr<CoCamera> _camera = {};
     std::shared_ptr<CoTexture> _environmentMap = {};
+
+    std::shared_ptr<CoResolver> _uvResolver = {};
+    std::shared_ptr<CoResolver> _ptextureResolver = {};
 
     std::unordered_map<std::string, CoUUID> _materialMap = {};
 };

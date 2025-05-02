@@ -6,8 +6,6 @@
 
 #include <cstdarg>
 #include <cstring>
-#include <iostream>
-#include <string>
 
 #include <syslog.h>
 

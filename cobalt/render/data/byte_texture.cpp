@@ -1,4 +1,4 @@
-#include "texture.h"
+#include "byte_texture.h"
 
 #include "color.h"
 #include "texture_utilities.h"
@@ -19,7 +19,7 @@ namespace cblt::render {
 
 namespace {
 
-bool checkCreateInfo(const CoTexture::CreateFromBytesInfo &createInfo) {
+bool checkCreateInfo(const CoByteTexture::CreateFromBytesInfo &createInfo) {
     if (!createInfo.bytes) {
         CoLogError("'bytes' must be nonnull");
         return false;
@@ -78,7 +78,7 @@ sampleNeighborhood(std::span<const T> data, const uint32_t numChannels, const ve
 
 } // anonymous namespace
 
-CoTexture::CoTexture(const CreateFromBytesInfo &createInfo) {
+CoByteTexture::CoByteTexture(const CreateFromBytesInfo &createInfo) {
     _textureData = createInfo.bytes;
     _textureSize = createInfo.dimensions;
     _textureFormat = createInfo.format;
@@ -86,14 +86,23 @@ CoTexture::CoTexture(const CreateFromBytesInfo &createInfo) {
     _numChannels = createInfo.numChannels;
 }
 
-CoTexture::~CoTexture() {
+CoByteTexture::~CoByteTexture() {
 }
 
-vec2u CoTexture::size() const {
+CoPixelFormat CoByteTexture::format() const {
+    return _textureFormat;
+}
+
+vec2u CoByteTexture::size() const {
     return _textureSize;
 }
 
-CoColor CoTexture::sample(const vec2f &uvCoord) const {
+size_t CoByteTexture::size_bytes() const {
+    const size_t bytesPerChannel = (_textureFormat == CoPixelFormat::Half) ? sizeof(Imath::half) : sizeof(float);
+    return _textureSize.x * _textureSize.y * _numChannels * bytesPerChannel;
+}
+
+CoColor CoByteTexture::sample(const vec2f &uvCoord) const {
     // rescale to image space
     if (std::clamp(uvCoord.x, 0.f, 1.f) != uvCoord.x || std::clamp(uvCoord.y, 0.f, 1.f) != uvCoord.y) {
         return CoColor{0.f, 0.f, 0.f, 0.f};
@@ -121,12 +130,12 @@ CoColor CoTexture::sample(const vec2f &uvCoord) const {
     return textureColor;
 }
 
-std::shared_ptr<CoTexture> CoTexture::create(const CreateFromBytesInfo &createInfo) {
+std::shared_ptr<CoTexture> CoByteTexture::create(const CreateFromBytesInfo &createInfo) {
     if (!checkCreateInfo(createInfo)) {
         return nullptr;
     }
 
-    return std::shared_ptr<CoTexture>(new CoTexture(createInfo));
+    return std::shared_ptr<CoTexture>(new CoByteTexture(createInfo));
 }
 
 } // namespace cblt::render

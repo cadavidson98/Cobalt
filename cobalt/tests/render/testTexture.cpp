@@ -1,4 +1,4 @@
-#include "render/data/texture.h"
+#include "render/data/byte_texture.h"
 
 #include <gtest/gtest.h>
 
@@ -12,7 +12,7 @@ TEST(CobaltRenderDataTests, TestReadTexture) {
     textureData[2] = 2.f;
     textureData[3] = 3.f;
 
-    std::shared_ptr<cblt::render::CoTexture> texture = cblt::render::CoTexture::create({
+    std::shared_ptr<cblt::render::CoTexture> texture = cblt::render::CoByteTexture::create({
         .bytes = textureData,
         .format = cblt::render::CoPixelFormat::Float,
         .numChannels = 1,

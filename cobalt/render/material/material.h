@@ -4,7 +4,6 @@
 #include "surface_function.h"
 #include "surface_params.h"
 
-#include "geometry/interpolation.h"
 #include "math/vec2.h"
 
 #include <memory>

@@ -1,9 +1,6 @@
 #ifndef CBLT_RENDER_SCENE_H
 #define CBLT_RENDER_SCENE_H
 
-#include "Ptexture.h"
-
-#include "core/dynamic_array.h"
 #include "render/data/camera.h"
 #include "render/material/material.h"
 
@@ -22,8 +19,10 @@ struct IntersectionEvent;
 
 namespace render {
 
-class CoTexture;
 class CoColor;
+struct CoResolver;
+class CoTexture;
+class CoTextureCache;
 
 using CoUUID = uint32_t;
 
@@ -33,35 +32,45 @@ public:
 
     bool closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const;
 
-    CoSurfaceParams resolveSurfaceAtInteraction(const geom::IntersectionEvent &intersectionEvent) const;
+    std::optional<CoSurfaceParams> resolveSurfaceAtInteraction(const geom::IntersectionEvent &intersectionEvent) const;
     CoColor environment(const geom::CoRay &ray) const;
 
     ~CoScene();
 
 private:
-    struct PrimitiveComponents {
-        CoUUID geometryIdx = kInvalidID;
-        CoUUID materialIdx = kInvalidID;
-    };
-
     struct GeometryComponent {
         std::shared_ptr<geom::CoMesh> mesh;
         mat4f transform;
     };
 
-    struct CreateFromDataInfo {
+    struct MaterialComponent {
+        std::shared_ptr<CoMaterial> surface;
+        std::shared_ptr<CoResolver> resolver;
+    };
+
+    struct Primitive {
+        CoUUID geometryIdx = kInvalidID;
+        CoUUID materialIdx = kInvalidID;
+    };
+
+    struct CreateOptions {
+        std::string baseDirectory = {};
+    };
+
+    struct CreateInfo {
         std::shared_ptr<CoCamera> camera;
         std::shared_ptr<CoTexture> environmentMap;
-        std::span<CoMaterial> materials;
-        std::span<PrimitiveComponents> primitives;
+        std::span<Primitive> primitives;
         std::span<GeometryComponent> meshes;
-        Ptex::PtexCache *ptexTextures;
+        std::span<MaterialComponent> materials;
+        CreateOptions options = {};
     };
 
     static CoUUID nextUUID();
-    static std::shared_ptr<CoScene> create(const CreateFromDataInfo &createInfo);
+    static std::shared_ptr<CoScene> create(const CreateInfo &createInfo);
 
-    CoScene();
+    CoScene(const CreateInfo &createInfo);
+    CoScene() = delete;
 
     // TODO: try using '0' as the invalid ID instead of 2^32 - 1; ZII reasons, or bool reasons?
     static constexpr CoUUID kInvalidID = CoUUID(~0);
@@ -71,11 +80,11 @@ private:
 
     std::shared_ptr<CoCamera> _camera;
     std::shared_ptr<CoTexture> _environmentMap;
-    Ptex::PtexCache *_ptexTextures = nullptr;
+    std::unique_ptr<CoTextureCache> _textureCache;
 
-    std::vector<PrimitiveComponents> _scenePrimitives;
-    std::vector<GeometryComponent> _meshes;
-    std::vector<CoMaterial> _materials;
+    std::vector<Primitive> _scenePrimitives;
+    std::vector<GeometryComponent> _geometries;
+    std::vector<MaterialComponent> _materials;
 
     friend class CoSceneFactory;
     friend class CoSceneFactoryDelegate;
