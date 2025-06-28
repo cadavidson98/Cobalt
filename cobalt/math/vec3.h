@@ -16,10 +16,15 @@ template<typename T>
 vec3<T> operator-(const vec3<T> &lhs, const vec3<T> &rhs);
 
 template<typename T>
+vec3<T> operator*(T lhs, const vec3<T> &rhs);
+
+template<typename T>
 vec3<T> operator/(const vec3<T> &lhs, T rhs);
 
 template<typename T>
 bool operator==(vec3<T> lhs, vec3<T> rhs);
+
+// TODO: SFINAE or concepts here?
 
 template<typename T>
 T dot(const vec3<T> &lhs, const vec3<T> &rhs);
@@ -33,6 +38,13 @@ T length(const vec3<T> &vector);
 template<typename T>
 vec3<T> normalize(const vec3<T> &vector);
 
+// project A onto B
+template<typename T>
+vec3<T> projection(const vec3<T> &A, const vec3<T> &B);
+
+template<typename T>
+vec3<T> reflect(const vec3<T> &direction, const vec3<T> &normal);
+
 template<typename T>
 struct vec3 {
     T x;
@@ -41,7 +53,9 @@ struct vec3 {
 
     friend vec3<T> operator+ <>(const vec3<T> &lhs, const vec3<T> &rhs);
     friend vec3<T> operator- <>(const vec3<T> &lhs, const vec3<T> &rhs);
+    friend vec3<T> operator* <>(T lhs, const vec3<T> &rhs);
     friend vec3<T> operator/ <>(const vec3<T> &lhs, T rhs);
+
     friend bool operator== <>(const vec3<T> lhs, const vec3<T> rhs);
 };
 
@@ -53,6 +67,11 @@ inline vec3<T> operator+(const vec3<T> &lhs, const vec3<T> &rhs) {
 template<typename T>
 inline vec3<T> operator-(const vec3<T> &lhs, const vec3<T> &rhs) {
     return {lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z};
+}
+
+template<typename T>
+vec3<T> operator*(T lhs, const vec3<T> &rhs) {
+    return {lhs * rhs.x, lhs * rhs.y, lhs * rhs.z};
 }
 
 template<typename T>
@@ -83,6 +102,16 @@ inline T length(const vec3<T> &vector) {
 template<typename T>
 inline vec3<T> normalize(const vec3<T> &vector) {
     return vector / length(vector);
+}
+
+template<typename T>
+inline vec3<T> projection(const vec3<T> &A, const vec3<T> &B) {
+    return dot(A, B) / dot(B, B) * B;
+}
+
+template<typename T>
+inline vec3<T> reflect(const vec3<T> &direction, const vec3<T> &normal) {
+    return direction - (T(2) * projection(direction, normal));
 }
 
 using vec3f = vec3<float>;

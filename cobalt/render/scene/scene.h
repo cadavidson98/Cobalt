@@ -4,8 +4,9 @@
 #include "render/data/camera.h"
 #include "render/material/material.h"
 
+
+#include <atomic>
 #include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -32,7 +33,6 @@ public:
 
     bool closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const;
 
-    std::optional<CoSurfaceParams> resolveSurfaceAtInteraction(const geom::IntersectionEvent &intersectionEvent) const;
     CoColor environment(const geom::CoRay &ray) const;
 
     ~CoScene();
@@ -66,7 +66,6 @@ private:
         CreateOptions options = {};
     };
 
-    static CoUUID nextUUID();
     static std::shared_ptr<CoScene> create(const CreateInfo &createInfo);
 
     CoScene(const CreateInfo &createInfo);
@@ -74,9 +73,8 @@ private:
 
     // TODO: try using '0' as the invalid ID instead of 2^32 - 1; ZII reasons, or bool reasons?
     static constexpr CoUUID kInvalidID = CoUUID(~0);
-    static std::atomic<CoUUID> _nextID;
-
-    std::shared_ptr<CoMaterial> _defaultMaterial;
+    std::atomic<CoUUID> _nextGeometryID;
+    std::atomic<CoUUID> _nextMaterialID;
 
     std::shared_ptr<CoCamera> _camera;
     std::shared_ptr<CoTexture> _environmentMap;

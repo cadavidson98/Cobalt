@@ -5,6 +5,7 @@ set(COBALT_CORE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/callback.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dynamic_array.h
     ${CMAKE_CURRENT_SOURCE_DIR}/logging.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/morton_encoding.h
     ${CMAKE_CURRENT_SOURCE_DIR}/size_types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/string_utilities.h
     ${CMAKE_CURRENT_SOURCE_DIR}/system.h)

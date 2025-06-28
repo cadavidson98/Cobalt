@@ -1,44 +1,75 @@
 #ifndef CBLT_RENDER_RESOLVER_H
 #define CBLT_RENDER_RESOLVER_H
 
-#include "material.h"
+#include "color.h"
 
-#include "geometry/intersection.h"
-
-#include <optional>
+#include "math/math_types.h"
 
 namespace cblt::geom {
 
 class CoMesh;
-struct IntersectionEvent;
 
 } // namespace cblt::geom
 
 namespace cblt::render {
 
-struct CoResolvedSurface {
-    CoSurfaceParams surfaceParams = {};
+enum class TextureType {
+    kTexture2D,
+    kPTexture,
 };
 
-struct CoResolver {
+class Texture2DView {
+public:
+    CoColor sample(vec2f textureCoords) const;
 
-    virtual std::optional<CoResolvedSurface>
-    resolve(const geom::CoMesh &mesh, const CoMaterial &material, const geom::IntersectionEvent &intersectionEvent)
-        const = 0;
+private:
+    const void *_texture;
 };
 
-struct CoProjectionResolver : CoResolver {
-
-    std::optional<CoResolvedSurface>
-    resolve(const geom::CoMesh &mesh, const CoMaterial &material, const geom::IntersectionEvent &intersectionEvent)
-        const override;
+struct ScalarData {
+    CoColor baseColor;
+    float metallic;
+    float subsurface;
+    float ior;
+    float specular;
+    float specularTint;
+    float specularTransmission;
+    float roughness;
+    float anisotropic;
+    float sheen;
+    float sheenTint;
+    float clearcoat;
+    float clearcoatGloss;
 };
 
-struct CoPTextureResolver : CoResolver {
+struct TextureData {
+    Texture2DView baseColor;
+};
 
-    std::optional<CoResolvedSurface>
-    resolve(const geom::CoMesh &mesh, const CoMaterial &material, const geom::IntersectionEvent &intersectionEvent)
-        const override;
+struct MaterialData {
+    ScalarData scalars;
+    TextureData textures;
+};
+
+class CoResolver {
+public:
+    CoResolver(TextureType type);
+
+    struct Interpolant {
+        vec3f position;
+        vec2f localCoordinates;
+        size_t faceIdx;
+    };
+
+    CoColor resolve(
+        const vec3f &incoming,
+        const geom::CoMesh &mesh,
+        const MaterialData &material,
+        const Interpolant &interpolant
+    ) const;
+
+private:
+    TextureType _textureType;
 };
 
 } // namespace cblt::render

@@ -100,7 +100,7 @@ bool renderCommand(int argc, char **argv) {
     std::mutex progressMutex;
     core::CoCallback progressCallback;
     progressCallback.functor = [&progressMutex](const char *message, int totalProgress) {
-        std::scoped_lock(progressMutex);
+        std::scoped_lock lock(progressMutex);
         printProgress(totalProgress, message);
     };
 
@@ -146,9 +146,9 @@ bool renderCommand(int argc, char **argv) {
 
     int renderProgress = 0;
     auto renderCallback = [&progressMutex, &renderProgress](uint32_t currentProgress) {
-        std::scoped_lock(progressMutex);
+        std::scoped_lock lock(progressMutex);
         renderProgress += currentProgress;
-        printProgress(renderProgress);
+        printProgress(renderProgress, "rendering scene");
     };
 
     std::shared_ptr<render::CoCamera> camera = defaultScene->camera();
@@ -163,11 +163,7 @@ bool renderCommand(int argc, char **argv) {
             const geom::CoRay ray = camera->createRay(viewportToNDC({float(pixelX), float(pixelY)}));
             const bool hitMesh = defaultScene->closestIntersection(ray, intersectionEvent);
             if (hitMesh) {
-                const std::optional<render::CoSurfaceParams> surfaceParams =
-                    defaultScene->resolveSurfaceAtInteraction(intersectionEvent);
-                if (surfaceParams) {
-                    renderTarget->write({pixelX, pixelY}, surfaceParams->baseColor.rgbColor());
-                }
+                renderTarget->write({pixelX, pixelY}, {1.f, 0.f, 0.f, 1.f});
             } else {
                 const render::CoColor environmentColor = defaultScene->environment(ray);
                 renderTarget->write(

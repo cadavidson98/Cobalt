@@ -22,11 +22,11 @@ size_t CoMesh::MeshStorage::NumPrimitives() const {
 }
 
 CoAxisAlignedBoundingBox CoMesh::MeshStorage::PrimitiveBounds(size_t startIdx, size_t endIdx) const {
-    static constexpr float minFloat = std::numeric_limits<float>::lowest();
-    static constexpr float maxFloat = std::numeric_limits<float>::max();
+    static constexpr float kMinFloat = std::numeric_limits<float>::lowest();
+    static constexpr float kMaxFloat = std::numeric_limits<float>::max();
     CoAxisAlignedBoundingBox regionBounds = {
-        .min = simd::vec3f(maxFloat, maxFloat, maxFloat),
-        .max = simd::vec3f(minFloat, minFloat, minFloat),
+        .min = simd::vec3f(kMaxFloat, kMaxFloat, kMaxFloat),
+        .max = simd::vec3f(kMinFloat, kMinFloat, kMinFloat),
     };
 
     for (size_t idx = startIdx; idx < endIdx; ++idx) {
@@ -164,20 +164,15 @@ bool CoMesh::hasAttribute(const CoMesh::VertexAttribute vertexAttribute) const {
     return true;
 }
 
-bool CoMesh::intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) const {
-    assert(_accelerator && "missing accelerator");
-    return _accelerator->IntersectClosest(ray, intersectionEvent);
-}
-
-CoMesh::Vertex CoMesh::resolveSurface(const IntersectionEvent &intersectionEvent) const {
-    const vec4u &faceIndex = _primitives->_indices[intersectionEvent.primitiveIndex];
+CoMesh::Vertex CoMesh::interpolateAttributes(const CoMesh::Interpolant &interpolant) const {
+    const vec4u &faceIndex = _primitives->_indices[interpolant.faceIdx];
     if (faceIndex.w != MeshStorage::kInvalidIndex) {
         const simd::vec3f position = math::bilinearInterpolation(
             _primitives->_positions[faceIndex.x],
             _primitives->_positions[faceIndex.y],
             _primitives->_positions[faceIndex.z],
             _primitives->_positions[faceIndex.w],
-            intersectionEvent.localCoordinates
+            interpolant.localCoordinates
         );
 
         const std::array<float, 4> values = position.Values();
@@ -188,7 +183,7 @@ CoMesh::Vertex CoMesh::resolveSurface(const IntersectionEvent &intersectionEvent
             .textureCoords = {},
         };
     } else {
-        const vec2f ab = intersectionEvent.localCoordinates;
+        const vec2f ab = interpolant.localCoordinates;
         const vec3f barycentricCoordinates = {ab.x, ab.y, 1.f - ab.x - ab.y};
         const simd::vec3f position = math::barycentricInterpolation(
             _primitives->_positions[faceIndex.x],
@@ -205,6 +200,11 @@ CoMesh::Vertex CoMesh::resolveSurface(const IntersectionEvent &intersectionEvent
             .textureCoords = {},
         };
     }
+}
+
+bool CoMesh::intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) const {
+    assert(_accelerator && "missing accelerator");
+    return _accelerator->IntersectClosest(ray, intersectionEvent);
 }
 
 } // namespace cblt::geom

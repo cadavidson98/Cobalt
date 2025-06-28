@@ -7,9 +7,9 @@ namespace cblt::render {
 
 class CoPTexture : public CoTexture {
 public:
-    CoPixelFormat format() const;
-    vec2u size() const;
-    size_t size_bytes() const;
+    CoPixelFormat format() const override;
+    vec2u size() const override;
+    size_t size_bytes() const override;
 
     CoColor sample(const vec2f &uvCoord) const override;
 

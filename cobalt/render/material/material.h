@@ -6,9 +6,6 @@
 
 #include "math/math_types.h"
 
-#include <memory>
-#include <variant>
-
 namespace cblt::render {
 
 // tagged union to represent various material arguments, as opposed to using inheritance

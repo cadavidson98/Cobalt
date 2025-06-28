@@ -2,10 +2,11 @@
 
 #include "fresnel.h"
 #include "ggx_function.h"
-#include "math/math_utilities.h"
 #include "smith_geometry_function.h"
 #include "surface_utils.h"
 #include "vec3.h"
+
+#include "math/math_utilities.h"
 
 namespace cblt::render {
 

@@ -22,6 +22,11 @@ public:
         kUV,
     };
 
+    struct Interpolant {
+        size_t faceIdx;
+        vec2f localCoordinates;
+    };
+
     struct Vertex {
         vec3f position;
         vec3f normal;
@@ -39,10 +44,10 @@ public:
 
     ~CoMesh();
 
-    bool hasAttribute(const VertexAttribute attribute) const;
+    bool hasAttribute(VertexAttribute attribute) const;
+    Vertex interpolateAttributes(const Interpolant &interpolant) const;
 
     bool intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) const;
-    Vertex resolveSurface(const IntersectionEvent &intersectionEvent) const;
 
 private:
     class MeshStorage : public CoPrimitiveStorage {

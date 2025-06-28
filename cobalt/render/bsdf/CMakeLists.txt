@@ -1,0 +1,10 @@
+set(COBALT_RENDER_BSDF_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/disney_principled.h
+)
+
+set(COBALT_RENDER_BSDF_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/disney_principled.cpp
+)
+
+target_sources(CobaltRender PUBLIC ${COBALT_RENDER_BSDF_HEADERS} PRIVATE ${COBALT_RENDER_BSDF_SOURCES})
+target_include_directories(CobaltRender AFTER PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

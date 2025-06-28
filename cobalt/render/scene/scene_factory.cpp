@@ -16,7 +16,7 @@
 
 namespace cblt::render {
 
-class CoSceneFactoryDelegate : public utils::MitsubaDelegate {
+class CoSceneFactoryDelegate final : public utils::MitsubaDelegate {
 public:
     bool readMesh(const utils::MitsubaMesh &mesh) override {
         std::shared_ptr<geom::CoMesh> cobaltMesh;
@@ -96,20 +96,10 @@ public:
             .clearcoatGloss = makeFloatNode(principledParameters.clearcoatGloss),
         };
 
-        std::shared_ptr<CoResolver> resolver = _uvResolver;
-        if (std::holds_alternative<utils::MitsubaTexture>(principledParameters.baseColor)) {
-            const utils::MitsubaTexture texture = std::get<utils::MitsubaTexture>(principledParameters.baseColor);
-            const std::string fileType = core::fileExtension(texture.fileName);
-            if (fileType == "ptx") {
-                resolver = _ptextureResolver;
-            }
-        }
-
         _lastMaterialID = _materials.size();
 
         _materials.push_back({
             .surface = std::shared_ptr<CoMaterial>(new CoMaterial(materialProperties)),
-            .resolver = resolver,
         });
 
         const std::string materialID = bsdf->referenceID();
@@ -159,8 +149,6 @@ public:
 
     CoSceneFactoryDelegate(core::CoCallback &callback, std::string_view rootDirectory)
         : _progressCallback{callback}, _rootDirectory{rootDirectory} {
-        _uvResolver = std::shared_ptr<CoResolver>(new CoProjectionResolver);
-        _ptextureResolver = std::shared_ptr<CoResolver>(new CoPTextureResolver);
     }
 
     std::shared_ptr<CoScene> scene() {
@@ -187,9 +175,6 @@ private:
 
     std::shared_ptr<CoCamera> _camera = {};
     std::shared_ptr<CoTexture> _environmentMap = {};
-
-    std::shared_ptr<CoResolver> _uvResolver = {};
-    std::shared_ptr<CoResolver> _ptextureResolver = {};
 
     std::unordered_map<std::string, CoUUID> _materialMap = {};
 };

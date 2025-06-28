@@ -3,8 +3,8 @@
 
 #include "size_types.h"
 
-#include <atomic>
 #include <functional>
+#include <mutex>
 
 namespace cblt::core {
 
