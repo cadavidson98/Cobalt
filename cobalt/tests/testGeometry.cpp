@@ -1,18 +1,75 @@
 #include "geometry/bounding_box.h"
 #include "geometry/bounding_volume.h"
+#include "geometry/bounding_volume_crtp.h"
 #include "geometry/intersection.h"
 #include "geometry/ray.h"
 #include "geometry/sphere.h"
 #include "geometry/triangle.h"
+#include "math/simd/simd_vec3.h"
 
 #include <gtest/gtest.h>
 
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 static constexpr float kEpsilon = 1e-4f;
+
+namespace cblt::geom::crtp {
+
+class CoStorageMock : public CoPrimitiveStorageBase<CoStorageMock> {
+    public:
+    CoStorageMock() {
+        for (int y = 0; y < 1024; ++y) {
+            for (int x = 0; x < 1024; ++x) {
+                boxes.push_back(cblt::geom::CoAxisAlignedBoundingBox{
+                    .min = simd::vec3f(x - 1.f, y - 1.f, -1.f),
+                    .max = simd::vec3f(x + 1.f, y + 1.f, +1.f),
+                });
+            }
+        }
+    }
+    
+    geom::CoAxisAlignedBoundingBox bounds() const {
+        return geom::CoAxisAlignedBoundingBox{
+            .min = boxes.front().min,
+            .max = boxes.back().max,
+        };
+    }
+    
+    void reorder(std::span<const MortonPrimitive> primitives) {
+        const auto scratch = boxes;
+        uint32_t idx = 0;
+        for (const auto &mortonPrimitive : primitives) {
+            boxes[idx] = scratch[mortonPrimitive.primitive.index];
+        }
+    }
+    
+    std::vector<Primitive> primitives() const {
+        std::vector<Primitive> prims;
+        for (size_t index = 0; index < boxes.size(); ++index) {
+            const auto &box = boxes[index];
+            prims.push_back(Primitive{
+                .type = PrimitiveType::kBox,
+                .boundingBox = box,
+                .index = uint32_t(index),
+            });
+        }
+        return prims;
+    }
+    
+    private:
+    std::vector<cblt::geom::CoAxisAlignedBoundingBox> boxes;
+};
+
+template<>
+struct primitive_types<CoStorageMock> {
+    static const PrimitiveTypes value = PrimitiveType::kBox;
+};
+
+}  // namespace cblt::geom::crtp
 
 namespace cblt::geom::test {
 struct BoxStorage {
@@ -65,7 +122,7 @@ struct BoxStorage {
 };
 } // namespace cblt::geom::test
 
-TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
+TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
     static const cblt::simd::vec3f origin(0.f, 0.f, 0.f);
     static const cblt::simd::vec3f xDir(1.f, 0.f, 0.f);
     static const cblt::geom::CoRay xRay(origin, xDir, 10.f);
@@ -125,7 +182,7 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxIntersect) {
     }
 }
 
-TEST(CobaltCoreGeometryTests, TestSphereIntersect) {
+TEST(CobaltGeometryTests, TestSphereIntersect) {
     {
         static const cblt::geom::CoSphere sphere{
             .center = cblt::simd::vec3f(0.f, 0.f, 0.f),
@@ -182,7 +239,7 @@ TEST(CobaltCoreGeometryTests, TestSphereIntersect) {
     }
 }
 
-TEST(CobaltCoreGeometryTests, TestTriangleIntersect) {
+TEST(CobaltGeometryTests, TestTriangleIntersect) {
     {
         static const cblt::geom::CoTriangle triangle{
             .position1 = cblt::simd::vec3f{ 0.f, 1.f, 1.f},
@@ -208,7 +265,7 @@ TEST(CobaltCoreGeometryTests, TestTriangleIntersect) {
     }
 }
 
-TEST(CobaltCoreGeometryTests, TestBoundingBoxPerformance) {
+TEST(CobaltGeometryTests, TestBoundingBoxPerformance) {
     static const cblt::simd::vec3f origin(0.f, 0.f, 0.f);
     static const cblt::simd::vec3f xDir(1.f, 0.f, 0.f);
     static const cblt::geom::CoRay xRay(origin, xDir, 10.f);
@@ -233,7 +290,7 @@ TEST(CobaltCoreGeometryTests, TestBoundingBoxPerformance) {
     std::cout << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(e - s).count() << std::endl;
 }
 
-TEST(CobaltCoreGeometryTests, TestCreateBoundingVolume) {
+TEST(CobaltGeometryTests, TestCreateBoundingVolume) {
 
     using BoxAccelerator = cblt::geom::CoBoundingVolume<cblt::geom::test::BoxStorage>;
 
@@ -253,4 +310,12 @@ TEST(CobaltCoreGeometryTests, TestCreateBoundingVolume) {
         cblt::geom::CoRay hitRay({5.f, 5.f, 0.f}, {0.f, 0.f, 1.f}, 10.f);
         EXPECT_TRUE(boundingVolume.IntersectClosest(hitRay, event));
     }
+}
+
+TEST(CobaltGeometryTests, TestCtrp) {
+    using namespace cblt::geom::crtp;
+    std::shared_ptr<CoStorageMock> storage = std::make_shared<CoStorageMock>();
+    CoBoundingVolume<CoStorageMock> bvh({
+        .primitives = storage,
+    });
 }

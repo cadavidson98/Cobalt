@@ -2,6 +2,7 @@ add_library(CobaltCore STATIC)
 target_compile_features(CobaltCore PUBLIC cxx_std_20)
 
 set(COBALT_CORE_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/algorithms.h
     ${CMAKE_CURRENT_SOURCE_DIR}/callback.h
     ${CMAKE_CURRENT_SOURCE_DIR}/dynamic_array.h
     ${CMAKE_CURRENT_SOURCE_DIR}/logging.h

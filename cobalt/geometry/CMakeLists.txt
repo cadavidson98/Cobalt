@@ -4,6 +4,8 @@ target_compile_features(CobaltGeometry PUBLIC cxx_std_20)
 set(COBALT_GEOMETRY_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/bounding_box.h
     ${CMAKE_CURRENT_SOURCE_DIR}/bounding_volume.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/bounding_volume_crtp.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/bounding_volume_crtp.inl
     ${CMAKE_CURRENT_SOURCE_DIR}/intersection.h
     ${CMAKE_CURRENT_SOURCE_DIR}/mesh.h
     ${CMAKE_CURRENT_SOURCE_DIR}/quad.h

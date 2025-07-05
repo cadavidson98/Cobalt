@@ -9,10 +9,10 @@
 namespace cblt::core {
 
 struct CoCallback {
-    std::mutex mutex;
-    uint32_t totalProgress = 0;
+    mutable std::mutex mutex;
+    mutable uint32_t totalProgress = 0;
     std::function<void(const char *, int)> functor;
-    void pump(const char *status, uint32_t incrementalProgress = 0) {
+    void pump(const char *status, uint32_t incrementalProgress = 0) const {
         std::lock_guard<std::mutex> lock(mutex);
         totalProgress += incrementalProgress;
         functor(status, totalProgress);
