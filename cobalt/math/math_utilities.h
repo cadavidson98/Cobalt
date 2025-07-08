@@ -14,7 +14,7 @@ constexpr T sqr(const T value) {
 
 template<typename T>
 constexpr T divUp(const T lhs, T rhs) {
-    return (lhs + T(1)) / rhs;
+    return (lhs + rhs - T(1)) / rhs;
 }
 
 template<typename T>

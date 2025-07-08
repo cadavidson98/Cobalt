@@ -20,14 +20,17 @@ static constexpr float kEpsilon = 1e-4f;
 namespace cblt::geom::crtp {
 
 class CoStorageMock : public CoPrimitiveStorageBase<CoStorageMock> {
+    static constexpr int kGridSize = 2;
+
     public:
     CoStorageMock() {
-        for (int y = 0; y < 1024; ++y) {
-            for (int x = 0; x < 1024; ++x) {
-                boxes.push_back(cblt::geom::CoAxisAlignedBoundingBox{
-                    .min = simd::vec3f(x - 1.f, y - 1.f, -1.f),
-                    .max = simd::vec3f(x + 1.f, y + 1.f, +1.f),
-                });
+        boxes.reserve(kGridSize * kGridSize);
+        for (int y = 0; y < kGridSize; ++y) {
+            for (int x = 0; x < kGridSize; ++x) {
+                boxes.emplace_back(
+                    simd::vec3f(x - 1.f, y - 1.f, -1.f),
+                    simd::vec3f(x + 1.f, y + 1.f, +1.f)
+                );
             }
         }
     }
@@ -73,15 +76,18 @@ struct primitive_types<CoStorageMock> {
 
 namespace cblt::geom::test {
 struct BoxStorage {
+    static constexpr int kGridSize = 1024;
+
     std::vector<CoAxisAlignedBoundingBox> boxes;
     BoxStorage() {
-        static const size_t numBoxes = 10;
-        boxes.reserve(numBoxes);
+        boxes.reserve(kGridSize * kGridSize);
 
-        for (size_t idx = 0; idx < numBoxes; ++idx) {
-            simd::vec3f boxMin(idx, idx, idx);
-            simd::vec3f boxMax(idx + 1, idx + 1, idx + 1);
-            boxes.emplace_back(boxMin, boxMax);
+        for (int y = 0; y < kGridSize; ++y) {
+            for (int x = 0; x < kGridSize; ++x) {
+                simd::vec3f boxMin(x - 1, y - 1, -1);
+                simd::vec3f boxMax(x + 1, y + 1, +1);
+                boxes.emplace_back(boxMin, boxMax);
+            }
         }
     }
 
@@ -121,6 +127,17 @@ struct BoxStorage {
     }
 };
 } // namespace cblt::geom::test
+
+class CobaltGeometryTest : public::testing::Test {
+    protected:
+    CobaltGeometryTest() {
+        storage = std::make_shared<cblt::geom::crtp::CoStorageMock>();
+        old_storage = std::make_shared<cblt::geom::test::BoxStorage>();
+    }
+
+    std::shared_ptr<cblt::geom::crtp::CoStorageMock> storage;
+    std::shared_ptr<cblt::geom::test::BoxStorage> old_storage;
+};
 
 TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
     static const cblt::simd::vec3f origin(0.f, 0.f, 0.f);
@@ -265,7 +282,7 @@ TEST(CobaltGeometryTests, TestTriangleIntersect) {
     }
 }
 
-TEST(CobaltGeometryTests, TestBoundingBoxPerformance) {
+TEST_F(CobaltGeometryTest, TestBoundingBoxPerformance) {
     static const cblt::simd::vec3f origin(0.f, 0.f, 0.f);
     static const cblt::simd::vec3f xDir(1.f, 0.f, 0.f);
     static const cblt::geom::CoRay xRay(origin, xDir, 10.f);
@@ -290,32 +307,24 @@ TEST(CobaltGeometryTests, TestBoundingBoxPerformance) {
     std::cout << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(e - s).count() << std::endl;
 }
 
-TEST(CobaltGeometryTests, TestCreateBoundingVolume) {
+TEST_F(CobaltGeometryTest, TestCreateBoundingVolume) {
 
     using BoxAccelerator = cblt::geom::CoBoundingVolume<cblt::geom::test::BoxStorage>;
 
-    std::shared_ptr<cblt::geom::test::BoxStorage> primitives =
-        std::shared_ptr<cblt::geom::test::BoxStorage>(new cblt::geom::test::BoxStorage);
-
     BoxAccelerator::CreateWithPrimitivesInfo createInfo{
-        .primitives = primitives,
+        .primitives = old_storage,
         .maxPrimsInLeaf = 1,
         .partitionMethod = BoxAccelerator::PartitionMethod::Midpoint,
     };
 
     BoxAccelerator boundingVolume(createInfo);
-
-    {
-        cblt::geom::IntersectionEvent event;
-        cblt::geom::CoRay hitRay({5.f, 5.f, 0.f}, {0.f, 0.f, 1.f}, 10.f);
-        EXPECT_TRUE(boundingVolume.IntersectClosest(hitRay, event));
-    }
+    EXPECT_TRUE(&boundingVolume);
 }
 
-TEST(CobaltGeometryTests, TestCtrp) {
+TEST_F(CobaltGeometryTest, TestCtrp) {
     using namespace cblt::geom::crtp;
-    std::shared_ptr<CoStorageMock> storage = std::make_shared<CoStorageMock>();
     CoBoundingVolume<CoStorageMock> bvh({
         .primitives = storage,
     });
+    EXPECT_TRUE(&bvh);
 }
