@@ -19,10 +19,10 @@ void radix_sort(Iterator begin, Iterator end, KeyFetcher keyFetcher) {
     std::span<ValueType> in(begin, end);
     std::span<ValueType> out(scratch);
 
-    for(size_t pass = 0; pass < numPasses; ++pass) {
+    for (size_t pass = 0; pass < numPasses; ++pass) {
         const uint32_t bitMask = 1 << pass;
         uint32_t zeroBucket = 0;
-        uint32_t onesBucket = 0; 
+        uint32_t onesBucket = 0;
         // compute bucket offsets
         for (const ValueType &v : in) {
             const uint32_t key = keyFetcher(v);
@@ -32,11 +32,11 @@ void radix_sort(Iterator begin, Iterator end, KeyFetcher keyFetcher) {
         onesBucket = std::distance(begin, end) - onesBucket;
 
         for (const ValueType &v : in) {
-            
+
             if (keyFetcher(v) & bitMask) {
-                out[onesBucket++] = v; 
+                out[onesBucket++] = v;
             } else {
-                out[zeroBucket++] = v; 
+                out[zeroBucket++] = v;
             }
         }
 
@@ -44,13 +44,10 @@ void radix_sort(Iterator begin, Iterator end, KeyFetcher keyFetcher) {
     }
 
     if constexpr (numPasses % 2 == 1) {
-        std::move(
-            std::make_move_iterator(scratch.begin()), 
-            std::make_move_iterator(scratch.end()),
-            begin);
+        std::move(std::make_move_iterator(scratch.begin()), std::make_move_iterator(scratch.end()), begin);
     }
 }
 
-}  // namespace cblt::core
+} // namespace cblt::core
 
 #endif // CBLT_CORE_ALGORITHMS_H

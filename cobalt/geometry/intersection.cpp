@@ -86,8 +86,6 @@ bool rayPatchIntersection(
     const simd::vec3f edge32 = position3 - position2;
     const simd::vec3f patchNormal = simd::cross(edge21, edge43);
 
-    const bool areParallel = std::fabs(simd::dot(patchNormal, patchNormal)) < 1e-4f;
-
     const float quadraticA = simd::dot(patchNormal, ray.dir);
     const float quadraticC = simd::dot(simd::cross(position1 - ray.pos, ray.dir), edge41);
     const float quadraticB = simd::dot(simd::cross(position2 - ray.pos, ray.dir), edge32) - (quadraticA + quadraticC);

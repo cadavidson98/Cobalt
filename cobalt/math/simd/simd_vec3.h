@@ -144,7 +144,7 @@ inline float reduceMin(const vec3f &lhs) {
     static const __m128 kMaxInf = {kMaxFloat, kMaxFloat, kMaxFloat, kMaxFloat};
     __m128 maskNAN = _mm_cmp_ps(lhs.xyz, kMaxInf, _CMP_LT_OQ);
     __m128 values = _mm_blendv_ps(kMaxInf, lhs.xyz, maskNAN);
-    __m128 shuffleLeft = _mm_shuffle_ps(lhs.xyz, lhs.xyz, _MM_SHUFFLE(2, 1, 0, 0));
+    __m128 shuffleLeft = _mm_shuffle_ps(values, values, _MM_SHUFFLE(2, 1, 0, 0));
     __m128 shuffleMin = _mm_min_ps(lhs.xyz, shuffleLeft);
     shuffleLeft = _mm_shuffle_ps(shuffleMin, shuffleMin, _MM_SHUFFLE(1, 0, 2, 2));
     shuffleMin = _mm_min_ps(shuffleMin, shuffleLeft);

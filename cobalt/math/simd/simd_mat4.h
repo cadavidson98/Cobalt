@@ -18,10 +18,10 @@ struct mat4f {
 
     mat4f(const vec4f &diagonal)
         : columns{
-              {diagonal.x,        0.f,        0.f,        0.f},
-              {       0.f, diagonal.y,        0.f,        0.f},
-              {       0.f,        0.f, diagonal.z,        0.f},
-              {       0.f,        0.f,        0.f, diagonal.w}
+              {diagonal.x(),          0.f,          0.f,          0.f},
+              {         0.f, diagonal.y(),          0.f,          0.f},
+              {         0.f,          0.f, diagonal.z(),          0.f},
+              {         0.f,          0.f,          0.f, diagonal.w()}
     } {
     }
 
@@ -38,10 +38,10 @@ struct mat4f {
     }
 
     friend vec4f operator*(const mat4f &a, vec4f b) {
-        vec4f out = a.columns[0] * b.x;
-        out += a.columns[1] * b.y;
-        out += a.columns[2] * b.z;
-        out += a.columns[3] * b.w;
+        vec4f out = a.columns[0] * b.x();
+        out += a.columns[1] * b.y();
+        out += a.columns[2] * b.z();
+        out += a.columns[3] * b.w();
         return out;
     }
 

@@ -6,7 +6,7 @@ AlignArrayOfStructures: Right
 AlignConsecutiveAssignments: 
   Enabled: false
 AlignConsecutiveBitFields:
-  Enabled: false
+  Enabled: true
 AlignConsecutiveDeclarations:
   Enabled: false
 AlignTrailingComments:

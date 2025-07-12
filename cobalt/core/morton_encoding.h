@@ -15,15 +15,15 @@ constexpr uint32_t mortonEncode(const uint32_t x, const uint32_t y, const uint32
     auto shift = [](const uint32_t v) {
         uint32_t value = v;
         value = (value | (value << 16)) & 0b00000011000000000000000011111111;
-        value = (value | (value <<  8)) & 0b00000011000000001111000000001111;
-        value = (value | (value <<  4)) & 0b00000011000011000011000011000011;
-        value = (value | (value <<  2)) & 0b00001001001001001001001001001001;
+        value = (value | (value << 8)) & 0b00000011000000001111000000001111;
+        value = (value | (value << 4)) & 0b00000011000011000011000011000011;
+        value = (value | (value << 2)) & 0b00001001001001001001001001001001;
         return value;
     };
 
     return (shift(z) << 2) | (shift(y) << 1) | shift(x);
 }
 
-}  // namespace cblt::core
+} // namespace cblt::core
 
-#endif  // CBLT_CORE_MORTON_ENCODING_H
+#endif // CBLT_CORE_MORTON_ENCODING_H

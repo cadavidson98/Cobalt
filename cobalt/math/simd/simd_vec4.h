@@ -16,15 +16,7 @@ enum : unsigned int {
 };
 
 struct vec4f {
-    union {
-        __m128 xyzw;
-        struct alignas(16) {
-            float x;
-            float y;
-            float z;
-            float w;
-        };
-    };
+    __m128 xyzw;
 
     vec4f(__m128 _xyzw) {
         xyzw = _xyzw;
@@ -96,7 +88,10 @@ struct vec4f {
     }
 
     friend bool operator==(const vec4f &a, const vec4f &b) {
-        return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
+        const std::array<float, 4> aValues = a.asArray();
+        const std::array<float, 4> bValues = b.asArray();
+        return aValues[0] == bValues[0] && aValues[1] == bValues[1] && aValues[2] == bValues[2] &&
+               aValues[3] == bValues[3];
     }
 
     friend vec4f min(const vec4f &lhs, const vec4f &rhs);
@@ -111,6 +106,22 @@ struct vec4f {
         std::array<float, 4> arrayType;
         _mm_store_ps(arrayType.data(), xyzw);
         return arrayType;
+    }
+
+    float x() const {
+        return _mm_cvtss_f32(xyzw);
+    }
+
+    float y() const {
+        return _mm_cvtss_f32(_mm_shuffle_ps(xyzw, xyzw, _MM_SHUFFLE(1, 1, 1, 1)));
+    }
+
+    float z() const {
+        return _mm_cvtss_f32(_mm_shuffle_ps(xyzw, xyzw, _MM_SHUFFLE(2, 2, 2, 2)));
+    }
+
+    float w() const {
+        return _mm_cvtss_f32(_mm_shuffle_ps(xyzw, xyzw, _MM_SHUFFLE(3, 3, 3, 3)));
     }
 };
 

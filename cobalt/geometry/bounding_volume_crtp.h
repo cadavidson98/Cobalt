@@ -6,7 +6,6 @@
 #include "bounding_volume_types.h"
 
 #include "core/callback.h"
-
 #include "core/size_types.h"
 #include "math/math_types.h"
 
@@ -48,7 +47,7 @@ private:
         uint32_t index = kInvalidIndex;
         Type type = Type::kInvalid;
     };
-    
+
     struct InteriorNode {
         TypedNode left;
         TypedNode right;
@@ -71,11 +70,8 @@ private:
         const uint32_t mask
     );
 
-    TypedNode buildTree(
-        std::span<const TypedNode> treeletRoots,
-        std::span<InteriorNode> nodes,
-        uint32_t &currentNodeIdx
-    );
+    TypedNode
+    buildTree(std::span<const TypedNode> treeletRoots, std::span<InteriorNode> nodes, uint32_t &currentNodeIdx);
 };
 
 } // namespace cblt::geom::crtp

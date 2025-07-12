@@ -4,7 +4,6 @@
 #include "render/data/camera.h"
 #include "render/material/material.h"
 
-
 #include <atomic>
 #include <memory>
 #include <string>

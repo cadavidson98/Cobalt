@@ -46,15 +46,19 @@ public:
 
         const CoUUID geometryID = _geometry.size();
 
-        _geometry.push_back(CoScene::GeometryComponent{
-            .mesh = cobaltMesh,
-            .transform = mesh.transform,
-        });
+        _geometry.push_back(
+            CoScene::GeometryComponent{
+                .mesh = cobaltMesh,
+                .transform = mesh.transform,
+            }
+        );
 
-        _primitives.push_back(CoScene::Primitive{
-            .geometryIdx = geometryID,
-            .materialIdx = materialID,
-        });
+        _primitives.push_back(
+            CoScene::Primitive{
+                .geometryIdx = geometryID,
+                .materialIdx = materialID,
+            }
+        );
         return true;
     }
 
@@ -68,8 +72,8 @@ public:
             // TODO: cache texture
         };
 
-        auto makeSpectrumNode = [](const std::variant<CoSpectrum, utils::MitsubaTexture> &value
-                                ) -> CoMaterialNode<CoSpectrum> {
+        auto makeSpectrumNode =
+            [](const std::variant<CoSpectrum, utils::MitsubaTexture> &value) -> CoMaterialNode<CoSpectrum> {
             if (std::holds_alternative<CoSpectrum>(value)) {
                 return CoMaterialNode(std::get<CoSpectrum>(value));
             }

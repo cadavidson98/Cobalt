@@ -23,26 +23,23 @@ class CoStorageMock : public CoPrimitiveStorageBase<CoStorageMock> {
     static constexpr int kGridSizeX = 1024;
     static constexpr int kGridSizeY = 1024;
 
-    public:
+public:
     CoStorageMock() {
         boxes.reserve(kGridSizeX * kGridSizeY);
         for (int y = 0; y < kGridSizeY; ++y) {
             for (int x = 0; x < kGridSizeX; ++x) {
-                boxes.emplace_back(
-                    simd::vec3f(x - 1.f, y - 1.f, -1.f),
-                    simd::vec3f(x + 1.f, y + 1.f, +1.f)
-                );
+                boxes.emplace_back(simd::vec3f(x - 1.f, y - 1.f, -1.f), simd::vec3f(x + 1.f, y + 1.f, +1.f));
             }
         }
     }
-    
+
     geom::CoAxisAlignedBoundingBox bounds() const {
         return geom::CoAxisAlignedBoundingBox{
             .min = boxes.front().min,
             .max = boxes.back().max,
         };
     }
-    
+
     void reorder(std::span<const MortonPrimitive> primitives) {
         const auto scratch = boxes;
         uint32_t idx = 0;
@@ -50,21 +47,23 @@ class CoStorageMock : public CoPrimitiveStorageBase<CoStorageMock> {
             boxes[idx] = scratch[mortonPrimitive.primitive.index];
         }
     }
-    
+
     std::vector<Primitive> primitives() const {
         std::vector<Primitive> prims;
         for (size_t index = 0; index < boxes.size(); ++index) {
             const auto &box = boxes[index];
-            prims.push_back(Primitive{
-                .type = PrimitiveType::kBox,
-                .boundingBox = box,
-                .index = uint32_t(index),
-            });
+            prims.push_back(
+                Primitive{
+                    .type = PrimitiveType::kBox,
+                    .boundingBox = box,
+                    .index = uint32_t(index),
+                }
+            );
         }
         return prims;
     }
-    
-    private:
+
+private:
     std::vector<cblt::geom::CoAxisAlignedBoundingBox> boxes;
 };
 
@@ -73,7 +72,7 @@ struct primitive_types<CoStorageMock> {
     static const PrimitiveTypes value = PrimitiveType::kBox;
 };
 
-}  // namespace cblt::geom::crtp
+} // namespace cblt::geom::crtp
 
 namespace cblt::geom::test {
 struct BoxStorage {
@@ -129,8 +128,8 @@ struct BoxStorage {
 };
 } // namespace cblt::geom::test
 
-class CobaltGeometryTest : public::testing::Test {
-    protected:
+class CobaltGeometryTest : public ::testing::Test {
+protected:
     CobaltGeometryTest() {
         storage = std::make_shared<cblt::geom::crtp::CoStorageMock>();
         old_storage = std::make_shared<cblt::geom::test::BoxStorage>();

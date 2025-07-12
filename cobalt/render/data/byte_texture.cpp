@@ -117,10 +117,12 @@ CoColor CoByteTexture::sample(const vec2f &uvCoord) const {
     case CoPixelFormat::Half : {
         std::span<const Imath::half> samples(static_cast<const Imath::half *>(_textureData.get()), numTexels);
         textureColor = sampleNeighborhood(samples, _numChannels, _textureSize, nearestTexel);
+        break;
     }
     case CoPixelFormat::Float : {
         std::span<const float> samples(static_cast<const float *>(_textureData.get()), numTexels);
         textureColor = sampleNeighborhood(samples, _numChannels, _textureSize, nearestTexel);
+        break;
     }
     case CoPixelFormat::Invalid :
     default : break;

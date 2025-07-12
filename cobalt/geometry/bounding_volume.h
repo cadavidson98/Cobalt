@@ -165,8 +165,7 @@ private:
             }
             [[fallthrough]];
         }
-        case PartitionMethod::Binary :
-            [[fallthrough]];
+        case PartitionMethod::Binary : [[fallthrough]];
         default : {
             splitIdx = (endIdx + startIdx) >> 1;
             break;

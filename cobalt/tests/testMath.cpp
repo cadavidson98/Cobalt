@@ -88,8 +88,6 @@ TEST(CobaltCoreMathTests, TestVec3f) {
     static const cblt::vec3f x(1.f, 0.f, 0.f);
     static const cblt::vec3f y(0.f, 1.f, 0.f);
     {
-        static const cblt::vec3f a(2.f, 4.f, 8.f);
-        static const cblt::vec3f b(10.f, 24.f, 56.f);
         // vector add
         const cblt::vec3f sum = x + y;
         EXPECT_EQ(sum, cblt::vec3f(1.f, 1.f, 0.f));
@@ -148,7 +146,7 @@ TEST(CobaltCoreMathTests, TestVec3f) {
         // length
 
         const cblt::vec3f z(-4.f, 5.f, -6.f);
-        const cblt::vec3f zero(0.f);
+        const cblt::vec3f zero(0.f, 0.f, 0.f);
 
         const float xLength = cblt::length(x);
         const float yLength = cblt::length(y);

@@ -20,7 +20,6 @@ namespace cblt::geom {
 class CoCollisionSystem {
 
 public:
-
     struct Component {
         PrimitiveType type;
         std::shared_ptr<CoMesh> mesh;
@@ -54,8 +53,6 @@ public:
 private:
     class PrimitiveStorage : public CoPrimitiveStorage {
     public:
-
-
         struct HeapArray {
             Primitive *ptr;
             size_t count;
@@ -72,7 +69,6 @@ private:
         void reorder(const HeapArray &primitives);
 
     private:
-
         Primitive *_primitives;
 
         CoSphere *_spheres;

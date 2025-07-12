@@ -569,11 +569,10 @@ bool readMitsuba(const std::string_view fileName, std::shared_ptr<MitsubaDelegat
                     }
 
                     delegate->readEmitter({
-                        .emissionMap =
-                            {
-                                          .fileName = fileName.c_str(),
-                                          .fileExtension = cblt::core::fileExtension(fileName.c_str()),
-                                          },
+                        .emissionMap = {
+                                        .fileName = fileName.c_str(),
+                                        .fileExtension = cblt::core::fileExtension(fileName.c_str()),
+                                        },
                     });
                 }
 
