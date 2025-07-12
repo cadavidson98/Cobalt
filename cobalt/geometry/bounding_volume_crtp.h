@@ -34,18 +34,13 @@ public:
     ~CoBoundingVolume();
 
 private:
-    static const uint32_t kInvalidIndex = -1;
-    static const uint8_t kMaxPrimitivesPerLeaf = 8;
+    static constexpr uint32_t kInvalidIndex = -1;
+    static constexpr uint8_t kMaxPrimitivesPerLeaf = 8;
 
     enum class Type {
         kInvalid = -1,
         kInterior,
         kLeaf,
-    };
-
-    struct Cluster {
-        size_t startIdx = kInvalidIndex;
-        size_t primitiveCount = 0;
     };
 
     struct TypedNode {
@@ -67,23 +62,17 @@ private:
     uint8_t primitivesPerLeaf;
     std::shared_ptr<StorageType> storage;
 
-    void buildIterative(const core::CoCallback &buildCallback);
-
-    void buildLeafNodes(std::span<const MortonPrimitive> primitives);
-    
     TypedNode buildTreelet(
-        std::span<const MortonPrimitive> mortonCluster,
+        std::span<const MortonPrimitive> mortonEncodedPrimitives,
         std::span<InteriorNode> interiorNodes,
         std::span<LeafNodeType> leafNodes,
-        const uint32_t interiorNodeOffset,
-        const uint32_t leafNodeOffset,
-        uint32_t &currentInteriorNodeIdx,
-        uint32_t &currentLeafNodeIdx,
+        uint32_t &currentLeafNodeIndex,
+        uint32_t &currentInteriorNodeIndex,
         const uint32_t mask
     );
 
-    TypedNode buildClusterTree(
-        std::span<const TypedNode> clusters,
+    TypedNode buildTree(
+        std::span<const TypedNode> treeletRoots,
         std::span<InteriorNode> nodes,
         uint32_t &currentNodeIdx
     );

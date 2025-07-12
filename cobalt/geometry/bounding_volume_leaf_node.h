@@ -14,8 +14,7 @@ namespace cblt::geom::crtp {
 class CoBoundingVolumeLeafNode {
 public:
 
-    CoBoundingVolumeLeafNode(std::shared_ptr<StorageType> storage, std::span<const MortonPrimitive> primitives)
-        : storage{storage} {
+    CoBoundingVolumeLeafNode(std::shared_ptr<StorageType> _storage, std::span<const MortonPrimitive> primitives) {
 
         static_assert(primitive_types<StorageType>::value != PrimitiveType::kNone, "storage must define primitive types");
 
@@ -23,17 +22,7 @@ public:
             const Primitive &primitive = mortonPrimitive.primitive;
         
             assert(primitive.type != PrimitiveType::kNone);
-            if (primitive.type == kSphere) {
-                spheres.push_back(primitive.index);
-            } else if (primitive.type == PrimitiveType::kTriangle) {
-                triangles.push_back(primitive.index);
-            } else if (primitive.type == PrimitiveType::kPatch) {
-                patches.push_back(primitive.index);
-            } else if (primitive.type == PrimitiveType::kBox) {
-                boxes.push_back(primitive.index);
-            } else if (primitive.type == PrimitiveType::kMesh) {
-                meshes.push_back(primitive.index);
-            }
+            boxIndices.push_back(primitive.index);
         }
 
     }
@@ -66,16 +55,8 @@ public:
 
     CoBoundingVolumeLeafNode() = default;
 private:
-
-    using PrimitiveIndices = std::vector<uint32_t>;
-
-    std::shared_ptr<StorageType> storage;
-
-    PrimitiveIndices spheres;
-    PrimitiveIndices triangles;
-    PrimitiveIndices patches;
-    PrimitiveIndices boxes;
-    PrimitiveIndices meshes;
+public:
+    std::vector<uint32_t> boxIndices;
 };
 
 }  // cblt::geom::crtp

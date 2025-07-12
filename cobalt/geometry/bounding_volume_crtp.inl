@@ -2,6 +2,7 @@
 #define CBLT_GEOM_BOUNDING_VOLUME_CRTP_INL
 
 #include "bounding_volume_crtp.h"
+#include "bounding_volume_types.h"
 
 #include "core/algorithms.h"
 #include "geometry/bounding_box.h"
@@ -13,48 +14,19 @@
 
 namespace cblt::geom::crtp {
 
-    template<typename StorageType>
-    requires isPrimitiveStorage<StorageType>
-CoBoundingVolume<StorageType>::CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions)
-    : primitivesPerLeaf{createOptions.maxPrimsInLeaf}, storage{createOptions.primitives} {
+namespace {
 
-    buildIterative(createOptions.buildCallback);
-}
+struct Cluster {
+    size_t startIdx = size_t(-1);
+    size_t primitiveCount = 0;
+};
 
-template<typename StorageType>
-    requires isPrimitiveStorage<StorageType>
-CoBoundingVolume<StorageType>::~CoBoundingVolume() {
-}
+struct NodeOffsets {
+    uint32_t interiorNode;
+    uint32_t leafNode;
+};
 
-template<typename StorageType>
-    requires isPrimitiveStorage<StorageType>
-void CoBoundingVolume<StorageType>::buildIterative(const core::CoCallback &buildCallback) {
-    // buildCallback.pump("encoding primitives", 0);
-
-    std::vector<MortonPrimitive> mortonEncodedPrimitives = storage->mortonEncodePrimitives();
-
-    // buildCallback.pump("sorting primitives", 10);
-
-    auto mortonKeyer = [](const MortonPrimitive &lhs) {
-        return lhs.mortonCode;
-    };
-
-    core::radix_sort<30>(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), mortonKeyer);
-
-    storage->reorder(mortonEncodedPrimitives);
-
-    // buildCallback.pump("finding clusters", 20);
-
-    buildLeafNodes(mortonEncodedPrimitives);
-
-    // buildCallback.pump("building interior nodes");
-}
-
-template<typename StorageType>
-    requires isPrimitiveStorage<StorageType>
-void CoBoundingVolume<StorageType>::buildLeafNodes(
-    std::span<const MortonPrimitive> primitives
-) {
+std::vector<Cluster> findClusters(std::span<const MortonPrimitive> primitives) {
     std::vector<Cluster> clusters;
     
     size_t startIdx = 0;
@@ -73,161 +45,198 @@ void CoBoundingVolume<StorageType>::buildLeafNodes(
         }
     }
 
-    clusters.push_back({
-        .startIdx = startIdx,
-        .primitiveCount = endIdx - startIdx,
-    });
+    if (endIdx - startIdx > 0) {
+        clusters.push_back({
+            .startIdx = startIdx,
+            .primitiveCount = endIdx - startIdx,
+        });
+    }   
 
-    std::vector<uint32_t> leafNodeOffsets(clusters.size());
-    std::vector<uint32_t> interiorNodeOffsets(clusters.size());
+    return clusters;
+}
 
-    auto computeMaxLeafNodes = [leafNodeSize=size_t(primitivesPerLeaf)](const Cluster &cluster) {
-        return utils::divUp(cluster.primitiveCount, leafNodeSize);
+std::vector<NodeOffsets> prefixSum(std::span<const Cluster> clusters, size_t primitivesPerLeaf) {
+    std::vector<NodeOffsets> clusterOffsets(clusters.size() + 1);
+
+    auto computeMaxLeafNodes = [leafNodeSize=primitivesPerLeaf](const Cluster &cluster) -> size_t {
+        // return utils::divUp(cluster.primitiveCount, leafNodeSize);
+        return cluster.primitiveCount;
     };
 
-    auto computeMaxInteriorNodes = [](const uint32_t leafNodeCount) {
+    auto computeMaxInteriorNodes = [](const size_t leafNodeCount) -> size_t {
+        assert(leafNodeCount > 0 && "must have at least 1 leaf node");
         return leafNodeCount - 1;
     };
-    
-    uint32_t totalLeafNodes = 0;
-    uint32_t totalInteriorNodes = computeMaxInteriorNodes(clusters.size());
-    for (uint32_t idx = 0; idx < clusters.size(); ++idx) {
-        leafNodeOffsets[idx] = totalLeafNodes;
-        interiorNodeOffsets[idx] = totalInteriorNodes;
 
-        const uint32_t leafNodeCount = computeMaxLeafNodes(clusters[idx]);;
+    uint32_t totalInteriorNodes = computeMaxInteriorNodes(clusters.size());
+    uint32_t totalLeafNodes = 0;
+
+    for (size_t idx = 0; idx < clusters.size(); ++idx) {
+        clusterOffsets[idx].leafNode = totalLeafNodes;
+        clusterOffsets[idx].interiorNode = totalInteriorNodes;
+
+        const uint32_t leafNodeCount = computeMaxLeafNodes(clusters[idx]);
 
         totalLeafNodes += leafNodeCount;
         totalInteriorNodes += computeMaxInteriorNodes(leafNodeCount);
     }
 
-    leafNodes.resize(totalLeafNodes);
-    interiorNodes.resize(totalInteriorNodes);
+    clusterOffsets.back() = NodeOffsets{
+        .interiorNode = totalInteriorNodes,
+        .leafNode = totalLeafNodes,
+    };
 
-    std::vector<TypedNode> treeletRoots(clusters.size());
+    return clusterOffsets;
+}
 
-    for (uint32_t idx = 0; idx < clusters.size(); ++idx) {
-        const Cluster &cluster = clusters[idx];
-        std::span<const MortonPrimitive> primitiveCluster =
-            primitives.subspan(cluster.startIdx, cluster.primitiveCount);
-        uint32_t currentInteriorNodeIdx = 0;
-        uint32_t currentLeafNodeIdx = 0;
+}  // anonymous namespace
 
-        const uint32_t interiorNodeStartIdx = interiorNodeOffsets[idx];
-        const uint32_t interiorNodeEndIdx = idx < clusters.size() ? interiorNodeOffsets[idx + 1] : totalInteriorNodes;
-        std::span<InteriorNode> clusterInteriorNodes(
-            std::next(interiorNodes.begin(), interiorNodeStartIdx),
-            std::next(interiorNodes.begin(), interiorNodeEndIdx)
-        );
+template<typename StorageType>
+    requires isPrimitiveStorage<StorageType>
+CoBoundingVolume<StorageType>::CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions)
+    : primitivesPerLeaf{createOptions.maxPrimsInLeaf}, storage{createOptions.primitives} {
+        std::vector<MortonPrimitive> mortonEncodedPrimitives = storage->mortonEncodePrimitives();
 
-        const uint32_t leafNodeStartIdx = leafNodeOffsets[idx];
-        const uint32_t leafNodeEndIdx = idx < clusters.size() ? leafNodeOffsets[idx + 1] : totalLeafNodes;
-        std::span<LeafNodeType> clusterLeafNodes(
-            std::next(leafNodes.begin(), leafNodeStartIdx),
-            std::next(leafNodes.begin(), leafNodeEndIdx)
-        );
+        auto mortonKeyer = [](const MortonPrimitive &lhs) {
+            return lhs.mortonCode;
+        };
+    
+        core::radix_sort<30>(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), mortonKeyer);
+    
+        // TODO: Does this reorder ruin the indices that I am storing on the morton encoded indices?
+        // The answer is Yes!
+        storage->reorder(mortonEncodedPrimitives);
+    
+        const std::vector<Cluster> clusters = findClusters(mortonEncodedPrimitives);
+    
+        const std::vector<NodeOffsets> offsets = prefixSum(clusters, primitivesPerLeaf);
+    
+        assert(offsets.size() == clusters.size() + 1 && "prefix sum array must be larger than clusters");
+    
+        const NodeOffsets &treeSize = offsets.back();
+    
+        leafNodes.resize(treeSize.leafNode);
+        interiorNodes.resize(treeSize.interiorNode);
+    
+        std::vector<TypedNode> treeletRoots(clusters.size());
+    
+        for (size_t idx = 0; idx < clusters.size(); ++idx) {
+            const Cluster &cluster = clusters[idx];
+    
+            auto first = mortonEncodedPrimitives.begin() + cluster.startIdx;
+            auto last = first + cluster.primitiveCount;
+            std::span<const MortonPrimitive> clusteredPrimitives{ first, last };
+    
+            uint32_t currentLeafNodeIdx = offsets[idx].leafNode;
+            uint32_t currentInteriorNodeIdx = offsets[idx].interiorNode;
+    
+            assert(idx != offsets.size() && "must not index to the total node sizes in prefix sum array");
+    
+            treeletRoots[idx] = buildTreelet(
+                clusteredPrimitives,
+                interiorNodes,
+                leafNodes,
+                currentLeafNodeIdx,
+                currentInteriorNodeIdx,
+                1 << 21
+            );
+        }
+    
+        uint32_t currentNodeIdx = 0;
+        buildTree(treeletRoots, interiorNodes, currentNodeIdx);
+}
 
-        treeletRoots[idx] = buildTreelet(
-            primitiveCluster,
-            clusterInteriorNodes,
-            clusterLeafNodes, 
-            interiorNodeStartIdx,
-            leafNodeStartIdx,
-            currentInteriorNodeIdx,
-            currentLeafNodeIdx,
-            1 << 22
-        );
-    }
-
-    // build tree for the treelet roots
-    uint32_t treeNodeIdx = 0;
-    buildClusterTree(
-        treeletRoots,
-        {interiorNodes.begin(), std::next(interiorNodes.begin(), clusters.size())},
-        treeNodeIdx
-    );
+template<typename StorageType>
+    requires isPrimitiveStorage<StorageType>
+CoBoundingVolume<StorageType>::~CoBoundingVolume() {
 }
 
 template<typename StorageType>
     requires isPrimitiveStorage<StorageType>
 CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTreelet(
-    std::span<const MortonPrimitive> mortonCluster,
+    std::span<const MortonPrimitive> mortonEncodedPrimitives,
     std::span<InteriorNode> interiorNodes,
     std::span<LeafNodeType> leafNodes,
-    const uint32_t interiorNodeOffset,
-    const uint32_t leafNodeOffset,
-    uint32_t &currentInteriorNodeIdx,
     uint32_t &currentLeafNodeIdx,
+    uint32_t &currentInteriorNodeIdx,
     const uint32_t mask
 ) {
     auto mergeBoundingBoxes = [](const CoAxisAlignedBoundingBox &lhs, const MortonPrimitive &rhs) {
         return CoAxisAlignedBoundingBox::Union(lhs, rhs.primitive.boundingBox);
     };
 
+    assert(mortonEncodedPrimitives.size() > 0);
+
     const CoAxisAlignedBoundingBox boundingBox = std::accumulate(
-        mortonCluster.begin(),
-        mortonCluster.end(),
-        mortonCluster.front().primitive.boundingBox,
+        mortonEncodedPrimitives.begin(),
+        mortonEncodedPrimitives.end(),
+        mortonEncodedPrimitives.front().primitive.boundingBox,
         mergeBoundingBoxes
     );
 
-    if (mortonCluster.size() < primitivesPerLeaf || !mask) {
-        leafNodes[currentLeafNodeIdx] = LeafNodeType(storage, mortonCluster);
+    if ((mortonEncodedPrimitives.size() <= primitivesPerLeaf) || !mask) {
+        const uint32_t leafNodeIdx = currentLeafNodeIdx++;
+
+        assert(mortonEncodedPrimitives.size() <= primitivesPerLeaf);
+        assert(leafNodeIdx < leafNodes.size() && "leaf node index out of bounds");
+
+        leafNodes[leafNodeIdx] = LeafNodeType(storage, mortonEncodedPrimitives);
         return TypedNode {
             .boundingBox = boundingBox,
-            .index = leafNodeOffset + (currentLeafNodeIdx++),
+            .index = leafNodeIdx,
             .type = Type::kLeaf,
         };
     }
 
-    const uint32_t frontMask = mortonCluster.front().mortonCode & mask;
-    const uint32_t backMask = mortonCluster.back().mortonCode & mask;
+    const uint32_t frontMask = mortonEncodedPrimitives.front().mortonCode & mask;
+    const uint32_t backMask = mortonEncodedPrimitives.back().mortonCode & mask;
 
     if (frontMask == backMask) {
         return buildTreelet(
-            mortonCluster, 
+            mortonEncodedPrimitives, 
             interiorNodes,
             leafNodes,
-            interiorNodeOffset,
-            leafNodeOffset,
+            currentLeafNodeIdx,
             currentInteriorNodeIdx,
-            currentLeafNodeIdx, 
             mask >> 1
         );
+
+        assert(false && "should never execute");
     }
 
     auto isInterval = [mask, frontMask](uint32_t ref, const MortonPrimitive &val) {
         return ref < uint32_t((mask & val.mortonCode) != frontMask);
     };
 
-    auto spliterator = std::upper_bound(mortonCluster.begin(), mortonCluster.end(), 0u, isInterval);
-    assert(spliterator != mortonCluster.end() && "should always partition sorted interval");
+    auto spliterator = std::upper_bound(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), 0u, isInterval);
+
+    assert(spliterator != mortonEncodedPrimitives.begin() && spliterator != mortonEncodedPrimitives.end() && "should always partition sorted interval");
+
+    const uint32_t interiorNodeIndex = currentInteriorNodeIdx++;
 
     const TypedNode interior{
         .boundingBox = boundingBox,
-        .index = interiorNodeOffset + (currentInteriorNodeIdx++),
+        .index = interiorNodeIndex,
         .type = Type::kInterior,
     };
 
-    interiorNodes[interior.index].left = buildTreelet(
-        {mortonCluster.begin(), spliterator}, 
+    assert(interiorNodeIndex < interiorNodes.size() && "interior node index out of bounds");
+
+    interiorNodes[interiorNodeIndex].left = buildTreelet(
+        {mortonEncodedPrimitives.begin(), spliterator}, 
         interiorNodes,
         leafNodes,
-        interiorNodeOffset,
-        leafNodeOffset,
-        currentInteriorNodeIdx,
         currentLeafNodeIdx,
+        currentInteriorNodeIdx,
         mask >> 1
     );
-    
-    interiorNodes[interior.index].right = buildTreelet(
-        {spliterator, mortonCluster.end()},
+
+    interiorNodes[interiorNodeIndex].right = buildTreelet(
+        {spliterator, mortonEncodedPrimitives.end()},
         interiorNodes,
         leafNodes,
-        interiorNodeOffset,
-        leafNodeOffset,
-        currentInteriorNodeIdx,
         currentLeafNodeIdx,
+        currentInteriorNodeIdx,
         mask >> 1
     );
 
@@ -236,14 +245,14 @@ CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTre
 
 template<typename StorageType>
     requires isPrimitiveStorage<StorageType>
-CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildClusterTree(
-    std::span<const TypedNode> clusters,
+CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTree(
+    std::span<const TypedNode> treeletRoots,
     std::span<InteriorNode> nodes,
     uint32_t &currentNodeIdx
 ) {
-    if (clusters.size() == 1) {
-        return clusters.front();
-    } else if (clusters.empty()) {
+    if (treeletRoots.size() == 1) {
+        return treeletRoots.front();
+    } else if (treeletRoots.empty()) {
         return TypedNode{};
     }
 
@@ -252,9 +261,9 @@ CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildClu
     };
 
     CoAxisAlignedBoundingBox boundingBox = std::accumulate(
-        clusters.begin(),
-        clusters.end(),
-        clusters.front().boundingBox,
+        treeletRoots.begin(),
+        treeletRoots.end(),
+        treeletRoots.front().boundingBox,
         mergeBoundingBoxes
     );
 
@@ -264,15 +273,15 @@ CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildClu
         .type = Type::kInterior,
     };
 
-    const size_t splitIdx = clusters.size() >> 1;
-    nodes[interior.index].left = buildClusterTree(
-        clusters.subspan(0, splitIdx),
+    const size_t splitIdx = treeletRoots.size() >> 1;
+    nodes[interior.index].left = buildTree(
+        treeletRoots.subspan(0, splitIdx),
         nodes,
         currentNodeIdx
     );
 
-    nodes[interior.index].right = buildClusterTree(
-        clusters.subspan(splitIdx, clusters.size() - splitIdx),
+    nodes[interior.index].right = buildTree(
+        treeletRoots.subspan(splitIdx, treeletRoots.size() - splitIdx),
         nodes,
         currentNodeIdx
     );

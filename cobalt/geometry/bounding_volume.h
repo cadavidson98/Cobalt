@@ -163,10 +163,13 @@ private:
             if (splitIdx != startIdx && splitIdx != endIdx) {
                 break;
             }
+            [[fallthrough]];
         }
         case PartitionMethod::Binary :
+            [[fallthrough]];
         default : {
             splitIdx = (endIdx + startIdx) >> 1;
+            break;
         }
         }
         // make node

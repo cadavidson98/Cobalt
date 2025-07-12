@@ -20,13 +20,14 @@ static constexpr float kEpsilon = 1e-4f;
 namespace cblt::geom::crtp {
 
 class CoStorageMock : public CoPrimitiveStorageBase<CoStorageMock> {
-    static constexpr int kGridSize = 2;
+    static constexpr int kGridSizeX = 1024;
+    static constexpr int kGridSizeY = 1024;
 
     public:
     CoStorageMock() {
-        boxes.reserve(kGridSize * kGridSize);
-        for (int y = 0; y < kGridSize; ++y) {
-            for (int x = 0; x < kGridSize; ++x) {
+        boxes.reserve(kGridSizeX * kGridSizeY);
+        for (int y = 0; y < kGridSizeY; ++y) {
+            for (int x = 0; x < kGridSizeX; ++x) {
                 boxes.emplace_back(
                     simd::vec3f(x - 1.f, y - 1.f, -1.f),
                     simd::vec3f(x + 1.f, y + 1.f, +1.f)
