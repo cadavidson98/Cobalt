@@ -1,6 +1,9 @@
+#include "core/morton_encoding.h"
+
 #include "geometry/bounding_box.h"
 #include "geometry/bounding_volume.h"
 #include "geometry/bounding_volume_crtp.h"
+#include "geometry/bounding_volume_types.h"
 #include "geometry/intersection.h"
 #include "geometry/ray.h"
 #include "geometry/sphere.h"
@@ -11,6 +14,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -20,38 +24,87 @@ static constexpr float kEpsilon = 1e-4f;
 namespace cblt::geom::crtp {
 
 class CoStorageMock : public CoPrimitiveStorageBase<CoStorageMock> {
-    static constexpr int kGridSizeX = 1024;
-    static constexpr int kGridSizeY = 1024;
-
 public:
     CoStorageMock() {
+        bool flip = 0;
         boxes.reserve(kGridSizeX * kGridSizeY);
         for (int y = 0; y < kGridSizeY; ++y) {
             for (int x = 0; x < kGridSizeX; ++x) {
-                boxes.emplace_back(simd::vec3f(x - 1.f, y - 1.f, -1.f), simd::vec3f(x + 1.f, y + 1.f, +1.f));
+                if (flip) {
+                    boxes.emplace_back(simd::vec3f(x - 1.f, y - 1.f, -1.f), simd::vec3f(x + 1.f, y + 1.f, +1.f));
+                } else {
+                    spheres.emplace_back(simd::vec3f(float(x), float(y), 0.f), 1.f);
+                }
+                flip = !flip;
             }
         }
     }
 
     geom::CoAxisAlignedBoundingBox bounds() const {
-        return geom::CoAxisAlignedBoundingBox{
-            .min = boxes.front().min,
-            .max = boxes.back().max,
-        };
+        return gridBounds;
     }
 
-    void reorder(std::span<const MortonPrimitive> primitives) {
+    void reorder(std::span<MortonPrimitive> primitives) {
         const auto scratch = boxes;
-        uint32_t idx = 0;
-        for (const auto &mortonPrimitive : primitives) {
-            boxes[idx] = scratch[mortonPrimitive.primitive.index];
+        uint32_t boxIdx = 0;
+        uint32_t sphereIdx = 0;
+
+        std::vector<CoAxisAlignedBoundingBox> boxesCopy = boxes;
+        std::vector<CoSphere> spheresCopy = spheres;
+
+        for (MortonPrimitive &mortonPrimitive : primitives) {
+            switch(mortonPrimitive.primitive.type) {
+                case PrimitiveType::kBox: {
+                    const size_t newIdx = boxIdx++;
+                    boxes[newIdx] = boxesCopy[mortonPrimitive.primitive.index];
+                    mortonPrimitive.primitive.index = newIdx;
+                    continue;
+                }
+                case PrimitiveType::kSphere: {
+                    const size_t newIdx = sphereIdx++;
+                    spheres[newIdx] = spheresCopy[mortonPrimitive.primitive.index];
+                    mortonPrimitive.primitive.index = newIdx;
+                    continue;
+                }
+                case PrimitiveType::kMesh: [[fallthrough]];
+                case PrimitiveType::kPatch: [[fallthrough]];
+                case PrimitiveType::kTriangle: [[fallthrough]];
+                default:
+                ASSERT_TRUE(false);
+            }
         }
+    }
+
+    std::vector<MortonPrimitive> mortonEncodePrimitives() const {
+        const CoAxisAlignedBoundingBox primitiveBounds = bounds();
+        const simd::vec3f boundsExtent = primitiveBounds.Scales();
+        const simd::vec3f boundsMin = primitiveBounds.min;
+        std::vector<Primitive> storagePrimitives = primitives();
+        auto encodePrimitive = [&boundsExtent, &boundsMin](const Primitive &primitive) {
+            static constexpr float kFloatToUint = float((1 << 10) - 1);
+            const simd::vec3f normalizedPosition = (primitive.boundingBox.Center() - boundsMin) / boundsExtent;
+            const std::array<float, 4> values = (kFloatToUint * normalizedPosition).Values();
+            return MortonPrimitive{
+                .mortonCode = core::mortonEncode(values[0], values[1], values[2]),
+                .primitive = primitive,
+            };
+        };
+
+        std::vector<MortonPrimitive> mortonEncodedPrimitives(storagePrimitives.size());
+        std::transform(
+            storagePrimitives.begin(),
+            storagePrimitives.end(),
+            mortonEncodedPrimitives.begin(),
+            encodePrimitive
+        );
+
+        return mortonEncodedPrimitives;
     }
 
     std::vector<Primitive> primitives() const {
         std::vector<Primitive> prims;
         for (size_t index = 0; index < boxes.size(); ++index) {
-            const auto &box = boxes[index];
+            const CoAxisAlignedBoundingBox &box = boxes[index];
             prims.push_back(
                 Primitive{
                     .type = PrimitiveType::kBox,
@@ -60,11 +113,35 @@ public:
                 }
             );
         }
+
+        for (size_t index = 0; index < spheres.size(); ++index) {
+            const CoSphere &sphere = spheres[index];
+            const CoAxisAlignedBoundingBox boundingBox = {
+                .min = sphere.center - simd::vec3f(sphere.radius),
+                .max = sphere.center + simd::vec3f(sphere.radius),
+            };
+
+            prims.push_back(Primitive{
+                .type = PrimitiveType::kSphere,
+                .boundingBox = boundingBox,
+                .index = uint32_t(index),
+            });
+        }
+
         return prims;
     }
 
 private:
+    static constexpr int kGridSizeX = 1024;
+    static constexpr int kGridSizeY = 1024;
+
+    const CoAxisAlignedBoundingBox gridBounds = {
+        .min = simd::vec3f(-1.f, -1.f, -1.f),
+        .max = simd::vec3f(kGridSizeX, kGridSizeY, 1.f),
+    };
+
     std::vector<cblt::geom::CoAxisAlignedBoundingBox> boxes;
+    std::vector<cblt::geom::CoSphere> spheres;
 };
 
 template<>

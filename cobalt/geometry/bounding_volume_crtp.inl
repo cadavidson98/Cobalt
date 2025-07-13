@@ -100,26 +100,24 @@ CoBoundingVolume<StorageType>::CoBoundingVolume(const CreateWithPrimitivesInfo &
         auto mortonKeyer = [](const MortonPrimitive &lhs) {
             return lhs.mortonCode;
         };
-    
+
         core::radix_sort<30>(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), mortonKeyer);
-    
-        // TODO: Does this reorder ruin the indices that I am storing on the morton encoded indices?
-        // The answer is Yes!
+
         storage->reorder(mortonEncodedPrimitives);
-    
+
         const std::vector<Cluster> clusters = findClusters(mortonEncodedPrimitives);
-    
+
         const std::vector<NodeOffsets> offsets = prefixSum(clusters, primitivesPerLeaf);
-    
+
         assert(offsets.size() == clusters.size() + 1 && "prefix sum array must be larger than clusters");
-    
+
         const NodeOffsets &treeSize = offsets.back();
-    
+
         leafNodes.resize(treeSize.leafNode);
         interiorNodes.resize(treeSize.interiorNode);
-    
+
         std::vector<TypedNode> treeletRoots(clusters.size());
-    
+
         for (size_t idx = 0; idx < clusters.size(); ++idx) {
             const Cluster &cluster = clusters[idx];
     
@@ -180,7 +178,7 @@ CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTre
         assert(mortonEncodedPrimitives.size() <= primitivesPerLeaf);
         assert(leafNodeIdx < leafNodes.size() && "leaf node index out of bounds");
 
-        leafNodes[leafNodeIdx] = LeafNodeType(storage, mortonEncodedPrimitives);
+        leafNodes[leafNodeIdx] = LeafNodeType(mortonEncodedPrimitives);
         return TypedNode {
             .boundingBox = boundingBox,
             .index = leafNodeIdx,
