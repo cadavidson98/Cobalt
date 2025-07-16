@@ -19,7 +19,7 @@ struct IntersectionEvent {
     uint32_t primitiveIndex = 0;
 };
 
-bool raySphereIntersection(const CoRay &ray, const CoSphere &sphere, IntersectionEvent &intersectionEvent);
+bool raySphereIntersection(const CoRay &ray, const CoSphere &sphere, float &timeMin, float &timeMax);
 
 bool rayTriangleIntersection(
     const CoRay &ray,

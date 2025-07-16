@@ -2,6 +2,7 @@
 #define CBLT_GEOM_BOUNDING_VOLUME_TYPES_H
 
 #include "bounding_box.h"
+#include "sphere.h"
 
 #include "core/size_types.h"
 
@@ -47,13 +48,26 @@ public:
         return static_cast<Derived *>(this)->reorder(primitives);
     }
 
+    std::span<const CoSphere> spheres(size_t start, size_t count) const {
+        return static_cast<Derived *>(this)->spheres(start, count);
+    }
+
+    std::span<const CoAxisAlignedBoundingBox> boxes(size_t start, size_t count) const {
+        return static_cast<Derived *>(this)->boxes(start, count);
+    }
+
 protected:
     CoPrimitiveStorageBase() = default;
 };
 
+struct IntersectionResult {
+    float hitTime = std::numeric_limits<float>::max();
+    Primitive primitive;
+};
+
 template<typename T>
 struct primitive_types {
-    static const PrimitiveTypes value = PrimitiveType::kNone;
+    static constexpr PrimitiveTypes value = PrimitiveType::kNone;
 };
 
 template<typename BoundingVolumeStorage>

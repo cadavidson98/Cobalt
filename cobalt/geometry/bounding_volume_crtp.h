@@ -7,6 +7,7 @@
 
 #include "core/callback.h"
 #include "core/size_types.h"
+#include "geometry/intersection.h"
 #include "math/math_types.h"
 
 #include <cassert>
@@ -32,6 +33,8 @@ public:
 
     ~CoBoundingVolume();
 
+    IntersectionResult intersects(const CoRay &ray) const;
+
 private:
     static constexpr uint32_t kInvalidIndex = -1;
     static constexpr uint8_t kMaxPrimitivesPerLeaf = 8;
@@ -55,6 +58,7 @@ private:
 
     using LeafNodeType = CoBoundingVolumeLeafNode<StorageType>;
 
+    CoAxisAlignedBoundingBox boundingBox;
     std::vector<InteriorNode> interiorNodes;
     std::vector<LeafNodeType> leafNodes;
 

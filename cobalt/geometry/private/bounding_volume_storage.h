@@ -2,15 +2,14 @@
 #define CBLT_GEOM_BOUNDING_VOLUME_STORAGE_H
 
 #include "bounding_volume_types.h"
+
 #include <filesystem>
 
 namespace cblt::geom::crtp {
 
 class CoBoundingVolumeStorage {
 public:
-
 private:
-
 };
 
 enum Format {
@@ -55,19 +54,14 @@ void reorder(CStyleStorage *storage) {
     for (size_t primitiveIdx = 0; primitiveIdx < copy->numPrimitives; ++primitiveIdx) {
         Primitive primitive = copy->primitives[primitiveIdx];
         switch (primitive.type) {
-        case PrimitiveType::kSphere:
-            storage->spheres[(sphereIdx++)] = copy->spheres[primitive.index];
-            continue;
-        case PrimitiveType::kBox:
-            storage->boxes[(boxIdx++)] = copy->boxes[primitive.index];
-            continue;
-        case PrimitiveType::kMesh:
-            storage->meshes[(meshIdx++)] = copy->meshes[primitive.index];
-        default: [[fallthrough]];
+        case PrimitiveType::kSphere : storage->spheres[(sphereIdx++)] = copy->spheres[primitive.index]; continue;
+        case PrimitiveType::kBox : storage->boxes[(boxIdx++)] = copy->boxes[primitive.index]; continue;
+        case PrimitiveType::kMesh : storage->meshes[(meshIdx++)] = copy->meshes[primitive.index];
+        default : [[fallthrough]];
         }
     }
 }
 
-}  // namespace cblt::geom
+} // namespace cblt::geom::crtp
 
-#endif  // CBLT_GEOM_BOUNDING_VOLUME_STORAGE_H
+#endif // CBLT_GEOM_BOUNDING_VOLUME_STORAGE_H

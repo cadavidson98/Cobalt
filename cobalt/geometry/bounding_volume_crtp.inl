@@ -6,10 +6,13 @@
 
 #include "core/algorithms.h"
 #include "geometry/bounding_box.h"
+#include "geometry/intersection.h"
 #include "math/math_utilities.h"
 
 #include <algorithm>
 #include <cstdint>
+#include <deque>
+#include <limits>
 #include <numeric>
 
 namespace cblt::geom::crtp {
@@ -58,8 +61,7 @@ std::vector<Cluster> findClusters(std::span<const MortonPrimitive> primitives) {
 std::vector<NodeOffsets> prefixSum(std::span<const Cluster> clusters, size_t primitivesPerLeaf) {
     std::vector<NodeOffsets> clusterOffsets(clusters.size() + 1);
 
-    auto computeMaxLeafNodes = [leafNodeSize=primitivesPerLeaf](const Cluster &cluster) -> size_t {
-        // return utils::divUp(cluster.primitiveCount, leafNodeSize);
+    auto computeMaxLeafNodes = [](const Cluster &cluster) -> size_t {
         return cluster.primitiveCount;
     };
 
@@ -142,11 +144,67 @@ CoBoundingVolume<StorageType>::CoBoundingVolume(const CreateWithPrimitivesInfo &
     
         uint32_t currentNodeIdx = 0;
         buildTree(treeletRoots, interiorNodes, currentNodeIdx);
+
+        const InteriorNode &root = interiorNodes[0];
+        boundingBox = CoAxisAlignedBoundingBox::Union(root.left.boundingBox, root.right.boundingBox);
 }
 
 template<typename StorageType>
     requires isPrimitiveStorage<StorageType>
 CoBoundingVolume<StorageType>::~CoBoundingVolume() {
+}
+
+template<typename StorageType>
+    requires isPrimitiveStorage<StorageType>
+IntersectionResult CoBoundingVolume<StorageType>::intersects(const CoRay &ray) const {
+    const TypedNode kRootNode = {
+        .boundingBox = boundingBox,
+        .index = 0,
+        .type = Type::kInterior,
+    };
+
+    std::deque<TypedNode> nodeStack;
+    nodeStack.push_back(kRootNode);
+
+    float treeTimeMin = 0;
+    float treeTimeMax = 0;
+
+    while(!nodeStack.empty()) {
+        const TypedNode current = nodeStack.front();
+        nodeStack.pop_front();
+
+        if (!rayAxisAlignedBoundingBoxIntersection(ray, current.boundingBox, treeTimeMin, treeTimeMax)) {
+            continue;
+        }
+
+        switch (current.type) {
+            case Type::kInterior: {
+                const InteriorNode &node = interiorNodes[current.index];
+                nodeStack.emplace_front(node.right);
+                nodeStack.emplace_front(node.left);
+                continue;
+            }
+            case Type::kLeaf: {
+                const LeafNodeType &node = leafNodes[current.index];
+                const IntersectionResult result = node.intersects(*storage, ray);
+                if (result.hitTime < ray.maxDist) {
+                    return result;
+                }
+                continue;
+            }
+            case Type::kInvalid: [[fallthrough]];
+            default: assert(false);
+        }
+    }
+
+    return IntersectionResult {
+        .hitTime = std::numeric_limits<float>::max(),
+        .primitive = {
+            .type = kNone,
+            .boundingBox = boundingBox,
+            .index = kInvalidIndex,
+        },
+    };
 }
 
 template<typename StorageType>

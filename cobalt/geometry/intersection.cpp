@@ -7,29 +7,31 @@
 #include "triangle.h"
 
 #include "core/size_types.h"
+#include "math/simd/simd_vec3.h"
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace cblt::geom {
 
-bool raySphereIntersection(const CoRay &ray, const CoSphere &sphere, IntersectionEvent &intersectionEvent) {
+bool raySphereIntersection(const CoRay &ray, const CoSphere &sphere, float &timeMin, float &timeMax) {
     simd::vec3f centerToPoint = ray.pos - sphere.center;
     // solve quadratic equation At^2 + Bt + C = 0
-    float A = simd::dot(ray.dir, ray.dir);
-    float B = 2.f * simd::dot(centerToPoint, ray.dir);
+    const float A = simd::dot(ray.dir, ray.dir);
+    const float B = 2.f * simd::dot(centerToPoint, ray.dir);
     float C = simd::dot(centerToPoint, centerToPoint) - sphere.radius * sphere.radius;
 
-    float magicNumber = B * B - 4.f * A * C;
-    if (magicNumber < 0.f) {
+    const float discriminant = B * B - 4.f * A * C;
+    if (discriminant < 0.f) {
         return false;
     }
 
-    float coeff = std::sqrt(magicNumber);
-    intersectionEvent.timeMin = (-B + coeff) / (2.f * A);
-    intersectionEvent.timeMax = (-B - coeff) / (2.f * A);
-    if (intersectionEvent.timeMin > intersectionEvent.timeMax) {
-        std::swap(intersectionEvent.timeMin, intersectionEvent.timeMax);
+    const float coeff = std::sqrt(discriminant);
+    timeMin = (-B + coeff) / (2.f * A);
+    timeMax = (-B - coeff) / (2.f * A);
+    if (timeMin > timeMax) {
+        std::swap(timeMin, timeMax);
     }
 
     return true;
@@ -168,8 +170,8 @@ bool rayAxisAlignedBoundingBoxIntersection(
     float &minTime,
     float &maxTime
 ) {
-    const simd::vec3f minIntersectTimes = (aabb.min - ray.pos) * ray.invDir;
-    const simd::vec3f maxIntersectTimes = (aabb.max - ray.pos) * ray.invDir;
+    const simd::vec3f minIntersectTimes = simd::maskNaN((aabb.min - ray.pos) * ray.invDir, std::numeric_limits<float>::lowest());
+    const simd::vec3f maxIntersectTimes = simd::maskNaN((aabb.max - ray.pos) * ray.invDir, std::numeric_limits<float>::max());
 
     const simd::vec3f closestTimes = simd::min(minIntersectTimes, maxIntersectTimes);
     const simd::vec3f farthestTimes = simd::max(minIntersectTimes, maxIntersectTimes);
@@ -178,7 +180,7 @@ bool rayAxisAlignedBoundingBoxIntersection(
     maxTime = simd::reduceMin(farthestTimes);
 
     if (maxTime < minTime) {
-        std::swap(minTime, maxTime);
+        return false;
     }
 
     if (minTime < 0.f) {
