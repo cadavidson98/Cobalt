@@ -114,6 +114,7 @@ bool renderCommand(int argc, char **argv) {
     );
 
     if (!defaultScene) {
+        std::cout << "Failed to load scene" << std::endl;
         return false;
     }
 
@@ -151,6 +152,10 @@ bool renderCommand(int argc, char **argv) {
     };
 
     std::shared_ptr<render::CoCamera> camera = defaultScene->camera();
+    if (!camera) {
+        std::cerr << "Missing Camera" << std::endl;
+        return false;
+    }
 
     const uint32_t numTotalPixels = kWidth * kHeight;
     const uint32_t pumpValue = 5;
@@ -164,15 +169,11 @@ bool renderCommand(int argc, char **argv) {
             if (hitMesh) {
                 renderTarget->write({pixelX, pixelY}, {1.f, 0.f, 0.f, 1.f});
             } else {
+                // FIXME: This is garbage (literally)
                 const render::CoColor environmentColor = defaultScene->environment(ray);
                 renderTarget->write(
                     {pixelX, pixelY},
-                    {
-                        environmentColor.r,
-                        environmentColor.g,
-                        environmentColor.b,
-                        1.f,
-                    }
+                    environmentColor
                 );
             }
             const uint32_t currentPixel = pixelY * kWidth + pixelX;

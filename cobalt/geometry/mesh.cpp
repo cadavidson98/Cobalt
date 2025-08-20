@@ -1,212 +1,134 @@
 #include "mesh.h"
 
+#include "bounding_box.h"
+#include "bounding_volume_mesh_storage.h"
+#include "bounding_volume_types.h"
 #include "intersection.h"
+
+#include "core/logging.h"
 
 #include "math/interpolation.h"
 #include "math/math_types.h"
+#include "math/simd/simd_vec3.h"
+#include <limits>
+#include <numeric>
 
 namespace cblt::geom {
 
-CoMesh::MeshStorage::MeshStorage(simd::vec3f *positions, vec4u *indices, size_t numFaces)
-    : CoPrimitiveStorage(numFaces), _positions{positions}, _indices{indices}, _numIndices{numFaces} {
-    _bounds = _ComputePrimitiveBounds(0, numFaces);
-}
-
-CoMesh::MeshStorage::~MeshStorage() {
-    delete[] _positions;
-    delete[] _indices;
-}
-
-size_t CoMesh::MeshStorage::NumPrimitives() const {
-    return _numIndices;
-}
-
-CoAxisAlignedBoundingBox CoMesh::MeshStorage::PrimitiveBounds(size_t startIdx, size_t endIdx) const {
-    static constexpr float kMinFloat = std::numeric_limits<float>::lowest();
-    static constexpr float kMaxFloat = std::numeric_limits<float>::max();
-    CoAxisAlignedBoundingBox regionBounds = {
-        .min = simd::vec3f(kMaxFloat, kMaxFloat, kMaxFloat),
-        .max = simd::vec3f(kMinFloat, kMinFloat, kMinFloat),
-    };
-
-    for (size_t idx = startIdx; idx < endIdx; ++idx) {
-        regionBounds.min = simd::min(regionBounds.min, _bounds[idx].min);
-        regionBounds.max = simd::max(regionBounds.max, _bounds[idx].max);
-    }
-
-    return regionBounds;
-}
-
-size_t CoMesh::MeshStorage::Reorder(
-    size_t startIdx,
-    size_t endIdx,
-    std::function<bool(const CoAxisAlignedBoundingBox &)> comparator
-) {
-    size_t splitIdx = endIdx - 1;
-    // partition
-    for (size_t idx = startIdx; idx < splitIdx;) {
-        if (comparator(_bounds[idx])) {
-            ++idx;
-        } else {
-            --splitIdx;
-            std::swap(_indices[idx], _indices[splitIdx]);
-            std::swap(_bounds[idx], _bounds[splitIdx]);
-            std::swap(_primitiveIndices[idx], _primitiveIndices[splitIdx]);
-        }
-    }
-
-    return splitIdx;
-}
-
-bool CoMesh::MeshStorage::PrimitivesIntersect(
-    const CoRay &ray,
-    size_t startIdx,
-    size_t endIdx,
-    IntersectionEvent &event
-) const {
-    bool hitFace = false;
-    float timeMin(std::numeric_limits<float>::max()), timeMax(std::numeric_limits<float>::max());
-    vec2f hitCoordinates = {0.f, 0.f};
-    for (size_t idx = startIdx; idx < endIdx; ++idx) {
-        const vec4u &faceIndex = _indices[idx];
-        if (faceIndex.w != kInvalidIndex) {
-            const bool hitPatch = rayPatchIntersection(
-                ray,
-                _positions[faceIndex.x],
-                _positions[faceIndex.y],
-                _positions[faceIndex.z],
-                _positions[faceIndex.w],
-                timeMin,
-                timeMax,
-                hitCoordinates
-            );
-            if (hitPatch && timeMin < event.timeMin) {
-                event.timeMin = timeMin;
-                event.localCoordinates = hitCoordinates;
-                event.primitiveIndex = _primitiveIndices[idx];
-                hitFace = true;
-            }
-        } else {
-            const bool hitTriangle = rayTriangleIntersection(
-                ray,
-                _positions[faceIndex.x],
-                _positions[faceIndex.y],
-                _positions[faceIndex.z],
-                timeMin,
-                hitCoordinates
-            );
-            if (hitTriangle && timeMin < event.timeMin) {
-                event.timeMin = timeMin;
-                event.localCoordinates = hitCoordinates;
-                event.primitiveIndex = _primitiveIndices[idx];
-                hitFace = true;
-            }
-        }
-    }
-
-    return hitFace;
-}
-
-std::vector<CoAxisAlignedBoundingBox>
-CoMesh::MeshStorage::_ComputePrimitiveBounds(size_t startIdx, size_t endIdx) const {
-    std::vector<CoAxisAlignedBoundingBox> bounds;
-    bounds.reserve(endIdx - startIdx + 1);
-    for (size_t idx = startIdx; idx < endIdx; ++idx) {
-        simd::vec3f boxMin;
-        simd::vec3f boxMax;
-
-        const vec4u &faceIndex = _indices[idx];
-
-        if (faceIndex.w != kInvalidIndex) {
-            const simd::vec3f boxMin12 = simd::min(_positions[faceIndex.x], _positions[faceIndex.y]);
-            const simd::vec3f boxMin34 = simd::min(_positions[faceIndex.z], _positions[faceIndex.w]);
-            boxMin = simd::min(boxMin12, boxMin34);
-
-            const simd::vec3f boxMax12 = simd::max(_positions[faceIndex.x], _positions[faceIndex.y]);
-
-            const simd::vec3f boxMax34 = simd::max(_positions[faceIndex.z], _positions[faceIndex.w]);
-            boxMax = simd::max(boxMin12, boxMin34);
-        } else {
-            const simd::vec3f boxMin12 = simd::min(_positions[faceIndex.x], _positions[faceIndex.y]);
-            boxMin = simd::min(boxMin12, _positions[faceIndex.z]);
-
-            const simd::vec3f boxMax12 = simd::max(_positions[faceIndex.x], _positions[faceIndex.y]);
-            boxMax = simd::max(boxMin12, _positions[faceIndex.z]);
+namespace {
+    template<typename T>
+    bool checkVertexAttributeBuffer(const CoMesh::VertexAttributeBuffer<T> &vertexBuffer) {
+        if (!vertexBuffer.vertexCount || !vertexBuffer.vertices) {
+            CoLogError("Vertex Buffer must be not empty");
+            return false;
         }
 
-        bounds.push_back({
-            .min = boxMin,
-            .max = boxMax,
-        });
+        if (!(vertexBuffer.triangleIndices || vertexBuffer.patchIndices) ||
+            !(vertexBuffer.triangleCount + vertexBuffer.patchCount)) {
+            CoLogError("Vertex Buffer must contain face indices");
+            return false;
+        }
+
+        if (bool(vertexBuffer.triangleIndices) != bool(vertexBuffer.triangleCount)) {
+            CoLogError("Triangle Index buffer must declare both a valid pointer and number of elements");
+            return false;
+        }
+
+        if (bool(vertexBuffer.patchIndices) != bool(vertexBuffer.patchCount)) {
+            CoLogError("Patch Index buffer must declare both a valid pointer and number of elements");
+            return false;
+        }
+
+        return true;
     }
 
-    return bounds;
+    bool checkCreateInfo(const CoMesh::CreateInfo &createInfo) {
+        return checkVertexAttributeBuffer(createInfo.positions);
+    }
 }
-
-/// ----------------------------------- CoMesh -----------------------------------
 
 std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
+    if (!checkCreateInfo(createInfo)) {
+        return nullptr;
+    }
+
     return std::shared_ptr<CoMesh>(new CoMesh(createInfo));
 }
 
-CoMesh::CoMesh(const CreateInfo &createInfo) {
-    _primitives =
-        std::shared_ptr<MeshStorage>(new MeshStorage(createInfo.positions, createInfo.indices, createInfo.numIndices));
+CoMesh::CoMesh(const CreateInfo &createInfo) : _positions(createInfo.positions) {
+    const std::shared_ptr<crtp::CoMeshStorage> meshStorage =
+        std::make_shared<crtp::CoMeshStorage>(crtp::CoMeshStorage::VertexBuffer{
+            .positions = _positions.vertices,
+            .positionCount = _positions.vertexCount,
+            .triangleIndices = _positions.triangleIndices,
+            .triangleCount = _positions.triangleCount,
+            .patchIndices = _positions.patchIndices,
+            .patchCount = _positions.patchCount,
+        });
+
+    std::span<const vec3u> triangles = { 
+        _positions.triangleIndices.get(),
+        _positions.triangleCount,
+    };
+
+    static constexpr float kMaxFloat = std::numeric_limits<float>::max();
+    static constexpr float kMinFloat = std::numeric_limits<float>::lowest();
+    _bounds = CoAxisAlignedBoundingBox{
+        .min = {kMaxFloat, kMaxFloat, kMaxFloat},
+        .max = {kMinFloat, kMinFloat, kMinFloat},
+    };
+
+    _bounds = std::accumulate(triangles.begin(), triangles.end(), _bounds, [positions = _positions.vertices](const CoAxisAlignedBoundingBox &bounds, const vec3u triangle) {
+        return CoAxisAlignedBoundingBox{
+            .min = simd::min(
+                simd::min(positions[triangle.x], positions[triangle.y]), 
+                simd::min(bounds.min, positions[triangle.y])
+            ),
+            .max = simd::max(
+                simd::max(positions[triangle.x], positions[triangle.y]), 
+                simd::max(bounds.max, positions[triangle.y])
+            ),
+        };
+    });
+
+    std::span<const vec4u> patches = {
+        _positions.patchIndices.get(),
+        _positions.patchCount,
+    };
+
+    _bounds = std::accumulate(patches.begin(), patches.end(), _bounds, [positions = _positions.vertices](const CoAxisAlignedBoundingBox &bounds, const vec4u patch) {
+        return CoAxisAlignedBoundingBox{
+            .min = simd::min(
+                simd::min(
+                    simd::min(positions[patch.x], positions[patch.y]), 
+                    simd::min(positions[patch.y], positions[patch.w])
+                ),
+                bounds.min
+            ),
+            .max = simd::max(
+                simd::max(
+                    simd::max(positions[patch.x], positions[patch.y]), 
+                    simd::max(positions[patch.y], positions[patch.w])
+                ),
+                bounds.max
+            ),
+        };
+    });
+
     _accelerator = std::unique_ptr<MeshAccelerator>(new MeshAccelerator(
         MeshAccelerator::CreateWithPrimitivesInfo{
-            .primitives = _primitives,
+            .primitives = meshStorage,
         }
     ));
 }
 
-CoMesh::~CoMesh() {
+CoAxisAlignedBoundingBox CoMesh::bounds() const {
+    return _bounds;
 }
 
-bool CoMesh::hasAttribute(const CoMesh::VertexAttribute vertexAttribute) const {
-    return true;
-}
-
-CoMesh::Vertex CoMesh::interpolateAttributes(const CoMesh::Interpolant &interpolant) const {
-    const vec4u &faceIndex = _primitives->_indices[interpolant.faceIdx];
-    if (faceIndex.w != MeshStorage::kInvalidIndex) {
-        const simd::vec3f position = math::bilinearInterpolation(
-            _primitives->_positions[faceIndex.x],
-            _primitives->_positions[faceIndex.y],
-            _primitives->_positions[faceIndex.z],
-            _primitives->_positions[faceIndex.w],
-            interpolant.localCoordinates
-        );
-
-        const std::array<float, 4> values = position.Values();
-
-        return Vertex{
-            .position = {values[0], values[1], values[2]},
-            .normal = {},
-            .textureCoords = {},
-        };
-    } else {
-        const vec2f ab = interpolant.localCoordinates;
-        const vec3f barycentricCoordinates = {ab.x, ab.y, 1.f - ab.x - ab.y};
-        const simd::vec3f position = math::barycentricInterpolation(
-            _primitives->_positions[faceIndex.x],
-            _primitives->_positions[faceIndex.y],
-            _primitives->_positions[faceIndex.z],
-            barycentricCoordinates
-        );
-
-        const std::array<float, 4> values = position.Values();
-
-        return Vertex{
-            .position = {values[0], values[1], values[2]},
-            .normal = {},
-            .textureCoords = {},
-        };
-    }
-}
-
-bool CoMesh::intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) const {
+geom::crtp::IntersectionResult CoMesh::intersects(const CoRay &ray) const {
     assert(_accelerator && "missing accelerator");
-    return _accelerator->IntersectClosest(ray, intersectionEvent);
+    return _accelerator->intersects(ray);
 }
 
 } // namespace cblt::geom

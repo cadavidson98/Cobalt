@@ -3,6 +3,11 @@
 namespace cblt::render {
 
 CoColor evaluatePrincipledBSDF(vec3f incoming, vec3f normal, vec3f outgoing, const CoPrincipledParameters &parameters) {
+    const vec3f halfway = normalize(incoming + outgoing);
+    [[maybe_unused]] const float nDotH = dot(normal, halfway);
+    [[maybe_unused]] const float nDotI = dot(normal, incoming);
+    [[maybe_unused]] const float nDotO = dot(normal, outgoing);
+
     return parameters.baseColor;
 }
 

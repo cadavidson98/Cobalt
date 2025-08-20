@@ -4,7 +4,6 @@
 #include "disney_principled.h"
 
 #include "core/logging.h"
-#include "geometry/mesh.h"
 
 namespace cblt::render {
 
@@ -13,31 +12,21 @@ CoResolver::CoResolver(TextureType textureType): _textureType{textureType} {
 
 CoColor CoResolver::resolve(
     const vec3f &incoming,
-    const geom::CoMesh &mesh,
-    const MaterialData &materialData,
-    const Interpolant &interpolant
+    const MaterialData &materialData
 ) const {
     static constexpr CoColor kEmptyColor = {0.f, 0.f, 0.f, 0.f};
 
-    const geom::CoMesh::Vertex vertex = mesh.interpolateAttributes({interpolant.faceIdx, interpolant.localCoordinates});
+    auto getBaseColor = [type = _textureType]() -> CoColor {
+        switch (type) {
+            case TextureType::kTexture2D :
+                return kEmptyColor;
+            case TextureType::kPTexture :
+                return kEmptyColor;
+            default : CoLogError("Unsupported Texture Type"); return kEmptyColor;
+            }
+    };
 
-    const vec3f outgoing = reflect(incoming, vertex.normal);
-
-    CoColor baseColor;
-
-    switch (_textureType) {
-    case TextureType::kTexture2D :
-        if (!mesh.hasAttribute(geom::CoMesh::VertexAttribute::kUV)) {
-            CoLogError("Missing UV coordinate attribute on mesh with texture 2D material");
-            return kEmptyColor;
-        }
-        baseColor = materialData.textures.baseColor.sample(vertex.textureCoords);
-        break;
-    case TextureType::kPTexture :
-        baseColor = materialData.textures.baseColor.sample(interpolant.localCoordinates);
-        break;
-    default : CoLogError("Unsupported Texture Type"); return kEmptyColor;
-    }
+    const CoColor baseColor = getBaseColor();
 
     const CoPrincipledParameters parameters = {
         .baseColor = baseColor,
@@ -55,7 +44,10 @@ CoColor CoResolver::resolve(
         .clearcoatGloss = materialData.scalars.clearcoatGloss,
     };
 
-    return evaluatePrincipledBSDF(incoming, outgoing, vertex.normal, parameters);
+    const vec3f normal = {0.f, 1.f, 0.f};
+    const vec3f outgoing = reflect(incoming, normal);
+
+    return evaluatePrincipledBSDF(incoming, normal, outgoing, parameters);
 }
 
 } // namespace cblt::render

@@ -1,6 +1,8 @@
 #ifndef CBLT_RENDER_SCENE_H
 #define CBLT_RENDER_SCENE_H
 
+#include "geometry/bounding_volume_crtp.h"
+#include "geometry/bounding_volume_scene_storage.h"
 #include "render/data/camera.h"
 #include "render/material/material.h"
 
@@ -13,14 +15,14 @@ namespace cblt {
 
 namespace geom {
 class CoMesh;
-class CoRay;
+struct CoRay;
 struct IntersectionEvent;
 } // namespace geom
 
 namespace render {
 
-class CoColor;
-struct CoResolver;
+struct CoColor;
+class CoResolver;
 class CoTexture;
 class CoTextureCache;
 
@@ -60,7 +62,7 @@ private:
         std::shared_ptr<CoCamera> camera;
         std::shared_ptr<CoTexture> environmentMap;
         std::span<Primitive> primitives;
-        std::span<GeometryComponent> meshes;
+        std::shared_ptr<geom::crtp::CoSceneStorage> geometry;
         std::span<MaterialComponent> materials;
         CreateOptions options = {};
     };
@@ -80,8 +82,12 @@ private:
     std::unique_ptr<CoTextureCache> _textureCache;
 
     std::vector<Primitive> _scenePrimitives;
-    std::vector<GeometryComponent> _geometries;
     std::vector<MaterialComponent> _materials;
+
+    using SceneAccelerator = geom::crtp::CoBoundingVolume<geom::crtp::CoSceneStorage>;
+
+    std::shared_ptr<geom::crtp::CoSceneStorage> _geometry;
+    std::unique_ptr<SceneAccelerator> _accelerator;
 
     friend class CoSceneFactory;
     friend class CoSceneFactoryDelegate;

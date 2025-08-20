@@ -14,7 +14,7 @@ inline std::vector<T> split(const std::string_view valuesString, char delim) {
     std::vector<T> values;
     while (index < valuesString.length()) {
         const size_t endIndex = valuesString.find_first_of(delim, index);
-        const std::string_view value = valuesString.substr(index, endIndex - index);
+        const std::string value(valuesString, index, endIndex - index);
 
         index = (endIndex == std::string_view::npos) ? valuesString.length() : endIndex + 1;
 
@@ -23,9 +23,9 @@ inline std::vector<T> split(const std::string_view valuesString, char delim) {
         }
 
         if constexpr (std::is_integral<T>::value) {
-            values.push_back(T(std::stoi(value.data())));
+            values.push_back(T(std::stoi(value)));
         } else if constexpr (std::is_floating_point<T>::value) {
-            values.push_back(T(std::stof(value.data())));
+            values.push_back(T(std::stof(value)));
         } else {
             static_assert(std::is_convertible_v<std::string, T>);
             values.push_back(T(value));

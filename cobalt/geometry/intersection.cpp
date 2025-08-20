@@ -119,7 +119,7 @@ bool rayPatchIntersection(
         float v;
     };
 
-    auto computePatchValues = [&ray, &position1, &position2, &position3, &position4](float u) {
+    auto computePatchValues = [&ray, &position1, &position2, &position3, &position4](float u) -> PatchValues {
         const simd::vec3f Fx = simd::lerp(position1, position2, u);
         const simd::vec3f Fy = simd::lerp(position4, position3, u);
         const simd::vec3f directionV = Fy - Fx;
@@ -132,31 +132,46 @@ bool rayPatchIntersection(
         const float v1 = simd::dot(rayToFx, simd::cross(ray.dir, normal)) / normalLengthSquared;
         const float t1 = simd::dot(rayToFx, simd::cross(directionV, normal)) / normalLengthSquared;
 
-        return PatchValues{.time = t1, .v = v1};
+        return PatchValues{
+            .time = t1,
+            .v = v1,
+        };
     };
 
-    float hitTime = std::numeric_limits<float>::max();
-    vec2f localCoordinates = {0.f, 0.f};
+    float hitTimeU = std::numeric_limits<float>::max();
+    
+    vec2f localCoordinatesU = {0.f, 0.f};
     const bool u1Valid = 0.f <= u1 && u1 <= 1.f;
     if (u1Valid) {
         const PatchValues patchValues = computePatchValues(u1);
         if (0.f < patchValues.time && 0.f <= patchValues.v && patchValues.v <= 1.f) {
-            hitTime = patchValues.time;
-            localCoordinates = {u1, patchValues.v};
+            hitTimeU = patchValues.time;
+            localCoordinatesU = {u1, patchValues.v};
         }
     }
 
+    float hitTimeV = std::numeric_limits<float>::max();
+
+    vec2f localCoordinatesV = {0.f, 0.f};
     const bool u2Valid = 0.f <= u2 && u2 <= 1.f;
     if (u2Valid) {
         const PatchValues patchValues = computePatchValues(u2);
-        if (0.f < patchValues.time && patchValues.time < hitTime && 0.f <= patchValues.v && patchValues.v <= 1.f) {
-            hitTime = patchValues.time;
-            localCoordinates = {u2, patchValues.v};
+        if (0.f < patchValues.time && 0.f <= patchValues.v && patchValues.v <= 1.f) {
+            hitTimeV = patchValues.time;
+            localCoordinatesV = {u2, patchValues.v};
         }
     }
 
-    if (hitTime <= ray.maxDist) {
-        timeMin = hitTime;
+    timeMin = hitTimeU;
+    timeMax = hitTimeV;
+    vec2f localCoordinates = localCoordinatesU;
+
+    if (timeMax < timeMin) {
+        std::swap(timeMin, timeMax);
+        localCoordinates = localCoordinatesV;
+    }
+
+    if (timeMin <= ray.maxDist) {
         hitCoordinates = localCoordinates;
         return true;
     }

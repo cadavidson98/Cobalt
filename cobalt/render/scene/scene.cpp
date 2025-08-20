@@ -4,6 +4,9 @@
 #include "texture.h"
 #include "texture_cache.h"
 
+#include "geometry/bounding_volume_crtp.h"
+#include "geometry/bounding_volume_scene_storage.h"
+#include "geometry/bounding_volume_types.h"
 #include "geometry/intersection.h"
 #include "geometry/mesh.h"
 #include "math/constants.h"
@@ -25,11 +28,14 @@ CoScene::CoScene(const CreateInfo &createInfo) {
     _camera = createInfo.camera;
     _environmentMap = createInfo.environmentMap;
     _scenePrimitives.reserve(createInfo.primitives.size());
-    _geometries.reserve(createInfo.meshes.size());
     _materials.reserve(createInfo.materials.size());
 
+    _geometry = createInfo.geometry;
+    _accelerator = std::make_unique<SceneAccelerator>(SceneAccelerator::CreateWithPrimitivesInfo{
+        .primitives = _geometry,
+    });
+
     std::copy(createInfo.primitives.begin(), createInfo.primitives.end(), std::back_inserter(_scenePrimitives));
-    std::copy(createInfo.meshes.begin(), createInfo.meshes.end(), std::back_inserter(_geometries));
     std::copy(createInfo.materials.begin(), createInfo.materials.end(), std::back_inserter(_materials));
 
     static constexpr size_t kGBToMB = 1024;
@@ -47,19 +53,9 @@ std::shared_ptr<CoCamera> CoScene::camera() const {
 }
 
 bool CoScene::closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const {
-    for (size_t idx = 0; idx < _scenePrimitives.size(); ++idx) {
-        if (_scenePrimitives[idx].geometryIdx == kInvalidID) {
-            continue;
-        }
-
-        const CoUUID &geometryIdx = _scenePrimitives[idx].geometryIdx;
-
-        if (_geometries[geometryIdx].mesh->intersects(ray, intersectionEvent)) {
-            intersectionEvent.geometryIndex = idx;
-            return true;
-        }
-    }
-    return false;
+    const geom::crtp::IntersectionResult result = _accelerator->intersects(ray);
+    intersectionEvent.timeMin = result.hitTime;
+    return result.primitive.type != geom::crtp::PrimitiveType::kNone;
 }
 
 CoColor CoScene::environment(const geom::CoRay &ray) const {

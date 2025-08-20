@@ -21,119 +21,10 @@
             "generator": "Unix Makefiles",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "g++",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-                "CMAKE_CXX_FLAGS": "-march=native -Wall -Wextra -Wpedantic -Wreorder",
+                "CMAKE_CXX_FLAGS": "-march=native -Werror -Wall -Wextra -Wpedantic -Wunused -Wreorder -Wformat -Wimplicit-fallthrough -Wuninitialized -Winit-self" ,
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-            }
-        },
-        {
-            "name": "mingw-g++",
-            "displayName": "GCC 13.1.0 x86_64-w64-mingw32 (mingw64)",
-            "description": "G++ 13 compiler for x86_64",
-            "hidden": true,
-            "generator": "MinGW Makefiles",
-            "binaryDir": "${sourceDir}/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-                "CMAKE_C_COMPILER": "D:/msys64/mingw64/bin/gcc.exe",
-                "CMAKE_CXX_COMPILER": "D:/msys64/mingw64/bin/g++.exe",
-                "CMAKE_CXX_FLAGS": "-march=native"
-            }
-        },
-        {
-            "name": "intel",
-            "displayName": "Intel OneAPI 2022.2.1 C++",
-            "description": "Intel C++ Compiler",
-            "hidden": true,
-            "generator": "Visual Studio 16 2019",
-            "binaryDir": "${sourceDir}/build/${presetName}",
-            "cacheVariables": {
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-                "CMAKE_C_COMPILER": "D:/Program Files (x86)/Intel/oneAPI/compiler/2022.2.1/windows/bin/icx.exe",
-                "CMAKE_CXX_COMPILER": "D:/Program Files (x86)/Intel/oneAPI/compiler/2022.2.1/windows/bin/icx.exe",
-                "CMAKE_CXX_FLAGS": "/Oi /EHsc"
-            }
-        },
-        {
-            "name": "intel-vs2019-debug",
-            "displayName": "Intel oneAPI DCC Debug",
-            "description": "Debug for intel compiler",
-            "inherits": [
-                "intel",
-                "verbose-debug"
-            ],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE":"Debug"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
-            "name": "intel-vs2019-release",
-            "displayName": "Intel oneAPI DCC Release",
-            "description": "Release for intel compiler",
-            "inherits": [
-                "intel"
-            ],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE":"Release"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
-            "name": "mingw-debug",
-            "displayName": "MingGW Debug",
-            "description": "Debug for minGW G++ compiler",
-            "inherits": [
-                "mingw-g++",
-                "verbose-debug"
-            ],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE":"Debug"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
-            "name": "mingw-release",
-            "displayName": "MingGW Release",
-            "description": "Release for minGW G++ compiler",
-            "inherits": [
-                "mingw-g++"
-            ],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE":"Release"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            }
-        },
-        {
-            "name": "mingw-release-debug-symbols",
-            "displayName": "MingGW Release With Debug Symbols",
-            "description": "Release for minGW G++ compiler (with debug symbols)",
-            "inherits": [
-                "mingw-g++"
-            ],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE":"RelWithDebInfo"
-            },
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
             }
         },
         {
@@ -173,32 +64,6 @@
     ],
     "buildPresets": [
         {
-            "name": "mingw-debug",
-            "description": "G++ 13 compiler for x86_64",
-            "displayName": "G++ 13.1.0 x86_64 (mingw64)",
-            "configurePreset": "mingw-debug",
-            "configuration": "Debug"
-        },
-        {
-            "name": "mingw-release",
-            "description": "G++ 13 compiler for x86_64",
-            "displayName": "G++ 13.1.0 x86_64 (mingw64)",
-            "configurePreset": "mingw-release",
-            "configuration": "Release"
-        },
-        {
-            "name":"vs2019-debug",
-            "displayName": "MSVC 2019 Debug",
-            "configurePreset": "intel-vs2019-debug",
-            "configuration": "Debug"
-        },
-        {
-            "name":"vs2019-release",
-            "displayName": "MSVC 2019 Release",
-            "configurePreset": "intel-vs2019-release",
-            "configuration": "Release"
-        },
-        {
             "name": "gcc-debug",
             "description": "G++ 9 compiler for x86_64",
             "displayName": "G++ 9 x86_64 (gcc)",
@@ -214,17 +79,6 @@
         }
     ],
     "testPresets": [
-        {
-            "name": "MinGW G++",
-            "description": "G++ 13 compiler for x86_64",
-            "displayName": "GCC 13.1.0 x86_64-w64-mingw32 (mingw64)",
-            "configurePreset": "mingw-g++"
-        },
-        {
-            "name": "Intel ICL",
-            "description": "Intel C++ Compiler",
-            "displayName": "Intel OneAPI 2022.2.1 C++",
-            "configurePreset": "intel-vs2019-debug"
-        }
+
     ]
 }

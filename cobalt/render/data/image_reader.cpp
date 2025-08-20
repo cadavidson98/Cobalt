@@ -1,11 +1,12 @@
 #include "image_reader.h"
 
 #include "byte_texture.h"
+#include "texture.h"
 
 #include "core/logging.h"
 #include "core/size_types.h"
 #include "core/string_utilities.h"
-#include "math/vec4.h"
+#include "math/math_types.h"
 
 #include <Imath/ImathBox.h>
 #include <Imath/half.h>
@@ -53,12 +54,12 @@ bool checkReadInfo(const ReadInfo &readInfo) {
     return true;
 }
 
-void pngError(png_structp pngPtr, png_const_charp errorMessage) {
+void pngError([[maybe_unused]] png_structp pngPtr, png_const_charp errorMessage) {
     CoLogError("Error reading PNG: %s", errorMessage);
     throw std::runtime_error(errorMessage);
 }
 
-void pngWarning(png_structp pngPtr, png_const_charp errorMessage) {
+void pngWarning([[maybe_unused]] png_structp pngPtr, png_const_charp errorMessage) {
     CoLogWarning("Warning reading PNG: %s", errorMessage);
 }
 
@@ -197,7 +198,7 @@ std::shared_ptr<render::CoTexture> readPng(const ReadInfo &readInfo) {
 std::shared_ptr<render::CoTexture> readExr(const ReadInfo &readInfo) {
 
     std::shared_ptr<void> textureData = nullptr;
-    CoPixelFormat textureFormat = {};
+    CoPixelFormat textureFormat = CoPixelFormat::Half;
     const uint32_t numChannels = 3;
     vec2u textureSize = {};
 
@@ -231,8 +232,10 @@ std::shared_ptr<render::CoTexture> readExr(const ReadInfo &readInfo) {
 
         if (red->type == Imf::PixelType::HALF) {
             textureData = std::make_shared<Imath::half[]>(allocSize);
+            textureFormat = CoPixelFormat::Half;
         } else {
             textureData = std::make_shared<float[]>(allocSize);
+            textureFormat = CoPixelFormat::Float;
         }
 
         uint currentChannel = 0;
@@ -272,7 +275,7 @@ std::shared_ptr<render::CoTexture> readExr(const ReadInfo &readInfo) {
 
     return CoByteTexture::create({
         .bytes = textureData,
-        .format = CoPixelFormat::Half,
+        .format = textureFormat,
         .numChannels = numChannels,
         .dimensions = textureSize,
     });

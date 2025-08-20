@@ -6,8 +6,9 @@
 #include <libxml2/libxml/xmlmemory.h>
 #include <libxml2/libxml/xmlreader.h>
 #include <libxml2/libxml/xpath.h>
+#include <cassert>
 
-namespace cblt::render::utils {
+namespace xml2 {
 
 struct xmlDeleter {
     void operator()(void *ptr) {
@@ -145,7 +146,7 @@ bool xmlHoldsAlternative(xmlXPathObjectPtr xPathObject) {
     case XPATH_NODESET :
         return xPathObject->nodesetval && xPathObject->nodesetval->nodeNr && xPathObject->nodesetval->nodeTab;
     case XPATH_STRING : return xPathObject->stringval;
-    case XPATH_BOOLEAN :
+    case XPATH_BOOLEAN : [[fallthrough]];
     case XPATH_NUMBER : return true;
     default : break;
     }
@@ -153,6 +154,8 @@ bool xmlHoldsAlternative(xmlXPathObjectPtr xPathObject) {
     return false;
 }
 
-} // namespace cblt::render::utils
+using TextReader = xmlResource<xmlTextReader, xmlTextReaderDeleter>;
+
+} // namespace xml2
 
 #endif // CBLT_RENDER_XML_UTILITIES_H

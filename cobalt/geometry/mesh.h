@@ -1,12 +1,14 @@
-#ifndef CBLT_CORE_MESH_H
-#define CBLT_CORE_MESH_H
+#ifndef CBLT_GEOM_MESH_H
+#define CBLT_GEOM_MESH_H
 
-#include "bounding_volume.h"
+#include "bounding_volume_crtp.h"
+#include "bounding_volume_mesh_storage.h"
+#include "bounding_volume_types.h"
 
 #include "core/size_types.h"
+#include "geometry/bounding_box.h"
 #include "math/math_types.h"
 
-#include <functional>
 #include <memory>
 
 namespace cblt::geom {
@@ -22,62 +24,33 @@ public:
         kUV,
     };
 
-    struct Interpolant {
-        size_t faceIdx;
-        vec2f localCoordinates;
-    };
-
-    struct Vertex {
-        vec3f position;
-        vec3f normal;
-        vec2f textureCoords;
+    template<typename T>
+    struct VertexAttributeBuffer {
+        std::shared_ptr<T[]> vertices;
+        size_t vertexCount;
+        std::shared_ptr<vec3u[]> triangleIndices;
+        size_t triangleCount;
+        std::shared_ptr<vec4u[]> patchIndices;
+        size_t patchCount;
     };
 
     struct CreateInfo {
-        simd::vec3f *positions;
-        size_t numVertices;
-        vec4u *indices;
-        size_t numIndices;
+        VertexAttributeBuffer<simd::vec3f> positions;
     };
 
     static std::shared_ptr<CoMesh> create(const CreateInfo &createInfo);
 
-    ~CoMesh();
+    CoAxisAlignedBoundingBox bounds() const;
 
-    bool hasAttribute(VertexAttribute attribute) const;
-    Vertex interpolateAttributes(const Interpolant &interpolant) const;
-
-    bool intersects(const CoRay &ray, IntersectionEvent &intersectionEvent) const;
+    geom::crtp::IntersectionResult intersects(const CoRay &ray) const;
 
 private:
-    class MeshStorage : public CoPrimitiveStorage {
-    public:
-        MeshStorage(simd::vec3f *positions, vec4u *indices, size_t numFaces);
-        ~MeshStorage();
 
-        static constexpr uint32_t kInvalidIndex = -1u;
+    using MeshAccelerator = crtp::CoBoundingVolume<crtp::CoMeshStorage>;
 
-        size_t NumPrimitives() const;
-        CoAxisAlignedBoundingBox PrimitiveBounds(size_t startIdx, size_t endIdx) const;
-        size_t
-        Reorder(size_t startIdx, size_t endIdx, std::function<bool(const CoAxisAlignedBoundingBox &)> comparator);
-        bool PrimitivesIntersect(const CoRay &ray, size_t startIdx, size_t endIdx, IntersectionEvent &event) const;
+    CoAxisAlignedBoundingBox _bounds;
 
-    private:
-        vec4u *_indices;
-        size_t _numIndices;
-
-        simd::vec3f *_positions;
-
-        std::vector<CoAxisAlignedBoundingBox> _bounds;
-
-        std::vector<CoAxisAlignedBoundingBox> _ComputePrimitiveBounds(size_t startIdx, size_t endIdx) const;
-        friend class CoMesh;
-    };
-
-    using MeshAccelerator = CoBoundingVolume<MeshStorage>;
-
-    std::shared_ptr<MeshStorage> _primitives;
+    VertexAttributeBuffer<simd::vec3f> _positions;
     std::unique_ptr<MeshAccelerator> _accelerator;
 
     CoMesh() = delete;
@@ -86,4 +59,4 @@ private:
 
 } // namespace cblt::geom
 
-#endif // CBLT_CORE_MESH_H
+#endif // CBLT_GEOM_MESH_H

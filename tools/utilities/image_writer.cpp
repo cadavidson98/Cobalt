@@ -108,6 +108,7 @@ bool writePng(const WriteInfo &writeInfo) {
     const png_time_struct pngTime{
         .year = imageWriteTimestamp.year,
         .month = imageWriteTimestamp.month,
+        .day = imageWriteTimestamp.day, 
         .hour = imageWriteTimestamp.hour,
         .minute = imageWriteTimestamp.minute,
         .second = imageWriteTimestamp.second,

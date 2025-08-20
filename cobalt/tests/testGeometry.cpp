@@ -1,8 +1,8 @@
-#include "core/morton_encoding.h"
-
 #include "geometry/bounding_box.h"
 #include "geometry/bounding_volume.h"
 #include "geometry/bounding_volume_crtp.h"
+#include "geometry/bounding_volume_mesh_storage.h"
+#include "geometry/bounding_volume_scene_storage.h"
 #include "geometry/bounding_volume_types.h"
 #include "geometry/intersection.h"
 #include "geometry/ray.h"
@@ -16,144 +16,10 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <sstream>
 #include <vector>
 
 static constexpr float kEpsilon = 1e-4f;
-
-namespace cblt::geom::crtp {
-
-template<>
-struct primitive_types<class CoStorageMock> {
-    static constexpr PrimitiveTypes value = (PrimitiveType::kBox | PrimitiveType::kSphere);
-};
-
-class CoStorageMock : public CoPrimitiveStorageBase<CoStorageMock> {
-public:
-    CoStorageMock(size_t gridX, size_t gridY) : gridBounds{
-        .min = simd::vec3f(-1.f, -1.f, -1.f),
-        .max = simd::vec3f(gridX, gridY, 1.f)
-    } {
-        bool flip = true;
-        boxPrimitives.reserve(gridX * gridY);
-        for (uint32_t y = 0; y < gridY; ++y) {
-            for (uint32_t x = 0; x < gridX; ++x) {
-                if (flip) {
-                    boxPrimitives.emplace_back(simd::vec3f(x - .5f, y - .5f, -.5f), simd::vec3f(x + .5f, y + .5f, +.5f));
-                } else {
-                    spherePrimitives.emplace_back(simd::vec3f(float(x), float(y), 0.f), .5f);
-                }
-                flip = !flip;
-            }
-        }
-    }
-
-    geom::CoAxisAlignedBoundingBox bounds() const {
-        return gridBounds;
-    }
-
-    void reorder(std::span<MortonPrimitive> primitives) {
-        uint32_t boxIdx = 0;
-        uint32_t sphereIdx = 0;
-
-        std::vector<CoAxisAlignedBoundingBox> boxesCopy = boxPrimitives;
-        std::vector<CoSphere> spheresCopy = spherePrimitives;
-
-        for (MortonPrimitive &mortonPrimitive : primitives) {
-            switch (mortonPrimitive.primitive.type) {
-            case PrimitiveType::kBox : {
-                const size_t newIdx = boxIdx++;
-                boxPrimitives[newIdx] = boxesCopy[mortonPrimitive.primitive.index];
-                mortonPrimitive.primitive.index = newIdx;
-                continue;
-            }
-            case PrimitiveType::kSphere : {
-                const size_t newIdx = sphereIdx++;
-                spherePrimitives[newIdx] = spheresCopy[mortonPrimitive.primitive.index];
-                mortonPrimitive.primitive.index = newIdx;
-                continue;
-            }
-            case PrimitiveType::kMesh : [[fallthrough]];
-            case PrimitiveType::kPatch : [[fallthrough]];
-            case PrimitiveType::kTriangle : [[fallthrough]];
-            default : ASSERT_TRUE(false);
-            }
-        }
-    }
-
-    std::vector<MortonPrimitive> mortonEncodePrimitives() const {
-        const CoAxisAlignedBoundingBox primitiveBounds = bounds();
-        const simd::vec3f boundsExtent = primitiveBounds.Scales();
-        const simd::vec3f boundsMin = primitiveBounds.min;
-        std::vector<Primitive> storagePrimitives = primitivesAll();
-        auto encodePrimitive = [&boundsExtent, &boundsMin](const Primitive &primitive) {
-            static constexpr float kFloatToUint = float((1 << 10) - 1);
-            const simd::vec3f normalizedPosition = (primitive.boundingBox.Center() - boundsMin) / boundsExtent;
-            const std::array<float, 4> values = (kFloatToUint * normalizedPosition).Values();
-            return MortonPrimitive{
-                .mortonCode = core::mortonEncode(values[0], values[1], values[2]),
-                .primitive = primitive,
-            };
-        };
-
-        std::vector<MortonPrimitive> mortonEncodedPrimitives(storagePrimitives.size());
-        std::transform(
-            storagePrimitives.begin(),
-            storagePrimitives.end(),
-            mortonEncodedPrimitives.begin(),
-            encodePrimitive
-        );
-
-        return mortonEncodedPrimitives;
-    }
-
-    std::span<const CoSphere> spheres(size_t start, size_t count) const {
-        return {spherePrimitives.begin() + start, spherePrimitives.begin() + (start + count) };
-
-        static_assert(primitive_types<CoStorageMock>::value & kSphere, "not supported");
-    }
-
-    std::span<const CoAxisAlignedBoundingBox> boxes(size_t start, size_t count) const {
-        return {boxPrimitives.begin() + start, boxPrimitives.begin() + (start + count) };
-
-        static_assert(primitive_types<CoStorageMock>::value != kNone, "not supported");
-    }
-
-private:
-    const CoAxisAlignedBoundingBox gridBounds;
-
-    std::vector<cblt::geom::CoAxisAlignedBoundingBox> boxPrimitives;
-    std::vector<cblt::geom::CoSphere> spherePrimitives;
-
-    std::vector<Primitive> primitivesAll() const {
-        std::vector<Primitive> prims;
-        for (size_t index = 0; index < boxPrimitives.size(); ++index) {
-            const CoAxisAlignedBoundingBox &box = boxPrimitives[index];
-            prims.push_back(Primitive{
-                .type = PrimitiveType::kBox,
-                .boundingBox = box,
-                .index = uint32_t(index),
-            });
-        }
-
-        for (size_t index = 0; index < spherePrimitives.size(); ++index) {
-            const CoSphere &sphere = spherePrimitives[index];
-            const CoAxisAlignedBoundingBox boundingBox = {
-                .min = sphere.center - simd::vec3f(sphere.radius),
-                .max = sphere.center + simd::vec3f(sphere.radius),
-            };
-
-            prims.push_back(Primitive{
-                .type = PrimitiveType::kSphere,
-                .boundingBox = boundingBox,
-                .index = uint32_t(index),
-            });
-        }
-
-        return prims;
-    }
-};
-
-} // namespace cblt::geom::crtp
 
 namespace cblt::geom::test {
 struct BoxStorage {
@@ -204,21 +70,100 @@ struct BoxStorage {
         }
         return hit;
     }
+
+
 };
+
+std::shared_ptr<crtp::CoMeshStorage> makeCubeMesh(size_t width) {
+    assert((width & 1) == 0);
+
+    const size_t verticesPerRow = width + 1;
+
+    const size_t vertexCount = verticesPerRow * verticesPerRow;
+    const size_t triangleCount = width * width;
+    const size_t patchCount = (width * width) / 2;
+
+    crtp::CoMeshStorage::VertexBuffer buffer = {
+        .positions = std::make_shared<simd::vec3f[]>(vertexCount),
+        .positionCount = vertexCount,
+        .triangleIndices = std::make_shared<vec3u[]>(triangleCount),
+        .triangleCount = triangleCount,
+        .patchIndices = std::make_shared<vec4u[]>(patchCount),
+        .patchCount = patchCount,
+    };
+
+    for (size_t y = 0; y < verticesPerRow; ++y) {
+        for (size_t x = 0; x < verticesPerRow; ++x) {
+            buffer.positions[y * verticesPerRow + x] = simd::vec3f(x, y, 0);
+        }
+    }
+
+    size_t triangleIdx = 0;
+    for (size_t y = 0; y < width; ++y) {
+        const size_t offset = (y & 1);
+        for (size_t x = 0; x < (width / 2); ++x) {
+            const size_t idx = y * verticesPerRow + (2 * x + offset);
+            const size_t nextIdx = idx + 1;
+            buffer.triangleIndices[triangleIdx++] = vec3u(idx, nextIdx, idx + verticesPerRow);
+            buffer.triangleIndices[triangleIdx++] = vec3u(nextIdx, nextIdx + verticesPerRow, idx + verticesPerRow);
+        }
+    }
+
+    size_t patchIdx = 0;
+    for (size_t y = 0; y < width; ++y) {
+        const size_t offset = !(y & 1);
+        for (size_t x = 0; x < (width / 2); ++x) {
+            const size_t idx = y * verticesPerRow + (2 * x + offset);
+            const size_t nextIdx = idx + 1;
+            buffer.patchIndices[patchIdx++] = vec4u(idx, nextIdx, nextIdx + verticesPerRow, idx + verticesPerRow);
+        }
+    }
+
+    return std::make_shared<crtp::CoMeshStorage>(std::move(buffer));
+}
+
+std::shared_ptr<crtp::CoSceneStorage> makeScene(size_t gridSizeX, size_t gridSizeY) {
+    std::shared_ptr<crtp::CoSceneStorage> scene = std::make_shared<cblt::geom::crtp::CoSceneStorage>();
+
+    bool flip = true;
+    for (uint32_t y = 0; y < gridSizeY; ++y) {
+        for (uint32_t x = 0; x < gridSizeX; ++x) {
+            if (flip) {
+                scene->addBox({
+                    .min = cblt::simd::vec3f(x - .5f, y - .5f, -.5f),
+                    .max = cblt::simd::vec3f(x + .5f, y + .5f, +.5f),
+                });
+            } else {
+                scene->addSphere({
+                    .center = cblt::simd::vec3f(float(x), float(y), 0.f),
+                    .radius = .5f,
+                });
+            }
+            flip = !flip;
+        }
+    }
+
+    return scene;
+}
+
 } // namespace cblt::geom::test
 
 class CobaltGeometryTest : public ::testing::Test {
 protected:
     CobaltGeometryTest() {
-        storage = std::make_shared<cblt::geom::crtp::CoStorageMock>(kGridSizeX, kGridSizeY);
+        storage = cblt::geom::test::makeScene(kGridSizeX, kGridSizeY);        
+        meshStorage = cblt::geom::test::makeCubeMesh(kCubeSize);
         old_storage = std::make_shared<cblt::geom::test::BoxStorage>(kGridSizeX, kGridSizeY);
     }
 
-    std::shared_ptr<cblt::geom::crtp::CoStorageMock> storage;
+    std::shared_ptr<cblt::geom::crtp::CoSceneStorage> storage;
+    std::shared_ptr<cblt::geom::crtp::CoMeshStorage> meshStorage;
     std::shared_ptr<cblt::geom::test::BoxStorage> old_storage;
 
     static constexpr size_t kGridSizeX = 512;
     static constexpr size_t kGridSizeY = 512;
+    
+    static constexpr size_t kCubeSize = 8;
 };
 
 TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
@@ -419,9 +364,35 @@ TEST_F(CobaltGeometryTest, TestCreateBoundingVolume) {
     }
 }
 
+TEST_F(CobaltGeometryTest, TestCreateMeshStorage) {
+    using namespace cblt::geom::crtp;
+    CoBoundingVolume<CoMeshStorage> boundingVolume({
+        .primitives = meshStorage,
+    });
+
+    for (size_t y = 0; y < kCubeSize; ++y) {
+        const size_t offset = (y & 1);
+        for (size_t x = 0; x < kCubeSize; ++x) {
+                cblt::geom::IntersectionEvent event;
+                const cblt::geom::CoRay ray(cblt::simd::vec3f(x + .25f, y + .25f, 4.f), cblt::simd::vec3f(0.f, 0.f, -1.f), 10.f);
+                const cblt::geom::crtp::IntersectionResult result = boundingVolume.intersects(ray);
+                std::ostringstream testDescription;
+                testDescription << "Mesh tile is: (" << x << ", " << y << ") of " << kCubeSize;
+                ASSERT_NEAR(result.hitTime, 4.f, kEpsilon) << testDescription.view();
+                // FIXME: Need to "remap" the index from the original grid values to the reordered indices in order to check
+                // what box / sphere we hit
+                if (((x + offset) & 1) == 1) {
+                    EXPECT_EQ(result.primitive.type, cblt::geom::crtp::kPatch) << testDescription.view();
+                } else {
+                    EXPECT_EQ(result.primitive.type, cblt::geom::crtp::kTriangle) << testDescription.view();
+                }
+        }
+    }
+}
+
 TEST_F(CobaltGeometryTest, TestCtrp) {
     using namespace cblt::geom::crtp;
-    CoBoundingVolume<CoStorageMock> boundingVolume({
+    CoBoundingVolume<CoSceneStorage> boundingVolume({
         .primitives = storage,
     });
 

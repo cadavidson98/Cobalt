@@ -2,7 +2,6 @@
 #define CBLT_GEOM_BOUNDING_VOLUME_TYPES_H
 
 #include "bounding_box.h"
-#include "sphere.h"
 
 #include "core/size_types.h"
 
@@ -24,40 +23,18 @@ using PrimitiveTypes = uint32_t;
 
 struct Primitive {
     PrimitiveType type;
-    CoAxisAlignedBoundingBox boundingBox;
     uint32_t index;
 };
 
 struct MortonPrimitive {
     uint32_t mortonCode;
     Primitive primitive;
+    CoAxisAlignedBoundingBox boundingBox;
 };
 
-template<class Derived>
-struct CoPrimitiveStorageBase {
-public:
-    std::vector<MortonPrimitive> mortonEncodePrimitives() const {
-        return static_cast<const Derived *>(this)->mortonEncodePrimitives();
-    }
-
-    geom::CoAxisAlignedBoundingBox bounds() const {
-        return static_cast<const Derived *>(this)->bounds();
-    }
-
-    void reorder(std::span<MortonPrimitive> primitives) {
-        return static_cast<Derived *>(this)->reorder(primitives);
-    }
-
-    std::span<const CoSphere> spheres(size_t start, size_t count) const {
-        return static_cast<Derived *>(this)->spheres(start, count);
-    }
-
-    std::span<const CoAxisAlignedBoundingBox> boxes(size_t start, size_t count) const {
-        return static_cast<Derived *>(this)->boxes(start, count);
-    }
-
-protected:
-    CoPrimitiveStorageBase() = default;
+struct PrimitiveExtent {
+    uint32_t start = uint32_t(-1);
+    uint32_t count = 0;
 };
 
 struct IntersectionResult {
@@ -65,14 +42,18 @@ struct IntersectionResult {
     Primitive primitive;
 };
 
-template<typename T>
-struct primitive_types {
-    static constexpr PrimitiveTypes value = PrimitiveType::kNone;
+template<class T>
+struct storageExtent {
+    using value = void;
 };
 
-template<typename BoundingVolumeStorage>
-concept isPrimitiveStorage =
-    requires { std::is_base_of_v<CoPrimitiveStorageBase<BoundingVolumeStorage>, BoundingVolumeStorage>; };
+template<class StorageType>
+concept isStorage = requires(StorageType storage, const storageExtent<StorageType>::value &extent, const CoRay &ray, std::span<MortonPrimitive> mortonPrimitives) {
+    { !std::is_void_v<storageExtent<StorageType>> };
+    { storage.mortonEncodePrimitives() } -> std::same_as<std::vector<MortonPrimitive>>;
+    { storage.reorder(mortonPrimitives) } -> std::same_as<void>;
+    { storage.intersects(extent, ray) } -> std::same_as<IntersectionResult>;
+};
 
 } // namespace cblt::geom::crtp
 

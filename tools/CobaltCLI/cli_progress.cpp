@@ -26,7 +26,6 @@ void printProgress(int percent, const char *status) {
     if (percent < 100) {
         statusFormatSize = std::snprintf(statusBar, kStatusBarLength, "[progress %3d%%]: %s ", percent, status);
     } else {
-        const char *completeMessage = "complete.";
         statusFormatSize = std::snprintf(statusBar, kStatusBarLength, "complete.");
     }
 

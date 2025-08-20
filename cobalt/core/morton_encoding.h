@@ -10,7 +10,7 @@ namespace cblt::core {
 // Morton Encoding adopted from 'Physically Based Rendering: From Theory to Implementation' 4th Edition
 // Assumes that x, y, z are all in the range 0, (1^10 - 1)
 constexpr uint32_t mortonEncode(const uint32_t x, const uint32_t y, const uint32_t z) {
-    constexpr uint32_t kMaxBit = 1 << 10;
+    [[maybe_unused]] constexpr uint32_t kMaxBit = 1 << 10;
     assert(x < kMaxBit && y < kMaxBit && z < kMaxBit);
     auto shift = [](const uint32_t v) {
         uint32_t value = v;

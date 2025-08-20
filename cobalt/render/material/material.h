@@ -18,9 +18,8 @@ public:
     };
 
     CoMaterialNode(constantType constant);
-    // CoMaterialNode(std::shared_ptr<class CoTexture> texture);
 
-    constantType output(vec2f uv, uint32_t faceIdx) const;
+    constantType output() const;
 
 private:
     constantType _value;
@@ -33,9 +32,7 @@ public:
 
     CoMaterial();
     CoMaterial(const Properties &parameters);
-    CoSurfaceParams surfaceParamsAtCoordinates(const vec2f uvCoords, uint32_t faceIdx) const;
-
-    // void sampleMaterialAtCoordinate(const CoRay &ray?, vec2f localCoorindates, uint32_t faceIdx) const;
+    CoSurfaceParams surfaceParamsAtCoordinates() const;
 private:
     Properties _parameters;
 };

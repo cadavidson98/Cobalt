@@ -7,58 +7,43 @@
 
 #include "core/logging.h"
 #include "core/string_utilities.h"
+#include "geometry/bounding_volume_scene_storage.h"
+#include "geometry/mesh.h"
+#include "geometry/sphere.h"
 #include "math/math_types.h"
 #include "private/mitsuba_utilities.h"
 #include "private/obj_utilities.h"
 
 #include <cstring>
+#include <memory>
 #include <unordered_map>
 
 namespace cblt::render {
 
 class CoSceneFactoryDelegate final : public utils::MitsubaDelegate {
 public:
-    bool readMesh(const utils::MitsubaMesh &mesh) override {
+    bool readSphere(const utils::MitsubaShape<utils::MitsubaSphere> &sphere) override {
+        _sceneGeometry->addSphere(geom::CoSphere{
+            .center = simd::vec3f(sphere.shape.center.x, sphere.shape.center.y, sphere.shape.center.z),
+            .radius = sphere.shape.radius,
+        });
+
+        return true;
+    }
+
+    bool readMesh(const utils::MitsubaShape<utils::MitsubaMesh> &mesh) override {
         std::shared_ptr<geom::CoMesh> cobaltMesh;
-        if (mesh.fileExtension == "obj") {
-            cobaltMesh = utils::readObjFile(core::appendFileToPath(_rootDirectory, mesh.fileName));
+        if (mesh.shape.fileExtension == "obj") {
+            const std::string filePath = core::appendFileToPath(_rootDirectory, mesh.shape.fileName);
+            cobaltMesh = utils::readObjFile(filePath);
         }
 
         if (!cobaltMesh) {
             return false;
         }
 
-        CoUUID materialID = CoScene::kInvalidID;
+        _sceneGeometry->addMesh(cobaltMesh);
 
-        if (std::holds_alternative<std::string>(mesh.material)) {
-            auto materialIter = _materialMap.find(std::get<std::string>(mesh.material));
-            if (materialIter == _materialMap.end()) {
-                return false;
-            }
-
-            materialID = materialIter->second;
-        } else {
-            if (!readBsdf(std::get<std::shared_ptr<utils::MitsubaBSDF>>(mesh.material))) {
-                return false;
-            }
-            materialID = _lastMaterialID;
-        }
-
-        const CoUUID geometryID = _geometry.size();
-
-        _geometry.push_back(
-            CoScene::GeometryComponent{
-                .mesh = cobaltMesh,
-                .transform = mesh.transform,
-            }
-        );
-
-        _primitives.push_back(
-            CoScene::Primitive{
-                .geometryIdx = geometryID,
-                .materialIdx = materialID,
-            }
-        );
         return true;
     }
 
@@ -72,8 +57,8 @@ public:
             // TODO: cache texture
         };
 
-        auto makeSpectrumNode =
-            [](const std::variant<CoSpectrum, utils::MitsubaTexture> &value) -> CoMaterialNode<CoSpectrum> {
+        auto makeSpectrumNode = [](const std::variant<CoSpectrum, utils::MitsubaTexture> &value
+                                ) -> CoMaterialNode<CoSpectrum> {
             if (std::holds_alternative<CoSpectrum>(value)) {
                 return CoMaterialNode(std::get<CoSpectrum>(value));
             }
@@ -104,6 +89,7 @@ public:
 
         _materials.push_back({
             .surface = std::shared_ptr<CoMaterial>(new CoMaterial(materialProperties)),
+            .resolver = nullptr,
         });
 
         const std::string materialID = bsdf->referenceID();
@@ -153,6 +139,8 @@ public:
 
     CoSceneFactoryDelegate(core::CoCallback &callback, std::string_view rootDirectory)
         : _progressCallback{callback}, _rootDirectory{rootDirectory} {
+
+        _sceneGeometry = std::make_shared<geom::crtp::CoSceneStorage>();
     }
 
     std::shared_ptr<CoScene> scene() {
@@ -160,7 +148,7 @@ public:
             .camera = _camera,
             .environmentMap = _environmentMap,
             .primitives = _primitives,
-            .meshes = _geometry,
+            .geometry = _sceneGeometry,
             .materials = _materials,
         };
 
@@ -173,8 +161,9 @@ private:
 
     CoUUID _lastMaterialID = CoScene::kInvalidID;
 
+    std::shared_ptr<geom::crtp::CoSceneStorage> _sceneGeometry;
+
     std::vector<CoScene::Primitive> _primitives = {};
-    std::vector<CoScene::GeometryComponent> _geometry = {};
     std::vector<CoScene::MaterialComponent> _materials = {};
 
     std::shared_ptr<CoCamera> _camera = {};

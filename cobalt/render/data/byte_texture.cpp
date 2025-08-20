@@ -41,7 +41,7 @@ template<typename T, uint32_t windowSize = 3>
 CoColor
 sampleNeighborhood(std::span<const T> data, const uint32_t numChannels, const vec2u textureSize, const vec2u center) {
 
-    const uint32_t maxIdx = numChannels * textureSize.x * textureSize.y;
+    [[maybe_unused]] const uint32_t maxIdx = numChannels * textureSize.x * textureSize.y;
 
     const uint32_t halfWindow = windowSize >> 1;
     const vec2f centerFloat = {float(center.x), float(center.y)};

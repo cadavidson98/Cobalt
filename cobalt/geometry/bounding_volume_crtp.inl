@@ -7,6 +7,7 @@
 #include "core/algorithms.h"
 #include "geometry/bounding_box.h"
 #include "geometry/intersection.h"
+#include "geometry/mesh.h"
 #include "math/math_utilities.h"
 
 #include <algorithm>
@@ -29,7 +30,7 @@ struct NodeOffsets {
     uint32_t leafNode;
 };
 
-std::vector<Cluster> findClusters(std::span<const MortonPrimitive> primitives) {
+inline std::vector<Cluster> findClusters(std::span<const MortonPrimitive> primitives) {
     std::vector<Cluster> clusters;
     
     size_t startIdx = 0;
@@ -58,7 +59,7 @@ std::vector<Cluster> findClusters(std::span<const MortonPrimitive> primitives) {
     return clusters;
 }
 
-std::vector<NodeOffsets> prefixSum(std::span<const Cluster> clusters, size_t primitivesPerLeaf) {
+inline std::vector<NodeOffsets> prefixSum(std::span<const Cluster> clusters) {
     std::vector<NodeOffsets> clusterOffsets(clusters.size() + 1);
 
     auto computeMaxLeafNodes = [](const Cluster &cluster) -> size_t {
@@ -94,22 +95,27 @@ std::vector<NodeOffsets> prefixSum(std::span<const Cluster> clusters, size_t pri
 }  // anonymous namespace
 
 template<typename StorageType>
-    requires isPrimitiveStorage<StorageType>
+    requires isStorage<StorageType>
 CoBoundingVolume<StorageType>::CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions)
     : primitivesPerLeaf{createOptions.maxPrimsInLeaf}, storage{createOptions.primitives} {
-        std::vector<MortonPrimitive> mortonEncodedPrimitives = storage->mortonEncodePrimitives();
+
+        // spatial sort & reordering
 
         auto mortonKeyer = [](const MortonPrimitive &lhs) {
             return lhs.mortonCode;
         };
 
+        std::vector<MortonPrimitive> mortonEncodedPrimitives = storage->mortonEncodePrimitives();
+
         core::radix_sort<30>(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), mortonKeyer);
 
         storage->reorder(mortonEncodedPrimitives);
 
+        // find treelet clusters
+
         const std::vector<Cluster> clusters = findClusters(mortonEncodedPrimitives);
 
-        const std::vector<NodeOffsets> offsets = prefixSum(clusters, primitivesPerLeaf);
+        const std::vector<NodeOffsets> offsets = prefixSum(clusters);
 
         assert(offsets.size() == clusters.size() + 1 && "prefix sum array must be larger than clusters");
 
@@ -119,6 +125,8 @@ CoBoundingVolume<StorageType>::CoBoundingVolume(const CreateWithPrimitivesInfo &
         interiorNodes.resize(treeSize.interiorNode);
 
         std::vector<TypedNode> treeletRoots(clusters.size());
+
+        // parallel treelet
 
         for (size_t idx = 0; idx < clusters.size(); ++idx) {
             const Cluster &cluster = clusters[idx];
@@ -150,12 +158,12 @@ CoBoundingVolume<StorageType>::CoBoundingVolume(const CreateWithPrimitivesInfo &
 }
 
 template<typename StorageType>
-    requires isPrimitiveStorage<StorageType>
+    requires isStorage<StorageType>
 CoBoundingVolume<StorageType>::~CoBoundingVolume() {
 }
 
 template<typename StorageType>
-    requires isPrimitiveStorage<StorageType>
+    requires isStorage<StorageType>
 IntersectionResult CoBoundingVolume<StorageType>::intersects(const CoRay &ray) const {
     const TypedNode kRootNode = {
         .boundingBox = boundingBox,
@@ -185,8 +193,10 @@ IntersectionResult CoBoundingVolume<StorageType>::intersects(const CoRay &ray) c
                 continue;
             }
             case Type::kLeaf: {
-                const LeafNodeType &node = leafNodes[current.index];
-                const IntersectionResult result = node.intersects(*storage, ray);
+                const LeafNode &node = leafNodes[current.index];
+
+                const IntersectionResult result = storage->intersects(node.extents, ray);
+
                 if (result.hitTime < ray.maxDist) {
                     return result;
                 }
@@ -201,24 +211,23 @@ IntersectionResult CoBoundingVolume<StorageType>::intersects(const CoRay &ray) c
         .hitTime = std::numeric_limits<float>::max(),
         .primitive = {
             .type = kNone,
-            .boundingBox = boundingBox,
             .index = kInvalidIndex,
         },
     };
 }
 
 template<typename StorageType>
-    requires isPrimitiveStorage<StorageType>
+    requires isStorage<StorageType>
 CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTreelet(
     std::span<const MortonPrimitive> mortonEncodedPrimitives,
     std::span<InteriorNode> interiorNodes,
-    std::span<LeafNodeType> leafNodes,
+    std::span<LeafNode> leafNodes,
     uint32_t &currentLeafNodeIdx,
     uint32_t &currentInteriorNodeIdx,
     const uint32_t mask
 ) {
     auto mergeBoundingBoxes = [](const CoAxisAlignedBoundingBox &lhs, const MortonPrimitive &rhs) {
-        return CoAxisAlignedBoundingBox::Union(lhs, rhs.primitive.boundingBox);
+        return CoAxisAlignedBoundingBox::Union(lhs, rhs.boundingBox);
     };
 
     assert(mortonEncodedPrimitives.size() > 0);
@@ -226,7 +235,7 @@ CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTre
     const CoAxisAlignedBoundingBox boundingBox = std::accumulate(
         mortonEncodedPrimitives.begin(),
         mortonEncodedPrimitives.end(),
-        mortonEncodedPrimitives.front().primitive.boundingBox,
+        mortonEncodedPrimitives.front().boundingBox,
         mergeBoundingBoxes
     );
 
@@ -236,7 +245,10 @@ CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTre
         assert(mortonEncodedPrimitives.size() <= primitivesPerLeaf);
         assert(leafNodeIdx < leafNodes.size() && "leaf node index out of bounds");
 
-        leafNodes[leafNodeIdx] = LeafNodeType(mortonEncodedPrimitives);
+        leafNodes[leafNodeIdx] = {
+            .extents = storage->findExtents(mortonEncodedPrimitives),
+        };
+
         return TypedNode {
             .boundingBox = boundingBox,
             .index = leafNodeIdx,
@@ -300,7 +312,7 @@ CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTre
 }
 
 template<typename StorageType>
-    requires isPrimitiveStorage<StorageType>
+    requires isStorage<StorageType>
 CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTree(
     std::span<const TypedNode> treeletRoots,
     std::span<InteriorNode> nodes,

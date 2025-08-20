@@ -63,9 +63,7 @@ public:
 
     CoColor resolve(
         const vec3f &incoming,
-        const geom::CoMesh &mesh,
-        const MaterialData &material,
-        const Interpolant &interpolant
+        const MaterialData &material
     ) const;
 
 private:

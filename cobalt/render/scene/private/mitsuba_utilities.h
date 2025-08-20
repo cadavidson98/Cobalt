@@ -6,10 +6,8 @@
 #include "math/math_types.h"
 
 #include <memory>
-#include <optional>
 #include <string>
 #include <variant>
-#include <vector>
 
 namespace cblt::render::utils {
 
@@ -44,22 +42,33 @@ struct MitsubaEmitter {
     MitsubaTexture emissionMap = {};
 };
 
-struct MitsubaMesh {
-    std::string fileName = "";
-    std::string fileExtension = "";
+template<typename ShapeType>
+struct MitsubaShape {
+    ShapeType shape;
     mat4f transform = {};
     std::variant<std::shared_ptr<MitsubaBSDF>, std::string> material;
 };
 
-class MitsubaDelegate {
-public:
-    virtual bool readMesh(const MitsubaMesh &mesh) = 0;
-    virtual bool readBsdf(std::shared_ptr<MitsubaBSDF> bsdf) = 0;
-    virtual bool readEmitter(const MitsubaEmitter &emitter) = 0;
-    virtual bool readSensor(const MitsubaCamera &camera) = 0;
+struct MitsubaSphere {
+    vec3f center;
+    float radius;
 };
 
-bool readMitsuba(const std::string_view fileName, std::shared_ptr<MitsubaDelegate> delegate);
+struct MitsubaMesh {
+    std::string fileName;
+    std::string fileExtension;
+};
+
+class MitsubaDelegate {
+public:
+    [[nodiscard]] virtual bool readSphere(const MitsubaShape<MitsubaSphere> &sphere) = 0;
+    [[nodiscard]] virtual bool readMesh(const MitsubaShape<MitsubaMesh> &mesh) = 0;
+    [[nodiscard]] virtual bool readBsdf(std::shared_ptr<MitsubaBSDF> bsdf) = 0;
+    [[nodiscard]] virtual bool readEmitter(const MitsubaEmitter &emitter) = 0;
+    [[nodiscard]] virtual bool readSensor(const MitsubaCamera &camera) = 0;
+};
+
+[[nodiscard]] bool readMitsuba(const std::string_view fileName, std::shared_ptr<MitsubaDelegate> delegate);
 
 } // namespace cblt::render::utils
 
