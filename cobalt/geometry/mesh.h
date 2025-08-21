@@ -1,7 +1,7 @@
 #ifndef CBLT_GEOM_MESH_H
 #define CBLT_GEOM_MESH_H
 
-#include "bounding_volume_crtp.h"
+#include "bounding_volume.h"
 #include "bounding_volume_mesh_storage.h"
 #include "bounding_volume_types.h"
 
@@ -42,10 +42,10 @@ public:
 
     CoAxisAlignedBoundingBox bounds() const;
 
-    geom::crtp::IntersectionResult intersects(const CoRay &ray) const;
+    geom::IntersectionResult intersects(const CoRay &ray) const;
 
 private:
-    using MeshAccelerator = crtp::CoBoundingVolume<crtp::CoMeshStorage>;
+    using MeshAccelerator = CoBoundingVolume<CoMeshStorage>;
 
     CoAxisAlignedBoundingBox _bounds;
 

@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <limits>
 
-namespace cblt::geom::crtp {
+namespace cblt::geom {
 
 class CoMeshStorage {
 public:
@@ -287,6 +287,6 @@ struct storageExtent<CoMeshStorage> {
     using value = CoMeshStorage::Extents;
 };
 
-} // namespace cblt::geom::crtp
+} // namespace cblt::geom
 
 #endif // CBLT_GEOM_BOUNDING_VOLUME_MESH_STORAGE_H

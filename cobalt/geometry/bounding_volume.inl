@@ -1,128 +1,362 @@
 #ifndef CBLT_GEOM_BOUNDING_VOLUME_INL
 #define CBLT_GEOM_BOUNDING_VOLUME_INL
+
 #include "bounding_volume.h"
+#include "bounding_volume_types.h"
 
-#include "intersection.h"
+#include "core/algorithms.h"
+#include "geometry/bounding_box.h"
+#include "geometry/intersection.h"
+#include "geometry/mesh.h"
+#include "math/math_utilities.h"
 
-#include <cassert>
-#include <functional>
+#include <algorithm>
+#include <cstdint>
+#include <deque>
 #include <limits>
-#include <queue>
+#include <numeric>
 
 namespace cblt::geom {
 
-template<typename BoundingVolumeStorage>
-CoBoundingVolume<typename BoundingVolumeStorage>::CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions)
-    : primitivesPerLeaf{createOptions.maxPrimsInLeaf}, partitionMethod{createOptions.partitionMethod},
-      storage{createOptions.primitives} {
-    BuildBoundingVolumeTree(0, storage->NumPrimitives());
+namespace {
+
+struct Cluster {
+    size_t startIdx = size_t(-1);
+    size_t primitiveCount = 0;
+};
+
+struct NodeOffsets {
+    uint32_t interiorNode;
+    uint32_t leafNode;
+};
+
+inline std::vector<Cluster> findClusters(std::span<const MortonPrimitive> primitives) {
+    std::vector<Cluster> clusters;
+    
+    size_t startIdx = 0;
+    size_t endIdx = 1;
+    for (; endIdx < primitives.size(); ++endIdx) {
+        static constexpr uint32_t kMask = 0b00111111110000000000000000000000;
+        const uint32_t startMask = primitives[startIdx].mortonCode & kMask;
+        const uint32_t endMask = primitives[endIdx].mortonCode & kMask;
+        if (startMask != endMask) {
+            // note: exclude primitive at endIdx because it isn't in the same cluster
+            clusters.push_back({
+                .startIdx = startIdx,
+                .primitiveCount = endIdx - startIdx,
+            });
+            startIdx = endIdx;
+        }
+    }
+
+    if (endIdx - startIdx > 0) {
+        clusters.push_back({
+            .startIdx = startIdx,
+            .primitiveCount = endIdx - startIdx,
+        });
+    }   
+
+    return clusters;
 }
 
-template<typename BoundingVolumeStorage>
-CoBoundingVolume<typename BoundingVolumeStorage>::~CoBoundingVolume() {
+inline std::vector<NodeOffsets> prefixSum(std::span<const Cluster> clusters) {
+    std::vector<NodeOffsets> clusterOffsets(clusters.size() + 1);
+
+    auto computeMaxLeafNodes = [](const Cluster &cluster) -> size_t {
+        return cluster.primitiveCount;
+    };
+
+    auto computeMaxInteriorNodes = [](const size_t leafNodeCount) -> size_t {
+        assert(leafNodeCount > 0 && "must have at least 1 leaf node");
+        return leafNodeCount - 1;
+    };
+
+    uint32_t totalInteriorNodes = computeMaxInteriorNodes(clusters.size());
+    uint32_t totalLeafNodes = 0;
+
+    for (size_t idx = 0; idx < clusters.size(); ++idx) {
+        clusterOffsets[idx].leafNode = totalLeafNodes;
+        clusterOffsets[idx].interiorNode = totalInteriorNodes;
+
+        const uint32_t leafNodeCount = computeMaxLeafNodes(clusters[idx]);
+
+        totalLeafNodes += leafNodeCount;
+        totalInteriorNodes += computeMaxInteriorNodes(leafNodeCount);
+    }
+
+    clusterOffsets.back() = NodeOffsets{
+        .interiorNode = totalInteriorNodes,
+        .leafNode = totalLeafNodes,
+    };
+
+    return clusterOffsets;
 }
 
-template<typename BoundingVolumeStorage>
-bool CoBoundingVolume<typename BoundingVolumeStorage>::IntersectClosest(const CoRay &ray, IntersectionEvent &intersectionEvent) const {
+}  // anonymous namespace
 
-    float closestHit = std::numeric_limits<float>::max();
-    float treeMinTime = 0;
-    float treeMaxTime = 0;
+template<typename StorageType>
+    requires isStorage<StorageType>
+CoBoundingVolume<StorageType>::CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions)
+    : primitivesPerLeaf{createOptions.maxPrimsInLeaf}, storage{createOptions.primitives} {
 
-    std::deque<size_t> nodeStack;
-    nodeStack.push_back(0);
-    while (!nodeStack.empty()) {
-        const size_t currentNodeIdx = nodeStack.back();
-        nodeStack.pop_back();
-        if (currentNodeIdx == kInvalidIndex) {
+        // spatial sort & reordering
+
+        auto mortonKeyer = [](const MortonPrimitive &lhs) {
+            return lhs.mortonCode;
+        };
+
+        std::vector<MortonPrimitive> mortonEncodedPrimitives = storage->mortonEncodePrimitives();
+
+        core::radix_sort<30>(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), mortonKeyer);
+
+        storage->reorder(mortonEncodedPrimitives);
+
+        // find treelet clusters
+
+        const std::vector<Cluster> clusters = findClusters(mortonEncodedPrimitives);
+
+        const std::vector<NodeOffsets> offsets = prefixSum(clusters);
+
+        assert(offsets.size() == clusters.size() + 1 && "prefix sum array must be larger than clusters");
+
+        const NodeOffsets &treeSize = offsets.back();
+
+        leafNodes.resize(treeSize.leafNode);
+        interiorNodes.resize(treeSize.interiorNode);
+
+        std::vector<TypedNode> treeletRoots(clusters.size());
+
+        // parallel treelet
+
+        for (size_t idx = 0; idx < clusters.size(); ++idx) {
+            const Cluster &cluster = clusters[idx];
+    
+            auto first = mortonEncodedPrimitives.begin() + cluster.startIdx;
+            auto last = first + cluster.primitiveCount;
+            std::span<const MortonPrimitive> clusteredPrimitives{ first, last };
+    
+            uint32_t currentLeafNodeIdx = offsets[idx].leafNode;
+            uint32_t currentInteriorNodeIdx = offsets[idx].interiorNode;
+    
+            assert(idx != offsets.size() && "must not index to the total node sizes in prefix sum array");
+    
+            treeletRoots[idx] = buildTreelet(
+                clusteredPrimitives,
+                interiorNodes,
+                leafNodes,
+                currentLeafNodeIdx,
+                currentInteriorNodeIdx,
+                1 << 21
+            );
+        }
+    
+        uint32_t currentNodeIdx = 0;
+        buildTree(treeletRoots, interiorNodes, currentNodeIdx);
+
+        const InteriorNode &root = interiorNodes[0];
+        boundingBox = CoAxisAlignedBoundingBox::Union(root.left.boundingBox, root.right.boundingBox);
+}
+
+template<typename StorageType>
+    requires isStorage<StorageType>
+CoBoundingVolume<StorageType>::~CoBoundingVolume() {
+}
+
+template<typename StorageType>
+    requires isStorage<StorageType>
+IntersectionResult CoBoundingVolume<StorageType>::intersects(const CoRay &ray) const {
+    const TypedNode kRootNode = {
+        .boundingBox = boundingBox,
+        .index = 0,
+        .type = Type::kInterior,
+    };
+
+    std::deque<TypedNode> nodeStack;
+    nodeStack.push_back(kRootNode);
+
+    float treeTimeMin = 0;
+    float treeTimeMax = 0;
+
+    while(!nodeStack.empty()) {
+        const TypedNode current = nodeStack.front();
+        nodeStack.pop_front();
+
+        if (!rayAxisAlignedBoundingBoxIntersection(ray, current.boundingBox, treeTimeMin, treeTimeMax)) {
             continue;
         }
-        const BoundingVolumeNode &currentNode = boundingVolumeTree[currentNodeIdx];
-        if (rayAxisAlignedBoundingBoxIntersection(ray, currentNode.nodeBounds, treeMinTime, treeMaxTime) &&
-            treeMinTime < closestHit) {
-            if (currentNode.primitiveCount != 0) {
-                // check for primitive hits
-                const size_t primitiveEndIdx = currentNode.primitiveStartIdx + currentNode.primitiveCount;
-                if (storage->PrimitivesIntersect(ray, currentNode.primitiveStartIdx, primitiveEndIdx, intersectionEvent)) {
-                    closestHit = intersectionEvent.timeMin;
+
+        switch (current.type) {
+            case Type::kInterior: {
+                const InteriorNode &node = interiorNodes[current.index];
+                nodeStack.emplace_front(node.right);
+                nodeStack.emplace_front(node.left);
+                continue;
+            }
+            case Type::kLeaf: {
+                const LeafNode &node = leafNodes[current.index];
+
+                const IntersectionResult result = storage->intersects(node.extents, ray);
+
+                if (result.hitTime < ray.maxDist) {
+                    return result;
                 }
                 continue;
             }
-            const size_t leftChildIdx = currentNodeIdx + 1; 
-            nodeStack.push_back(currentNode.rightChildIdx);
-            nodeStack.push_back(leftChildIdx);
+            case Type::kInvalid: [[fallthrough]];
+            default: assert(false);
         }
     }
-    return closestHit < ray.maxDist;
+
+    return IntersectionResult {
+        .hitTime = std::numeric_limits<float>::max(),
+        .primitive = {
+            .type = kNone,
+            .index = kInvalidIndex,
+        },
+    };
 }
 
-template<typename BoundingVolumeStorage>
-void CoBoundingVolume<typename BoundingVolumeStorage>::BuildBoundingVolumeTree(size_t startIdx, size_t endIdx) {
-
-    if (startIdx > endIdx) {
-        return;
-    }
-
-    const size_t numPrimitives = endIdx - startIdx;
-
-    CoAxisAlignedBoundingBox regionBounds = storage->PrimitiveBounds(startIdx, endIdx);
-
-    if (numPrimitives <= primitivesPerLeaf) {
-        assert(numPrimitives + startIdx <= storage->NumPrimitives());
-        BoundingVolumeNode leafNode{
-            .nodeBounds = regionBounds,
-            .primitiveStartIdx = startIdx,
-            .primitiveCount = static_cast<uint8_t>(numPrimitives),
-        };
-        boundingVolumeTree.push_back(std::move(leafNode));
-        return;
-    }
-
-    // split on largest axis
-    const simd::vec3f boundingDimensions = regionBounds.Scales();
-    const simd::vec3f boundingCenter = regionBounds.Center();
-    // need to get largest axis
-    const std::array<float, 4> dimensions = boundingDimensions.Values();
-    size_t maxIndex = 0;
-    float maxDimension = dimensions[0];
-    for (size_t idx = 1; idx < 3; ++idx) {
-        if (maxDimension < dimensions[idx]) {
-            maxIndex = idx;
-            maxDimension = dimensions[idx];
-        }
-    }
-
-    size_t splitIdx = startIdx;
-    switch (partitionMethod) {
-    case PartitionMethod::Midpoint: {
-        const float splitValue = boundingCenter[maxIndex];
-        splitIdx = storage->Reorder(startIdx, endIdx, [splitValue, maxIndex](const CoAxisAlignedBoundingBox &primitiveBounds) {
-                const simd::vec3f aabbCenter = primitiveBounds.Center();
-                return aabbCenter[maxIndex] < splitValue;
-            });
-        if (splitIdx != startIdx && splitIdx != endIdx) {
-            break;
-        }
-    }
-    case PartitionMethod::Binary:
-    default: {
-        splitIdx = (endIdx + startIdx) >> 1;
-    }
-    }
-    // make node
-    BoundingVolumeNode node{
-        .nodeBounds = regionBounds,
-        .rightChildIdx = kInvalidIndex,
-        .primitiveCount = 0,
+template<typename StorageType>
+    requires isStorage<StorageType>
+CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTreelet(
+    std::span<const MortonPrimitive> mortonEncodedPrimitives,
+    std::span<InteriorNode> interiorNodes,
+    std::span<LeafNode> leafNodes,
+    uint32_t &currentLeafNodeIdx,
+    uint32_t &currentInteriorNodeIdx,
+    const uint32_t mask
+) {
+    auto mergeBoundingBoxes = [](const CoAxisAlignedBoundingBox &lhs, const MortonPrimitive &rhs) {
+        return CoAxisAlignedBoundingBox::Union(lhs, rhs.boundingBox);
     };
 
-    boundingVolumeTree.push_back(std::move(node));
-    size_t curNodeIdx = boundingVolumeTree.size();
-    BuildBoundingVolumeTree(startIdx, splitIdx);
-    boundingVolumeTree[curNodeIdx - 1].rightChildIdx = boundingVolumeTree.size();
-    BuildBoundingVolumeTree(splitIdx, endIdx);
+    assert(mortonEncodedPrimitives.size() > 0);
+
+    const CoAxisAlignedBoundingBox boundingBox = std::accumulate(
+        mortonEncodedPrimitives.begin(),
+        mortonEncodedPrimitives.end(),
+        mortonEncodedPrimitives.front().boundingBox,
+        mergeBoundingBoxes
+    );
+
+    if ((mortonEncodedPrimitives.size() <= primitivesPerLeaf) || !mask) {
+        const uint32_t leafNodeIdx = currentLeafNodeIdx++;
+
+        assert(mortonEncodedPrimitives.size() <= primitivesPerLeaf);
+        assert(leafNodeIdx < leafNodes.size() && "leaf node index out of bounds");
+
+        leafNodes[leafNodeIdx] = {
+            .extents = storage->findExtents(mortonEncodedPrimitives),
+        };
+
+        return TypedNode {
+            .boundingBox = boundingBox,
+            .index = leafNodeIdx,
+            .type = Type::kLeaf,
+        };
+    }
+
+    const uint32_t frontMask = mortonEncodedPrimitives.front().mortonCode & mask;
+    const uint32_t backMask = mortonEncodedPrimitives.back().mortonCode & mask;
+
+    if (frontMask == backMask) {
+        return buildTreelet(
+            mortonEncodedPrimitives, 
+            interiorNodes,
+            leafNodes,
+            currentLeafNodeIdx,
+            currentInteriorNodeIdx,
+            mask >> 1
+        );
+
+        assert(false && "should never execute");
+    }
+
+    auto isInterval = [mask, frontMask](uint32_t ref, const MortonPrimitive &val) {
+        return ref < uint32_t((mask & val.mortonCode) != frontMask);
+    };
+
+    auto spliterator = std::upper_bound(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), 0u, isInterval);
+
+    assert(spliterator != mortonEncodedPrimitives.begin() && spliterator != mortonEncodedPrimitives.end() && "should always partition sorted interval");
+
+    const uint32_t interiorNodeIndex = currentInteriorNodeIdx++;
+
+    const TypedNode interior{
+        .boundingBox = boundingBox,
+        .index = interiorNodeIndex,
+        .type = Type::kInterior,
+    };
+
+    assert(interiorNodeIndex < interiorNodes.size() && "interior node index out of bounds");
+
+    interiorNodes[interiorNodeIndex].left = buildTreelet(
+        {mortonEncodedPrimitives.begin(), spliterator}, 
+        interiorNodes,
+        leafNodes,
+        currentLeafNodeIdx,
+        currentInteriorNodeIdx,
+        mask >> 1
+    );
+
+    interiorNodes[interiorNodeIndex].right = buildTreelet(
+        {spliterator, mortonEncodedPrimitives.end()},
+        interiorNodes,
+        leafNodes,
+        currentLeafNodeIdx,
+        currentInteriorNodeIdx,
+        mask >> 1
+    );
+
+    return interior;
 }
 
-} // namespace cblt::geom
+template<typename StorageType>
+    requires isStorage<StorageType>
+CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTree(
+    std::span<const TypedNode> treeletRoots,
+    std::span<InteriorNode> nodes,
+    uint32_t &currentNodeIdx
+) {
+    if (treeletRoots.size() == 1) {
+        return treeletRoots.front();
+    } else if (treeletRoots.empty()) {
+        return TypedNode{};
+    }
 
-#endif   // CBLT_GEOM_BOUNDING_VOLUME_INL
+    auto mergeBoundingBoxes = [](const CoAxisAlignedBoundingBox &lhs, const TypedNode &rhs) {
+        return CoAxisAlignedBoundingBox::Union(lhs, rhs.boundingBox);
+    };
+
+    CoAxisAlignedBoundingBox boundingBox = std::accumulate(
+        treeletRoots.begin(),
+        treeletRoots.end(),
+        treeletRoots.front().boundingBox,
+        mergeBoundingBoxes
+    );
+
+    const TypedNode interior{
+        .boundingBox = boundingBox,
+        .index = currentNodeIdx++,
+        .type = Type::kInterior,
+    };
+
+    const size_t splitIdx = treeletRoots.size() >> 1;
+    nodes[interior.index].left = buildTree(
+        treeletRoots.subspan(0, splitIdx),
+        nodes,
+        currentNodeIdx
+    );
+
+    nodes[interior.index].right = buildTree(
+        treeletRoots.subspan(splitIdx, treeletRoots.size() - splitIdx),
+        nodes,
+        currentNodeIdx
+    );
+
+    return interior;
+}
+
+}  // namespace cblt::geom
+
+#endif  // CBLT_GEOM_BOUNDING_VOLUME_INL

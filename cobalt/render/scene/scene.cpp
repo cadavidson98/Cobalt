@@ -4,7 +4,7 @@
 #include "texture.h"
 #include "texture_cache.h"
 
-#include "geometry/bounding_volume_crtp.h"
+#include "geometry/bounding_volume.h"
 #include "geometry/bounding_volume_scene_storage.h"
 #include "geometry/bounding_volume_types.h"
 #include "geometry/intersection.h"
@@ -53,9 +53,9 @@ std::shared_ptr<CoCamera> CoScene::camera() const {
 }
 
 bool CoScene::closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const {
-    const geom::crtp::IntersectionResult result = _accelerator->intersects(ray);
+    const geom::IntersectionResult result = _accelerator->intersects(ray);
     intersectionEvent.timeMin = result.hitTime;
-    return result.primitive.type != geom::crtp::PrimitiveType::kNone;
+    return result.primitive.type != geom::PrimitiveType::kNone;
 }
 
 CoColor CoScene::environment(const geom::CoRay &ray) const {

@@ -140,7 +140,7 @@ public:
     CoSceneFactoryDelegate(core::CoCallback &callback, std::string_view rootDirectory)
         : _progressCallback{callback}, _rootDirectory{rootDirectory} {
 
-        _sceneGeometry = std::make_shared<geom::crtp::CoSceneStorage>();
+        _sceneGeometry = std::make_shared<geom::CoSceneStorage>();
     }
 
     std::shared_ptr<CoScene> scene() {
@@ -161,7 +161,7 @@ private:
 
     CoUUID _lastMaterialID = CoScene::kInvalidID;
 
-    std::shared_ptr<geom::crtp::CoSceneStorage> _sceneGeometry;
+    std::shared_ptr<geom::CoSceneStorage> _sceneGeometry;
 
     std::vector<CoScene::Primitive> _primitives = {};
     std::vector<CoScene::MaterialComponent> _materials = {};

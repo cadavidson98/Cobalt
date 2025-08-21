@@ -5,7 +5,7 @@
 
 #include <filesystem>
 
-namespace cblt::geom::crtp {
+namespace cblt::geom {
 
 class CoBoundingVolumeStorage {
 public:
@@ -62,6 +62,6 @@ void reorder(CStyleStorage *storage) {
     }
 }
 
-} // namespace cblt::geom::crtp
+} // namespace cblt::geom
 
 #endif // CBLT_GEOM_BOUNDING_VOLUME_STORAGE_H

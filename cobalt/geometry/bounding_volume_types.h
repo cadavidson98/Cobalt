@@ -8,15 +8,14 @@
 #include <span>
 #include <vector>
 
-namespace cblt::geom::crtp {
+namespace cblt::geom {
 
 enum PrimitiveType : uint32_t {
     kNone = 0,
-    kSphere = 1,
-    kTriangle = 2,
-    kPatch = 4,
-    kBox = 8,
-    kMesh = 16,
+    kTriangle = 1,
+    kPatch = 2,
+    kSphere = 4,
+    kMesh = 8,
 };
 
 using PrimitiveTypes = uint32_t;
@@ -60,6 +59,6 @@ concept isStorage = requires(
     { storage.intersects(extent, ray) } -> std::same_as<IntersectionResult>;
 };
 
-} // namespace cblt::geom::crtp
+} // namespace cblt::geom
 
 #endif // CBLT_GEOM_BOUNDING_VOLUME_TYPES_H

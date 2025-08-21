@@ -56,15 +56,14 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
 }
 
 CoMesh::CoMesh(const CreateInfo &createInfo): _positions(createInfo.positions) {
-    const std::shared_ptr<crtp::CoMeshStorage> meshStorage =
-        std::make_shared<crtp::CoMeshStorage>(crtp::CoMeshStorage::VertexBuffer{
-            .positions = _positions.vertices,
-            .positionCount = _positions.vertexCount,
-            .triangleIndices = _positions.triangleIndices,
-            .triangleCount = _positions.triangleCount,
-            .patchIndices = _positions.patchIndices,
-            .patchCount = _positions.patchCount,
-        });
+    const std::shared_ptr<CoMeshStorage> meshStorage = std::make_shared<CoMeshStorage>(CoMeshStorage::VertexBuffer{
+        .positions = _positions.vertices,
+        .positionCount = _positions.vertexCount,
+        .triangleIndices = _positions.triangleIndices,
+        .triangleCount = _positions.triangleCount,
+        .patchIndices = _positions.patchIndices,
+        .patchCount = _positions.patchCount,
+    });
 
     std::span<const vec3u> triangles = {
         _positions.triangleIndices.get(),
@@ -134,7 +133,7 @@ CoAxisAlignedBoundingBox CoMesh::bounds() const {
     return _bounds;
 }
 
-geom::crtp::IntersectionResult CoMesh::intersects(const CoRay &ray) const {
+geom::IntersectionResult CoMesh::intersects(const CoRay &ray) const {
     assert(_accelerator && "missing accelerator");
     return _accelerator->intersects(ray);
 }

@@ -14,9 +14,7 @@
 #include <limits>
 #include <memory>
 
-#include <unistd.h>
-
-namespace cblt::geom::crtp {
+namespace cblt::geom {
 
 class CoSceneStorage {
 public:
@@ -46,11 +44,6 @@ public:
         _bounds = CoAxisAlignedBoundingBox::Union(_bounds, sphereBounds);
     }
 
-    void addBox(const CoAxisAlignedBoundingBox &box) {
-        _boxPrimitives.push_back(box);
-        _bounds = CoAxisAlignedBoundingBox::Union(_bounds, box);
-    }
-
     void addMesh(const std::shared_ptr<CoMesh> mesh) {
         _meshPrimitives.push_back(mesh);
         _bounds = CoAxisAlignedBoundingBox::Union(_bounds, mesh->bounds());
@@ -58,22 +51,14 @@ public:
 
     // MARK: bounding volume helper methods
     void reorder(std::span<MortonPrimitive> primitives) {
-        uint32_t boxIdx = 0;
         uint32_t sphereIdx = 0;
         uint32_t meshIdx = 0;
 
-        std::vector<CoAxisAlignedBoundingBox> boxesCopy = _boxPrimitives;
         std::vector<CoSphere> spheresCopy = _spherePrimitives;
         std::vector<std::shared_ptr<CoMesh>> meshesCopy = _meshPrimitives;
 
         for (MortonPrimitive &mortonPrimitive : primitives) {
             switch (mortonPrimitive.primitive.type) {
-            case PrimitiveType::kBox : {
-                const size_t newIdx = boxIdx++;
-                _boxPrimitives[newIdx] = boxesCopy[mortonPrimitive.primitive.index];
-                mortonPrimitive.primitive.index = newIdx;
-                continue;
-            }
             case PrimitiveType::kSphere : {
                 const size_t newIdx = sphereIdx++;
                 _spherePrimitives[newIdx] = spheresCopy[mortonPrimitive.primitive.index];
@@ -99,7 +84,7 @@ public:
         const simd::vec3f boundsMin = primitiveBounds.min;
 
         std::vector<MortonPrimitive> primitives;
-        primitives.reserve(_boxPrimitives.size() + _spherePrimitives.size() + _meshPrimitives.size());
+        primitives.reserve(_spherePrimitives.size() + _meshPrimitives.size());
 
         auto encodePrimitive = [&boundsExtent, &boundsMin](const CoAxisAlignedBoundingBox &boundingBox) -> uint32_t {
             static constexpr float kFloatToUint = float((1 << 10) - 1);
@@ -107,19 +92,6 @@ public:
             const std::array<float, 4> values = (kFloatToUint * normalizedPosition).Values();
             return core::mortonEncode(values[0], values[1], values[2]);
         };
-
-        for (size_t index = 0; index < _boxPrimitives.size(); ++index) {
-            const CoAxisAlignedBoundingBox &box = _boxPrimitives[index];
-            primitives.push_back(MortonPrimitive{
-                .mortonCode = encodePrimitive(box),
-                .primitive =
-                    {
-                                .type = PrimitiveType::kBox,
-                                .index = uint32_t(index),
-                                },
-                .boundingBox = box,
-            });
-        }
 
         for (size_t index = 0; index < _spherePrimitives.size(); ++index) {
             const CoSphere &sphere = _spherePrimitives[index];
@@ -169,7 +141,6 @@ public:
         for (const MortonPrimitive &mortonPrimitive : primitives) {
             const Primitive &primitive = mortonPrimitive.primitive;
             switch (primitive.type) {
-            case PrimitiveType::kBox : extents.boxes = expandExtent(extents.boxes, primitive); continue;
             case PrimitiveType::kSphere : extents.spheres = expandExtent(extents.spheres, primitive); continue;
             case PrimitiveType::kMesh : extents.meshes = expandExtent(extents.meshes, primitive); continue;
             default : assert(false);
@@ -180,23 +151,7 @@ public:
     }
 
     [[nodiscard]] IntersectionResult intersects(const Extents &extents, const CoRay &ray) {
-        const PrimitiveExtent &boxes = extents.boxes;
-
         IntersectionResult result;
-
-        for (size_t idx = boxes.start; idx < boxes.start + boxes.count; ++idx) {
-            float localTimeMin = std::numeric_limits<float>::max();
-            float localTimeMax = std::numeric_limits<float>::max();
-            const CoAxisAlignedBoundingBox &box = _boxPrimitives[idx];
-            if (rayAxisAlignedBoundingBoxIntersection(ray, box, localTimeMin, localTimeMax) &&
-                localTimeMin < result.hitTime) {
-                result.hitTime = localTimeMin;
-                result.primitive = {
-                    .type = PrimitiveType::kBox,
-                    .index = uint32_t(idx),
-                };
-            }
-        }
 
         const PrimitiveExtent &spheres = extents.spheres;
         for (size_t idx = spheres.start; idx < spheres.start + spheres.count; ++idx) {
@@ -231,7 +186,6 @@ public:
 private:
     CoAxisAlignedBoundingBox _bounds;
 
-    std::vector<cblt::geom::CoAxisAlignedBoundingBox> _boxPrimitives;
     std::vector<cblt::geom::CoSphere> _spherePrimitives;
     std::vector<std::shared_ptr<cblt::geom::CoMesh>> _meshPrimitives;
 
@@ -245,6 +199,6 @@ struct storageExtent<CoSceneStorage> {
     using value = CoSceneStorage::Extents;
 };
 
-} // namespace cblt::geom::crtp
+} // namespace cblt::geom
 
 #endif // CBLT_GEOM_BOUNDING_VOLUME_SCENE_STORAGE_H
