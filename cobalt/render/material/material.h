@@ -33,6 +33,7 @@ public:
     CoMaterial();
     CoMaterial(const Properties &parameters);
     CoSurfaceParams surfaceParamsAtCoordinates() const;
+
 private:
     Properties _parameters;
 };

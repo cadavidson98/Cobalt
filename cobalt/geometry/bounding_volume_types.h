@@ -48,7 +48,12 @@ struct storageExtent {
 };
 
 template<class StorageType>
-concept isStorage = requires(StorageType storage, const storageExtent<StorageType>::value &extent, const CoRay &ray, std::span<MortonPrimitive> mortonPrimitives) {
+concept isStorage = requires(
+    StorageType storage,
+    const storageExtent<StorageType>::value &extent,
+    const CoRay &ray,
+    std::span<MortonPrimitive> mortonPrimitives
+) {
     { !std::is_void_v<storageExtent<StorageType>> };
     { storage.mortonEncodePrimitives() } -> std::same_as<std::vector<MortonPrimitive>>;
     { storage.reorder(mortonPrimitives) } -> std::same_as<void>;

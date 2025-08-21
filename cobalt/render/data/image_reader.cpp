@@ -170,8 +170,8 @@ std::shared_ptr<render::CoTexture> readPng(const ReadInfo &readInfo) {
                 const size_t writeIndex = (y * width + x) * numChannels;
                 for (size_t channel = 0; channel < numChannels; ++channel) {
                     const size_t channelIndex = readIndex + (channel * kBytesPerChannel);
-                    const uint16_t shortByte =
-                        uint16_t(rowData[channelIndex]) << 8 | uint16_t(rowData[channelIndex + 1]);
+                    const uint16_t shortByte = uint16_t(rowData[channelIndex]) << 8 |
+                                               uint16_t(rowData[channelIndex + 1]);
 
                     textureData[writeIndex + channel] = shortToFloat(shortByte);
                 }
@@ -244,8 +244,8 @@ std::shared_ptr<render::CoTexture> readExr(const ReadInfo &readInfo) {
             [&frameBuffer, &textureData, &currentChannel, width](const Imf::Channel *channel, const char *name) {
                 if (channel) {
 
-                    const size_t strideBytes =
-                        (channel->type == Imf::PixelType::HALF) ? sizeof(Imath::half) : sizeof(float);
+                    const size_t strideBytes = (channel->type == Imf::PixelType::HALF) ? sizeof(Imath::half)
+                                                                                       : sizeof(float);
 
                     frameBuffer.insert(
                         name,

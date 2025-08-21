@@ -125,9 +125,10 @@ bool renderCommand(int argc, char **argv) {
     static constexpr uint32_t kWidth = 800;
     static constexpr uint32_t kHeight = 800;
     std::shared_ptr<render::CoRenderTarget> renderTarget = render::CoRenderTarget::create({
-        .size = {
-                 kWidth, kHeight,
-                 },
+        .size =
+            {
+                   kWidth, kHeight,
+                   },
     });
 
     if (!renderTarget) {
@@ -171,10 +172,7 @@ bool renderCommand(int argc, char **argv) {
             } else {
                 // FIXME: This is garbage (literally)
                 const render::CoColor environmentColor = defaultScene->environment(ray);
-                renderTarget->write(
-                    {pixelX, pixelY},
-                    environmentColor
-                );
+                renderTarget->write({pixelX, pixelY}, environmentColor);
             }
             const uint32_t currentPixel = pixelY * kWidth + pixelX;
             if (currentPixel % pixelProgress == 0) {

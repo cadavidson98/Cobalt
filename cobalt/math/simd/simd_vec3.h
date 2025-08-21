@@ -139,9 +139,9 @@ inline vec3f max(const vec3f &lhs, const vec3f &rhs) {
 }
 
 inline vec3f maskNaN(const vec3f &lhs, const float value) {
-    const __m128 values = { value, value, value, value};
+    const __m128 values = {value, value, value, value};
     const __m128 mask = _mm_cmp_ps(lhs.xyz, lhs.xyz, _CMP_ORD_Q);
-    return {_mm_blendv_ps(values, lhs.xyz, mask) };
+    return {_mm_blendv_ps(values, lhs.xyz, mask)};
 }
 
 inline float reduceMin(const vec3f &lhs) {

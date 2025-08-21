@@ -139,7 +139,7 @@ bool rayPatchIntersection(
     };
 
     float hitTimeU = std::numeric_limits<float>::max();
-    
+
     vec2f localCoordinatesU = {0.f, 0.f};
     const bool u1Valid = 0.f <= u1 && u1 <= 1.f;
     if (u1Valid) {
@@ -185,8 +185,10 @@ bool rayAxisAlignedBoundingBoxIntersection(
     float &minTime,
     float &maxTime
 ) {
-    const simd::vec3f minIntersectTimes = simd::maskNaN((aabb.min - ray.pos) * ray.invDir, std::numeric_limits<float>::lowest());
-    const simd::vec3f maxIntersectTimes = simd::maskNaN((aabb.max - ray.pos) * ray.invDir, std::numeric_limits<float>::max());
+    const simd::vec3f minIntersectTimes =
+        simd::maskNaN((aabb.min - ray.pos) * ray.invDir, std::numeric_limits<float>::lowest());
+    const simd::vec3f maxIntersectTimes =
+        simd::maskNaN((aabb.max - ray.pos) * ray.invDir, std::numeric_limits<float>::max());
 
     const simd::vec3f closestTimes = simd::min(minIntersectTimes, maxIntersectTimes);
     const simd::vec3f farthestTimes = simd::max(minIntersectTimes, maxIntersectTimes);

@@ -38,8 +38,12 @@ bool checkCreateInfo(const CoByteTexture::CreateFromBytesInfo &createInfo) {
 }
 
 template<typename T, uint32_t windowSize = 3>
-CoColor
-sampleNeighborhood(std::span<const T> data, const uint32_t numChannels, const vec2u textureSize, const vec2u center) {
+CoColor sampleNeighborhood(
+    std::span<const T> data,
+    const uint32_t numChannels,
+    const vec2u textureSize,
+    const vec2u center
+) {
 
     [[maybe_unused]] const uint32_t maxIdx = numChannels * textureSize.x * textureSize.y;
 

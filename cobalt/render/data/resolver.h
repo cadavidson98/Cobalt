@@ -61,10 +61,7 @@ public:
         size_t faceIdx;
     };
 
-    CoColor resolve(
-        const vec3f &incoming,
-        const MaterialData &material
-    ) const;
+    CoColor resolve(const vec3f &incoming, const MaterialData &material) const;
 
 private:
     TextureType _textureType;

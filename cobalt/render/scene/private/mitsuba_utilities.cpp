@@ -174,9 +174,14 @@ mat4f loadTransform(xmlNodePtr transformNode, const MitsubaSchema &schema) {
     return transform;
 }
 
-std::optional<MitsubaCamera>
-loadCamera(xmlNodePtr cameraNode, xmlXPathContextPtr context, const MitsubaSchema &schema) {
-    xml2::xmlResource<xmlXPathObject> transform(xmlXPathNodeEval(cameraNode, schema.transformExpression.xml_str(), context));
+std::optional<MitsubaCamera> loadCamera(
+    xmlNodePtr cameraNode,
+    xmlXPathContextPtr context,
+    const MitsubaSchema &schema
+) {
+    xml2::xmlResource<xmlXPathObject> transform(
+        xmlXPathNodeEval(cameraNode, schema.transformExpression.xml_str(), context)
+    );
     if (!transform || !xml2::xmlHoldsAlternative<XPATH_NODESET>(transform.get())) {
         CoLogError("Missing transform for Camera");
         return std::nullopt;
@@ -202,8 +207,11 @@ loadCamera(xmlNodePtr cameraNode, xmlXPathContextPtr context, const MitsubaSchem
     };
 }
 
-std::shared_ptr<MitsubaBSDF>
-loadMaterial(xmlNodePtr materialNode, xmlXPathContextPtr context, const MitsubaSchema &schema) {
+std::shared_ptr<MitsubaBSDF> loadMaterial(
+    xmlNodePtr materialNode,
+    xmlXPathContextPtr context,
+    const MitsubaSchema &schema
+) {
     xml2::xmlString materialType = xmlGetProp(materialNode, schema.typeName.xml_str());
     if (!materialType) {
         CoLogError("unsupported material type");
@@ -246,9 +254,12 @@ loadMaterial(xmlNodePtr materialNode, xmlXPathContextPtr context, const MitsubaS
     };
 
     auto getRoughness = [&schema, context](xmlNodePtr node) -> vec2f {
-        xml2::xmlResource<xmlXPathObject> roughnessObject = xmlXPathNodeEval(node, schema.roughnessName.xml_str(), context);
-        xml2::xmlResource<xmlXPathObject> roughnessXObject = xmlXPathNodeEval(node, schema.roughnessXName.xml_str(), context);
-        xml2::xmlResource<xmlXPathObject> roughnessYObject = xmlXPathNodeEval(node, schema.roughnessYName.xml_str(), context);
+        xml2::xmlResource<xmlXPathObject> roughnessObject =
+            xmlXPathNodeEval(node, schema.roughnessName.xml_str(), context);
+        xml2::xmlResource<xmlXPathObject> roughnessXObject =
+            xmlXPathNodeEval(node, schema.roughnessXName.xml_str(), context);
+        xml2::xmlResource<xmlXPathObject> roughnessYObject =
+            xmlXPathNodeEval(node, schema.roughnessYName.xml_str(), context);
         static constexpr float kDefaultRoughness = 0.1f;
 
         if (xml2::xmlHoldsAlternative<XPATH_NODESET>(roughnessObject.get())) {
@@ -316,7 +327,7 @@ std::optional<MitsubaSphere> loadSphere(
     xml2::xmlResource<xmlXPathObject> center = xmlXPathNodeEval(sphereNode, schema.centerName.xml_str(), context);
 
     static constexpr float kDefaultRadius = 1.f;
-    static constexpr vec3f kDefaultCenter = { 0.f, 0.f, 0.f};
+    static constexpr vec3f kDefaultCenter = {0.f, 0.f, 0.f};
 
     float sphereRadius = kDefaultRadius;
     vec3f sphereCenter = kDefaultCenter;
@@ -340,7 +351,7 @@ std::optional<MitsubaSphere> loadSphere(
         };
     }
 
-    return MitsubaSphere {
+    return MitsubaSphere{
         .center = sphereCenter,
         .radius = sphereRadius,
     };
@@ -376,11 +387,8 @@ std::optional<MitsubaShape<ShapeType>> loadTypedShape(
 ) {
     mat4f shapeToWorld(1.f);
 
-    xml2::xmlResource<xmlXPathObject> transform = xmlXPathNodeEval(
-        shapeNode,
-        schema.transformExpression.xml_str(), 
-        context
-    );
+    xml2::xmlResource<xmlXPathObject> transform =
+        xmlXPathNodeEval(shapeNode, schema.transformExpression.xml_str(), context);
 
     if (xml2::xmlHoldsAlternative<XPATH_NODESET>(transform.get())) {
         xmlNodeSetPtr transformNode = transform->nodesetval;
@@ -398,7 +406,7 @@ std::optional<MitsubaShape<ShapeType>> loadTypedShape(
         return std::nullopt;
     }
 
-    return MitsubaShape<ShapeType> {
+    return MitsubaShape<ShapeType>{
         .shape = std::move(*shape),
         .transform = shapeToWorld,
         .material = material,
@@ -418,7 +426,7 @@ bool readMitsuba(const std::string_view fileName, std::shared_ptr<MitsubaDelegat
         return false;
     }
 
-    while(xmlTextReaderRead(mitsubaReader.get()) > 0) {
+    while (xmlTextReaderRead(mitsubaReader.get()) > 0) {
         const int rawType = xmlTextReaderNodeType(mitsubaReader.get());
         if (rawType == -1) {
             break;
@@ -441,8 +449,7 @@ bool readMitsuba(const std::string_view fileName, std::shared_ptr<MitsubaDelegat
 
                 xml2::xmlResource<xmlXPathContext> xpathContext = xmlXPathNewContext(bsdfNode->doc);
 
-                const std::shared_ptr<MitsubaBSDF> bsdf =
-                    loadMaterial(bsdfNode, xpathContext.get(), schema);
+                const std::shared_ptr<MitsubaBSDF> bsdf = loadMaterial(bsdfNode, xpathContext.get(), schema);
                 if (!bsdf || !delegate->readBsdf(bsdf)) {
                     return false;
                 }
@@ -462,10 +469,11 @@ bool readMitsuba(const std::string_view fileName, std::shared_ptr<MitsubaDelegat
                     }
 
                     const MitsubaEmitter emitter = {
-                        .emissionMap = {
-                            .fileName = fileName.c_str(),
-                            .fileExtension = cblt::core::fileExtension(fileName.c_str()),
-                        },
+                        .emissionMap =
+                            {
+                                          .fileName = fileName.c_str(),
+                                          .fileExtension = cblt::core::fileExtension(fileName.c_str()),
+                                          },
                     };
 
                     if (!delegate->readEmitter(emitter)) {
@@ -478,24 +486,16 @@ bool readMitsuba(const std::string_view fileName, std::shared_ptr<MitsubaDelegat
                 xml2::xmlResource<xmlXPathContext> xpathContext = xmlXPathNewContext(shapeNode->doc);
                 const xml2::xmlString typeProperty = xmlGetProp(shapeNode, schema.typeName.xml_str());
                 if (typeProperty == schema.objTypeName) {
-                    const std::optional<MitsubaShape<MitsubaMesh>> mesh = loadTypedShape<MitsubaMesh>(
-                        shapeNode,
-                        xpathContext.get(),
-                        schema,
-                        loadMesh
-                    );
+                    const std::optional<MitsubaShape<MitsubaMesh>> mesh =
+                        loadTypedShape<MitsubaMesh>(shapeNode, xpathContext.get(), schema, loadMesh);
 
                     if (!mesh || !delegate->readMesh(*mesh)) {
                         return false;
                     }
                 } else if (typeProperty == schema.sphereName) {
-                    const std::optional<MitsubaShape<MitsubaSphere>> sphere = loadTypedShape<MitsubaSphere>(
-                        shapeNode,
-                        xpathContext.get(),
-                        schema,
-                        loadSphere
-                    );
- 
+                    const std::optional<MitsubaShape<MitsubaSphere>> sphere =
+                        loadTypedShape<MitsubaSphere>(shapeNode, xpathContext.get(), schema, loadSphere);
+
                     if (!sphere || !delegate->readSphere(*sphere)) {
                         return false;
                     }

@@ -89,6 +89,9 @@ InsertNewlineAtEOF: true
 LineEnding: LF
 MaxEmptyLinesToKeep: 1
 # NamespaceIndentation: ALL
+PenaltyBreakAssignment: 15
+PenaltyBreakBeforeFirstCallParameter: 5
+PenaltyReturnTypeOnItsOwnLine: 10000
 PointerAlignment: Right
 SortIncludes: CaseSensitive
 SortUsingDeclarations: Lexicographic

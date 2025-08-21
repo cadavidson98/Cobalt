@@ -14,7 +14,7 @@
 namespace {
 
 // common tokents
-constexpr const char *const kObjTokens = " \n";
+constexpr const char * const kObjTokens = " \n";
 constexpr char kCommentToken = '#';
 
 // mesh tokens
@@ -45,7 +45,7 @@ MeshBuffersSizeInfo scanObjFile(std::ifstream &meshFile) {
     auto computeTokenCount = [](const std::string_view line) -> size_t {
         size_t tokenCount = 0;
         size_t pos = 0;
-        while(pos < line.length()) {
+        while (pos < line.length()) {
             pos = line.find_first_of(kObjTokens, pos);
 
             ++tokenCount;
@@ -110,7 +110,7 @@ std::shared_ptr<geom::CoMesh> readObjFile(const std::string &fileName) {
 
     const MeshBuffersSizeInfo &meshInfo = bufferSizeInfo;
 
-    const geom::CoMesh::VertexAttributeBuffer<simd::vec3f> positions {
+    const geom::CoMesh::VertexAttributeBuffer<simd::vec3f> positions{
         .vertices = std::make_shared<simd::vec3f[]>(meshInfo.positionCount),
         .vertexCount = meshInfo.positionCount,
         .triangleIndices = meshInfo.triangleCount > 0 ? std::make_shared<vec3u[]>(meshInfo.triangleCount) : 0,

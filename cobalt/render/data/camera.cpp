@@ -9,8 +9,8 @@ CoCamera::CoCamera(const CreateFromProjectionInfo &createInfo) {
     _cameraPos = vec3f(cameraTranslation.x, cameraTranslation.y, cameraTranslation.z);
     _filmSize = createInfo.filmSize;
 
-    _viewportToWorld =
-        createInfo.cameraToWorld * utils::perspectiveProjectionInv(.01f, 1000.f, createInfo.hFov, createInfo.vFov);
+    _viewportToWorld = createInfo.cameraToWorld *
+                       utils::perspectiveProjectionInv(.01f, 1000.f, createInfo.hFov, createInfo.vFov);
 }
 
 geom::CoRay CoCamera::createRay(vec2f ndcPos) const {

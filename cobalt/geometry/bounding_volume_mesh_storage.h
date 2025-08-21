@@ -36,9 +36,9 @@ public:
     CoMeshStorage(VertexBuffer buffer): _positionsBuffer(buffer) {
         static constexpr float kMinFloat = std::numeric_limits<float>::lowest();
         static constexpr float kMaxFloat = std::numeric_limits<float>::max();
-        _bounds = CoAxisAlignedBoundingBox {
-            .min = { kMaxFloat, kMaxFloat, kMaxFloat },
-            .max = { kMinFloat, kMinFloat, kMinFloat },
+        _bounds = CoAxisAlignedBoundingBox{
+            .min = {kMaxFloat, kMaxFloat, kMaxFloat},
+            .max = {kMinFloat, kMinFloat, kMinFloat},
         };
 
         auto computeTriangleBounds = [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C) {
@@ -51,14 +51,17 @@ public:
         for (size_t triangleIdx = 0; triangleIdx < _positionsBuffer.triangleCount; ++triangleIdx) {
             const vec3u &triangle = _positionsBuffer.triangleIndices[triangleIdx];
 
-            const CoAxisAlignedBoundingBox bounds = computeTriangleBounds(_positionsBuffer.positions[triangle.x], 
-                _positionsBuffer.positions[triangle.y], 
+            const CoAxisAlignedBoundingBox bounds = computeTriangleBounds(
+                _positionsBuffer.positions[triangle.x],
+                _positionsBuffer.positions[triangle.y],
                 _positionsBuffer.positions[triangle.z]
             );
             _bounds = CoAxisAlignedBoundingBox::Union(_bounds, bounds);
         }
-        
-        auto computePatchBounds = [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C, const simd::vec3f &D) {
+
+        auto computePatchBounds =
+            [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C, const simd::vec3f &D
+            ) -> CoAxisAlignedBoundingBox {
             return CoAxisAlignedBoundingBox{
                 .min = simd::min(simd::min(A, B), simd::min(C, D)),
                 .max = simd::max(simd::max(A, B), simd::max(C, D)),
@@ -78,14 +81,14 @@ public:
             _bounds = CoAxisAlignedBoundingBox::Union(_bounds, bounds);
         }
     }
-    
+
     // MARK: bounding volume helper methods
     void reorder(std::span<MortonPrimitive> primitives) {
         uint32_t triangleIdx = 0;
         uint32_t patchIdx = 0;
 
         auto copyArray = []<typename T>(T *vals, size_t count) -> std::vector<T> {
-            std::span<const T> source = { vals, count };
+            std::span<const T> source = {vals, count};
             return std::vector<T>(source.begin(), source.end());
         };
 
@@ -93,7 +96,7 @@ public:
             copyArray(_positionsBuffer.triangleIndices.get(), _positionsBuffer.triangleCount);
         const std::vector<vec4u> patchesCopy =
             copyArray(_positionsBuffer.patchIndices.get(), _positionsBuffer.patchCount);
-    
+
         for (MortonPrimitive &mortonPrimitive : primitives) {
             switch (mortonPrimitive.primitive.type) {
             case PrimitiveType::kTriangle : {
@@ -112,7 +115,7 @@ public:
             }
         }
     }
-    
+
     [[nodiscard]] std::vector<MortonPrimitive> mortonEncodePrimitives() const {
         const CoAxisAlignedBoundingBox primitiveBounds = bounds();
         const simd::vec3f boundsExtent = primitiveBounds.Scales();
@@ -139,22 +142,25 @@ public:
             const vec3u &triangle = _positionsBuffer.triangleIndices[triangleIdx];
 
             const CoAxisAlignedBoundingBox boundingBox = computeTriangleBounds(
-                _positionsBuffer.positions[triangle.x], 
-                _positionsBuffer.positions[triangle.y], 
+                _positionsBuffer.positions[triangle.x],
+                _positionsBuffer.positions[triangle.y],
                 _positionsBuffer.positions[triangle.z]
             );
 
-            primitives.push_back(MortonPrimitive {
+            primitives.push_back(MortonPrimitive{
                 .mortonCode = computeMortonCode(boundingBox),
-                .primitive = {
-                    .type = PrimitiveType::kTriangle,
-                    .index= uint32_t(triangleIdx),
-                },
+                .primitive =
+                    Primitive{
+                              .type = PrimitiveType::kTriangle,
+                              .index = uint32_t(triangleIdx),
+                              },
                 .boundingBox = boundingBox,
             });
         }
 
-        auto computePatchBounds = [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C, const simd::vec3f &D) {
+        auto computePatchBounds =
+            [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C, const simd::vec3f &D
+            ) -> CoAxisAlignedBoundingBox {
             return CoAxisAlignedBoundingBox{
                 .min = simd::min(simd::min(A, B), simd::min(C, D)),
                 .max = simd::max(simd::max(A, B), simd::max(C, D)),
@@ -165,22 +171,23 @@ public:
             const vec4u &patch = _positionsBuffer.patchIndices[patchIdx];
 
             const CoAxisAlignedBoundingBox boundingBox = computePatchBounds(
-                _positionsBuffer.positions[patch.x], 
-                _positionsBuffer.positions[patch.y], 
+                _positionsBuffer.positions[patch.x],
+                _positionsBuffer.positions[patch.y],
                 _positionsBuffer.positions[patch.z],
                 _positionsBuffer.positions[patch.w]
             );
 
-            primitives.push_back(MortonPrimitive {
+            primitives.push_back(MortonPrimitive{
                 .mortonCode = computeMortonCode(boundingBox),
-                .primitive = {
-                    .type = PrimitiveType::kPatch,
-                    .index= uint32_t(patchIdx),
-                },
+                .primitive =
+                    Primitive{
+                              .type = PrimitiveType::kPatch,
+                              .index = uint32_t(patchIdx),
+                              },
                 .boundingBox = boundingBox,
             });
         }
-    
+
         return primitives;
     }
 
@@ -191,18 +198,14 @@ public:
                 .count = extent.count + 1,
             };
         };
-    
+
         Extents extents;
 
         for (const MortonPrimitive &mortonPrimitive : primitives) {
             const Primitive &primitive = mortonPrimitive.primitive;
             switch (primitive.type) {
-            case PrimitiveType::kTriangle : 
-                extents.triangles = expandExtent(extents.triangles, primitive);
-                continue;
-            case PrimitiveType::kPatch :
-                extents.patches = expandExtent(extents.patches, primitive);
-                continue;
+            case PrimitiveType::kTriangle : extents.triangles = expandExtent(extents.triangles, primitive); continue;
+            case PrimitiveType::kPatch : extents.patches = expandExtent(extents.patches, primitive); continue;
 
             default : assert(false);
             }
@@ -219,7 +222,7 @@ public:
             float localTimeMin = std::numeric_limits<float>::max();
             const vec3u &triangle = _positionsBuffer.triangleIndices[idx];
             vec2f coordinates;
-            
+
             const bool hitTriangle = rayTriangleIntersection(
                 ray,
                 _positionsBuffer.positions[triangle.x],
@@ -231,11 +234,11 @@ public:
 
             if (hitTriangle && localTimeMin < result.hitTime) {
                 result.hitTime = localTimeMin;
-                result.primitive = {
+                result.primitive = Primitive{
                     .type = PrimitiveType::kTriangle,
                     .index = uint32_t(idx),
                 };
-            }            
+            }
         }
 
         const PrimitiveExtent &patches = extents.patches;
@@ -284,6 +287,6 @@ struct storageExtent<CoMeshStorage> {
     using value = CoMeshStorage::Extents;
 };
 
-}  // cblt::geom::crtp
+} // namespace cblt::geom::crtp
 
-#endif  // CBLT_GEOM_BOUNDING_VOLUME_MESH_STORAGE_H
+#endif // CBLT_GEOM_BOUNDING_VOLUME_MESH_STORAGE_H

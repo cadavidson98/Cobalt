@@ -61,8 +61,11 @@ private:
         size_t numPrimitives() const;
         CoAxisAlignedBoundingBox primitiveBounds(size_t startIdx, size_t endIdx) const;
 
-        size_t
-        reorder(size_t startIdx, size_t endIdx, std::function<bool(const CoAxisAlignedBoundingBox &)> comparator);
+        size_t reorder(
+            size_t startIdx,
+            size_t endIdx,
+            std::function<bool(const CoAxisAlignedBoundingBox &)> comparator
+        );
 
         // caller assumes ownership of HeadArray
         HeapArray makePrimitives() const;

@@ -70,8 +70,6 @@ struct BoxStorage {
         }
         return hit;
     }
-
-
 };
 
 std::shared_ptr<crtp::CoMeshStorage> makeCubeMesh(size_t width) {
@@ -151,7 +149,7 @@ std::shared_ptr<crtp::CoSceneStorage> makeScene(size_t gridSizeX, size_t gridSiz
 class CobaltGeometryTest : public ::testing::Test {
 protected:
     CobaltGeometryTest() {
-        storage = cblt::geom::test::makeScene(kGridSizeX, kGridSizeY);        
+        storage = cblt::geom::test::makeScene(kGridSizeX, kGridSizeY);
         meshStorage = cblt::geom::test::makeCubeMesh(kCubeSize);
         old_storage = std::make_shared<cblt::geom::test::BoxStorage>(kGridSizeX, kGridSizeY);
     }
@@ -162,7 +160,7 @@ protected:
 
     static constexpr size_t kGridSizeX = 512;
     static constexpr size_t kGridSizeY = 512;
-    
+
     static constexpr size_t kCubeSize = 8;
 };
 
@@ -345,13 +343,13 @@ TEST_F(CobaltGeometryTest, TestBoundingBoxPerformance) {
 TEST_F(CobaltGeometryTest, TestCreateBoundingVolume) {
 
     using BoxAccelerator = cblt::geom::CoBoundingVolume<cblt::geom::test::BoxStorage>;
-    
+
     BoxAccelerator::CreateWithPrimitivesInfo createInfo{
         .primitives = old_storage,
         .maxPrimsInLeaf = 1,
         .partitionMethod = BoxAccelerator::PartitionMethod::Midpoint,
     };
-    
+
     BoxAccelerator boundingVolume(createInfo);
 
     for (size_t y = 0; y < kGridSizeY; ++y) {
@@ -373,19 +371,23 @@ TEST_F(CobaltGeometryTest, TestCreateMeshStorage) {
     for (size_t y = 0; y < kCubeSize; ++y) {
         const size_t offset = (y & 1);
         for (size_t x = 0; x < kCubeSize; ++x) {
-                cblt::geom::IntersectionEvent event;
-                const cblt::geom::CoRay ray(cblt::simd::vec3f(x + .25f, y + .25f, 4.f), cblt::simd::vec3f(0.f, 0.f, -1.f), 10.f);
-                const cblt::geom::crtp::IntersectionResult result = boundingVolume.intersects(ray);
-                std::ostringstream testDescription;
-                testDescription << "Mesh tile is: (" << x << ", " << y << ") of " << kCubeSize;
-                ASSERT_NEAR(result.hitTime, 4.f, kEpsilon) << testDescription.view();
-                // FIXME: Need to "remap" the index from the original grid values to the reordered indices in order to check
-                // what box / sphere we hit
-                if (((x + offset) & 1) == 1) {
-                    EXPECT_EQ(result.primitive.type, cblt::geom::crtp::kPatch) << testDescription.view();
-                } else {
-                    EXPECT_EQ(result.primitive.type, cblt::geom::crtp::kTriangle) << testDescription.view();
-                }
+            cblt::geom::IntersectionEvent event;
+            const cblt::geom::CoRay ray(
+                cblt::simd::vec3f(x + .25f, y + .25f, 4.f),
+                cblt::simd::vec3f(0.f, 0.f, -1.f),
+                10.f
+            );
+            const cblt::geom::crtp::IntersectionResult result = boundingVolume.intersects(ray);
+            std::ostringstream testDescription;
+            testDescription << "Mesh tile is: (" << x << ", " << y << ") of " << kCubeSize;
+            ASSERT_NEAR(result.hitTime, 4.f, kEpsilon) << testDescription.view();
+            // FIXME: Need to "remap" the index from the original grid values to the reordered indices in order to check
+            // what box / sphere we hit
+            if (((x + offset) & 1) == 1) {
+                EXPECT_EQ(result.primitive.type, cblt::geom::crtp::kPatch) << testDescription.view();
+            } else {
+                EXPECT_EQ(result.primitive.type, cblt::geom::crtp::kTriangle) << testDescription.view();
+            }
         }
     }
 }

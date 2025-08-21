@@ -10,20 +10,15 @@ namespace cblt::render {
 CoResolver::CoResolver(TextureType textureType): _textureType{textureType} {
 }
 
-CoColor CoResolver::resolve(
-    const vec3f &incoming,
-    const MaterialData &materialData
-) const {
+CoColor CoResolver::resolve(const vec3f &incoming, const MaterialData &materialData) const {
     static constexpr CoColor kEmptyColor = {0.f, 0.f, 0.f, 0.f};
 
     auto getBaseColor = [type = _textureType]() -> CoColor {
         switch (type) {
-            case TextureType::kTexture2D :
-                return kEmptyColor;
-            case TextureType::kPTexture :
-                return kEmptyColor;
-            default : CoLogError("Unsupported Texture Type"); return kEmptyColor;
-            }
+        case TextureType::kTexture2D : return kEmptyColor;
+        case TextureType::kPTexture : return kEmptyColor;
+        default : CoLogError("Unsupported Texture Type"); return kEmptyColor;
+        }
     };
 
     const CoColor baseColor = getBaseColor();

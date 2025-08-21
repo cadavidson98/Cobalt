@@ -6,6 +6,7 @@
 #include <libxml2/libxml/xmlmemory.h>
 #include <libxml2/libxml/xmlreader.h>
 #include <libxml2/libxml/xpath.h>
+
 #include <cassert>
 
 namespace xml2 {

@@ -14,8 +14,7 @@ template<typename constantType>
 constantType CoMaterialNode<constantType>::output() const {
     switch (_valueType) {
     case Input::kTexture :
-    case Input::kConstant :
-        return _value;
+    case Input::kConstant : return _value;
     }
     return constantType();
 }

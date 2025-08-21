@@ -45,7 +45,6 @@ public:
     geom::crtp::IntersectionResult intersects(const CoRay &ray) const;
 
 private:
-
     using MeshAccelerator = crtp::CoBoundingVolume<crtp::CoMeshStorage>;
 
     CoAxisAlignedBoundingBox _bounds;

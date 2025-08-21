@@ -172,8 +172,10 @@ private:
     std::unordered_map<std::string, CoUUID> _materialMap = {};
 };
 
-std::shared_ptr<CoScene>
-CoSceneFactory::buildScene(const CoSceneFactory::CreateInfo &createInfo, core::CoCallback &callback) {
+std::shared_ptr<CoScene> CoSceneFactory::buildScene(
+    const CoSceneFactory::CreateInfo &createInfo,
+    core::CoCallback &callback
+) {
     switch (createInfo.format) {
     case SceneFormat::kMitsuba : return _loadMitsubaScene(createInfo, callback);
     }
@@ -181,8 +183,10 @@ CoSceneFactory::buildScene(const CoSceneFactory::CreateInfo &createInfo, core::C
     return nullptr;
 }
 
-std::shared_ptr<CoScene>
-CoSceneFactory::_loadMitsubaScene(const CoSceneFactory::CreateInfo &createInfo, core::CoCallback &callback) {
+std::shared_ptr<CoScene> CoSceneFactory::_loadMitsubaScene(
+    const CoSceneFactory::CreateInfo &createInfo,
+    core::CoCallback &callback
+) {
     callback.pump("Parsing scene file");
     std::shared_ptr<CoSceneFactoryDelegate> delegate =
         std::make_shared<CoSceneFactoryDelegate>(callback, createInfo.parentDirectory.value_or(""));
