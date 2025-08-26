@@ -8,12 +8,12 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/resources.h.in ${CMAKE_CURRENT_SOURCE
 
 set(COBALT_TEST_SOURCES
     resources.h
-    testAlgorithms.cpp
-    testGeometry.cpp
-    testMath.cpp
-    testMaterial.cpp
-    testString.cpp
-    testUtilities.cpp
+    test_algorithms.cpp
+    test_geometry.cpp
+    test_math.cpp
+    test_material.cpp
+    test_string.cpp
+    test_utilities.cpp
 )
 
 add_executable(CobaltTests ${COBALT_TEST_SOURCES})
