@@ -150,7 +150,7 @@ public:
         return extents;
     }
 
-    [[nodiscard]] IntersectionResult intersects(const Extents &extents, const CoRay &ray) {
+    [[nodiscard]] IntersectionResult intersects(const Extents &extents, const CoRay &ray) const {
         IntersectionResult result;
 
         const PrimitiveExtent &spheres = extents.spheres;
@@ -163,6 +163,10 @@ public:
                 result.primitive = {
                     .type = PrimitiveType::kSphere,
                     .index = uint32_t(idx),
+                };
+                result.geometry = {
+                    .type = PrimitiveType::kNone,
+                    .index = 0,
                 };
             }
         }
@@ -177,6 +181,7 @@ public:
                     .type = PrimitiveType::kMesh,
                     .index = uint32_t(idx),
                 };
+                result.geometry = meshResult.primitive;
             }
         }
 

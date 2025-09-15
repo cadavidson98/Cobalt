@@ -3,6 +3,7 @@
 
 #include "constants.h"
 #include "mat4.h"
+#include "vec2.h"
 #include "vec3.h"
 
 namespace cblt::utils {
@@ -33,6 +34,8 @@ mat4f perspectiveProjectionInv(float nearPlane, float farPlane, float hFov, floa
 mat4f scaleMatrix(vec3f scale);
 mat4f translationMatrix(vec3f translation);
 mat4f rotationMatrix(vec3f axis, float angle);
+
+vec2f sphericalCoordinates(vec3f cartesian);
 
 } // namespace cblt::utils
 

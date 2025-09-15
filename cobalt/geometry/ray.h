@@ -12,6 +12,8 @@ namespace cblt::geom {
 
 struct CoRay {
 
+    CoRay(): pos(0.f), dir(0.f), invDir(0.f), maxDist(0.f) {};
+
     CoRay(const simd::vec3f &_pos, const simd::vec3f &_dir, float _maxDist)
         : pos{_pos.xyz}, dir{_dir.xyz}, invDir{kOne / (dir)}, maxDist{_maxDist} {
     }

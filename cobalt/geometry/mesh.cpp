@@ -6,7 +6,6 @@
 #include "intersection.h"
 
 #include "core/logging.h"
-#include "math/interpolation.h"
 #include "math/math_types.h"
 #include "math/simd/simd_vec3.h"
 
@@ -16,8 +15,12 @@
 namespace cblt::geom {
 
 namespace {
+
+constexpr float kMaxFloat = std::numeric_limits<float>::max();
+constexpr float kMinFloat = std::numeric_limits<float>::lowest();
+
 template<typename T>
-bool checkVertexAttributeBuffer(const CoMesh::VertexAttributeBuffer<T> &vertexBuffer) {
+[[nodiscard]] bool checkVertexAttributeBuffer(const core::VertexAttributeBuffer<T> &vertexBuffer) {
     if (!vertexBuffer.vertexCount || !vertexBuffer.vertices) {
         CoLogError("Vertex Buffer must be not empty");
         return false;
@@ -42,46 +45,28 @@ bool checkVertexAttributeBuffer(const CoMesh::VertexAttributeBuffer<T> &vertexBu
     return true;
 }
 
-bool checkCreateInfo(const CoMesh::CreateInfo &createInfo) {
+[[nodiscard]] bool checkCreateInfo(const CoMesh::CreateInfo &createInfo) {
     return checkVertexAttributeBuffer(createInfo.positions);
 }
-} // namespace
+} // anonymous namespace
 
 std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
     if (!checkCreateInfo(createInfo)) {
         return nullptr;
     }
 
-    return std::shared_ptr<CoMesh>(new CoMesh(createInfo));
-}
+    const core::VertexAttributeBuffer<simd::vec3f> &positions = createInfo.positions;
 
-CoMesh::CoMesh(const CreateInfo &createInfo): _positions(createInfo.positions) {
-    const std::shared_ptr<CoMeshStorage> meshStorage = std::make_shared<CoMeshStorage>(CoMeshStorage::VertexBuffer{
-        .positions = _positions.vertices,
-        .positionCount = _positions.vertexCount,
-        .triangleIndices = _positions.triangleIndices,
-        .triangleCount = _positions.triangleCount,
-        .patchIndices = _positions.patchIndices,
-        .patchCount = _positions.patchCount,
-    });
-
-    std::span<const vec3u> triangles = {
-        _positions.triangleIndices.get(),
-        _positions.triangleCount,
+    const std::span<const vec3u> triangles = {
+        positions.triangleIndices.get(),
+        positions.triangleCount,
     };
 
-    static constexpr float kMaxFloat = std::numeric_limits<float>::max();
-    static constexpr float kMinFloat = std::numeric_limits<float>::lowest();
-    _bounds = CoAxisAlignedBoundingBox{
-        .min = {kMaxFloat, kMaxFloat, kMaxFloat},
-        .max = {kMinFloat, kMinFloat, kMinFloat},
-    };
-
-    _bounds = std::accumulate(
+    const CoAxisAlignedBoundingBox triangleBounds = std::accumulate(
         triangles.begin(),
         triangles.end(),
-        _bounds,
-        [positions = _positions.vertices](const CoAxisAlignedBoundingBox &bounds, const vec3u triangle) {
+        CoAxisAlignedBoundingBox{.min = simd::vec3f(kMaxFloat), .max = simd::vec3f(kMinFloat)},
+        [positions = positions.vertices](const CoAxisAlignedBoundingBox &bounds, const vec3u triangle) {
             return CoAxisAlignedBoundingBox{
                 .min = simd::min(
                     simd::min(positions[triangle.x], positions[triangle.y]),
@@ -95,16 +80,16 @@ CoMesh::CoMesh(const CreateInfo &createInfo): _positions(createInfo.positions) {
         }
     );
 
-    std::span<const vec4u> patches = {
-        _positions.patchIndices.get(),
-        _positions.patchCount,
+    const std::span<const vec4u> patches = {
+        positions.patchIndices.get(),
+        positions.patchCount,
     };
 
-    _bounds = std::accumulate(
+    const CoAxisAlignedBoundingBox patchBounds = std::accumulate(
         patches.begin(),
         patches.end(),
-        _bounds,
-        [positions = _positions.vertices](const CoAxisAlignedBoundingBox &bounds, const vec4u patch) {
+        CoAxisAlignedBoundingBox{.min = simd::vec3f(kMaxFloat), .max = simd::vec3f(kMinFloat)},
+        [positions = positions.vertices](const CoAxisAlignedBoundingBox &bounds, const vec4u patch) {
             return CoAxisAlignedBoundingBox{
                 .min = simd::min(
                     simd::min(
@@ -124,9 +109,31 @@ CoMesh::CoMesh(const CreateInfo &createInfo): _positions(createInfo.positions) {
         }
     );
 
-    _accelerator = std::unique_ptr<MeshAccelerator>(new MeshAccelerator(MeshAccelerator::CreateWithPrimitivesInfo{
-        .primitives = meshStorage,
-    }));
+    // TODO: do I need to check for 'Max' when computing mins (and mins when computing Max)
+    const CoAxisAlignedBoundingBox meshBounds = {
+        .min = simd::min(patchBounds.min, triangleBounds.min),
+        .max = simd::max(patchBounds.max, triangleBounds.max),
+    };
+
+    const std::shared_ptr<CoMeshStorage> meshStorage = std::make_shared<CoMeshStorage>(positions);
+
+    // BoundingVolumeBuilder<CoMeshStorage> builder(meshStorage);
+    // builder.sort();
+
+    // // this span will be empty if the caller didn't sort
+    // const std::span<const Primitive> sortedPrimitives = builder.sortedPrimitives();
+
+    // // do whatev here; being a pedantic ahole here, technically we don't need to fail, we can just sort implicitly
+    // // if we haven't sorted explictly
+    // // new problem; we need to pass MortonEncodedPrimitive to the BVH constructor :(
+    // builder.makeBoundingVolume();
+
+    return std::shared_ptr<CoMesh>(new CoMesh(meshStorage, meshBounds));
+}
+
+// there is a "function with side effects" assumption here
+CoMesh::CoMesh(std::shared_ptr<CoMeshStorage> meshStorage, CoAxisAlignedBoundingBox bounds)
+    : _accelerator({meshStorage}), _bounds{bounds} {
 }
 
 CoAxisAlignedBoundingBox CoMesh::bounds() const {
@@ -134,8 +141,7 @@ CoAxisAlignedBoundingBox CoMesh::bounds() const {
 }
 
 geom::IntersectionResult CoMesh::intersects(const CoRay &ray) const {
-    assert(_accelerator && "missing accelerator");
-    return _accelerator->intersects(ray);
+    return _accelerator.intersects(ray);
 }
 
 } // namespace cblt::geom

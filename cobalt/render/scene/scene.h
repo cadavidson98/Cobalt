@@ -1,99 +1,39 @@
 #ifndef CBLT_RENDER_SCENE_H
 #define CBLT_RENDER_SCENE_H
 
-#include "geometry/bounding_volume.h"
 #include "geometry/bounding_volume_scene_storage.h"
 #include "render/data/camera.h"
-#include "render/material/material.h"
+#include "render/data/texture.h"
 
-#include <atomic>
 #include <memory>
-#include <string>
-#include <vector>
 
-namespace cblt {
-
-namespace geom {
-class CoMesh;
-struct CoRay;
-struct IntersectionEvent;
-} // namespace geom
-
-namespace render {
-
-struct CoColor;
-class CoResolver;
-class CoTexture;
-class CoTextureCache;
-
-using CoUUID = uint32_t;
+namespace cblt::render {
 
 class CoScene {
 public:
-    std::shared_ptr<CoCamera> camera() const;
-
-    bool closestIntersection(const geom::CoRay &ray, geom::IntersectionEvent &intersectionEvent) const;
-
-    CoColor environment(const geom::CoRay &ray) const;
-
-    ~CoScene();
-
-private:
-    struct GeometryComponent {
-        std::shared_ptr<geom::CoMesh> mesh;
-        mat4f transform;
-    };
-
-    struct MaterialComponent {
-        std::shared_ptr<CoMaterial> surface;
-        std::shared_ptr<CoResolver> resolver;
-    };
-
-    struct Primitive {
-        CoUUID geometryIdx = kInvalidID;
-        CoUUID materialIdx = kInvalidID;
-    };
-
-    struct CreateOptions {
-        std::string baseDirectory = {};
-    };
-
     struct CreateInfo {
         std::shared_ptr<CoCamera> camera;
         std::shared_ptr<CoTexture> environmentMap;
-        std::span<Primitive> primitives;
         std::shared_ptr<geom::CoSceneStorage> geometry;
-        std::span<MaterialComponent> materials;
-        CreateOptions options = {};
     };
 
     static std::shared_ptr<CoScene> create(const CreateInfo &createInfo);
 
+    std::shared_ptr<CoCamera> camera() const;
+
+    std::shared_ptr<geom::CoSceneStorage> storage() const {
+        return _geometry;
+    };
+
+private:
     CoScene(const CreateInfo &createInfo);
     CoScene() = delete;
 
-    // TODO: try using '0' as the invalid ID instead of 2^32 - 1; ZII reasons, or bool reasons?
-    static constexpr CoUUID kInvalidID = CoUUID(~0);
-    std::atomic<CoUUID> _nextGeometryID;
-    std::atomic<CoUUID> _nextMaterialID;
-
     std::shared_ptr<CoCamera> _camera;
     std::shared_ptr<CoTexture> _environmentMap;
-    std::unique_ptr<CoTextureCache> _textureCache;
-
-    std::vector<Primitive> _scenePrimitives;
-    std::vector<MaterialComponent> _materials;
-
-    using SceneAccelerator = geom::CoBoundingVolume<geom::CoSceneStorage>;
-
     std::shared_ptr<geom::CoSceneStorage> _geometry;
-    std::unique_ptr<SceneAccelerator> _accelerator;
+};
 
-    friend class CoSceneFactory;
-    friend class CoSceneFactoryDelegate;
-}; // CoScene
-
-} // namespace render
-} // namespace cblt
+} // namespace cblt::render
 
 #endif // CBLT_RENDER_SCENE_H

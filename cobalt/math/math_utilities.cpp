@@ -80,4 +80,14 @@ mat4f rotationMatrix(vec3f axis, float angle) {
     };
 }
 
+vec2f sphericalCoordinates(vec3f cartesian) {
+    const float phi = std::acos(cartesian.y);
+    // TODO: make sure camera is using an rhs csys
+    float theta = std::atan2(-cartesian.z, cartesian.x);
+    theta = (theta < 0.f) ? theta + cblt::kPI : theta;
+    const float u = ((theta) / (2.f * cblt::kPI));
+    const float v = phi / cblt::kPI;
+    return {u, v};
+}
+
 } // namespace cblt::utils

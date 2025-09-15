@@ -5,6 +5,7 @@
 
 #include "core/size_types.h"
 
+#include <limits>
 #include <span>
 #include <vector>
 
@@ -39,6 +40,11 @@ struct PrimitiveExtent {
 struct IntersectionResult {
     float hitTime = std::numeric_limits<float>::max();
     Primitive primitive;
+    Primitive geometry;
+
+    explicit operator bool() const {
+        return hitTime != std::numeric_limits<float>::max();
+    }
 };
 
 template<class T>

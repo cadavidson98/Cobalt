@@ -4,10 +4,10 @@
 #include "bounding_box.h"
 #include "bounding_volume_types.h"
 #include "intersection.h"
-#include "mesh.h"
 
 #include "core/morton_encoding.h"
 #include "core/size_types.h"
+#include "core/vertex_buffer.h"
 #include "math/simd/simd_vec3.h"
 
 #include <algorithm>
@@ -22,18 +22,7 @@ public:
         PrimitiveExtent patches;
     };
 
-    struct VertexBuffer {
-        std::shared_ptr<simd::vec3f[]> positions;
-        size_t positionCount;
-
-        std::shared_ptr<vec3u[]> triangleIndices;
-        size_t triangleCount;
-
-        std::shared_ptr<vec4u[]> patchIndices;
-        size_t patchCount;
-    };
-
-    CoMeshStorage(VertexBuffer buffer): _positionsBuffer(buffer) {
+    CoMeshStorage(core::VertexAttributeBuffer<simd::vec3f> buffer): _positionsBuffer(buffer) {
         static constexpr float kMinFloat = std::numeric_limits<float>::lowest();
         static constexpr float kMaxFloat = std::numeric_limits<float>::max();
         _bounds = CoAxisAlignedBoundingBox{
@@ -52,9 +41,9 @@ public:
             const vec3u &triangle = _positionsBuffer.triangleIndices[triangleIdx];
 
             const CoAxisAlignedBoundingBox bounds = computeTriangleBounds(
-                _positionsBuffer.positions[triangle.x],
-                _positionsBuffer.positions[triangle.y],
-                _positionsBuffer.positions[triangle.z]
+                _positionsBuffer.vertices[triangle.x],
+                _positionsBuffer.vertices[triangle.y],
+                _positionsBuffer.vertices[triangle.z]
             );
             _bounds = CoAxisAlignedBoundingBox::Union(_bounds, bounds);
         }
@@ -72,17 +61,92 @@ public:
             const vec4u &patch = _positionsBuffer.patchIndices[patchIdx];
 
             const CoAxisAlignedBoundingBox bounds = computePatchBounds(
-                _positionsBuffer.positions[patch.x],
-                _positionsBuffer.positions[patch.y],
-                _positionsBuffer.positions[patch.z],
-                _positionsBuffer.positions[patch.w]
+                _positionsBuffer.vertices[patch.x],
+                _positionsBuffer.vertices[patch.y],
+                _positionsBuffer.vertices[patch.z],
+                _positionsBuffer.vertices[patch.w]
             );
 
             _bounds = CoAxisAlignedBoundingBox::Union(_bounds, bounds);
         }
     }
 
-    // MARK: bounding volume helper methods
+    // To be pulled out into a new interface prior to storage creation
+    [[nodiscard]] std::vector<MortonPrimitive> mortonEncodePrimitives() const {
+        const CoAxisAlignedBoundingBox primitiveBounds = bounds();
+        const simd::vec3f boundsExtent = primitiveBounds.Scales();
+        const simd::vec3f boundsMin = primitiveBounds.min;
+
+        std::vector<MortonPrimitive> primitives;
+        primitives.reserve(_positionsBuffer.triangleCount + _positionsBuffer.patchCount);
+
+        auto computeMortonCode = [&boundsExtent, &boundsMin](const CoAxisAlignedBoundingBox &boundingBox) -> uint32_t {
+            static constexpr float kFloatToUint = float((1 << 10) - 1);
+            const simd::vec3f normalizedPosition = (boundingBox.Center() - boundsMin) / boundsExtent;
+            const std::array<float, 4> values = (kFloatToUint * normalizedPosition).Values();
+            return core::mortonEncode(values[0], values[1], values[2]);
+        };
+
+        auto computeTriangleBounds = [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C) {
+            return CoAxisAlignedBoundingBox{
+                .min = simd::min(simd::min(A, B), C),
+                .max = simd::max(simd::max(A, B), C),
+            };
+        };
+
+        for (size_t triangleIdx = 0; triangleIdx < _positionsBuffer.triangleCount; ++triangleIdx) {
+            const vec3u &triangle = _positionsBuffer.triangleIndices[triangleIdx];
+
+            const CoAxisAlignedBoundingBox boundingBox = computeTriangleBounds(
+                _positionsBuffer.vertices[triangle.x],
+                _positionsBuffer.vertices[triangle.y],
+                _positionsBuffer.vertices[triangle.z]
+            );
+
+            primitives.push_back(MortonPrimitive{
+                .mortonCode = computeMortonCode(boundingBox),
+                .primitive =
+                    Primitive{
+                              .type = PrimitiveType::kTriangle,
+                              .index = uint32_t(triangleIdx),
+                              },
+                .boundingBox = boundingBox,
+            });
+        }
+
+        auto computePatchBounds =
+            [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C, const simd::vec3f &D
+            ) -> CoAxisAlignedBoundingBox {
+            return CoAxisAlignedBoundingBox{
+                .min = simd::min(simd::min(A, B), simd::min(C, D)),
+                .max = simd::max(simd::max(A, B), simd::max(C, D)),
+            };
+        };
+
+        for (size_t patchIdx = 0; patchIdx < _positionsBuffer.patchCount; ++patchIdx) {
+            const vec4u &patch = _positionsBuffer.patchIndices[patchIdx];
+
+            const CoAxisAlignedBoundingBox boundingBox = computePatchBounds(
+                _positionsBuffer.vertices[patch.x],
+                _positionsBuffer.vertices[patch.y],
+                _positionsBuffer.vertices[patch.z],
+                _positionsBuffer.vertices[patch.w]
+            );
+
+            primitives.push_back(MortonPrimitive{
+                .mortonCode = computeMortonCode(boundingBox),
+                .primitive =
+                    Primitive{
+                              .type = PrimitiveType::kPatch,
+                              .index = uint32_t(patchIdx),
+                              },
+                .boundingBox = boundingBox,
+            });
+        }
+
+        return primitives;
+    }
+
     void reorder(std::span<MortonPrimitive> primitives) {
         uint32_t triangleIdx = 0;
         uint32_t patchIdx = 0;
@@ -116,80 +180,7 @@ public:
         }
     }
 
-    [[nodiscard]] std::vector<MortonPrimitive> mortonEncodePrimitives() const {
-        const CoAxisAlignedBoundingBox primitiveBounds = bounds();
-        const simd::vec3f boundsExtent = primitiveBounds.Scales();
-        const simd::vec3f boundsMin = primitiveBounds.min;
-
-        std::vector<MortonPrimitive> primitives;
-        primitives.reserve(_positionsBuffer.triangleCount + _positionsBuffer.patchCount);
-
-        auto computeMortonCode = [&boundsExtent, &boundsMin](const CoAxisAlignedBoundingBox &boundingBox) -> uint32_t {
-            static constexpr float kFloatToUint = float((1 << 10) - 1);
-            const simd::vec3f normalizedPosition = (boundingBox.Center() - boundsMin) / boundsExtent;
-            const std::array<float, 4> values = (kFloatToUint * normalizedPosition).Values();
-            return core::mortonEncode(values[0], values[1], values[2]);
-        };
-
-        auto computeTriangleBounds = [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C) {
-            return CoAxisAlignedBoundingBox{
-                .min = simd::min(simd::min(A, B), C),
-                .max = simd::max(simd::max(A, B), C),
-            };
-        };
-
-        for (size_t triangleIdx = 0; triangleIdx < _positionsBuffer.triangleCount; ++triangleIdx) {
-            const vec3u &triangle = _positionsBuffer.triangleIndices[triangleIdx];
-
-            const CoAxisAlignedBoundingBox boundingBox = computeTriangleBounds(
-                _positionsBuffer.positions[triangle.x],
-                _positionsBuffer.positions[triangle.y],
-                _positionsBuffer.positions[triangle.z]
-            );
-
-            primitives.push_back(MortonPrimitive{
-                .mortonCode = computeMortonCode(boundingBox),
-                .primitive =
-                    Primitive{
-                              .type = PrimitiveType::kTriangle,
-                              .index = uint32_t(triangleIdx),
-                              },
-                .boundingBox = boundingBox,
-            });
-        }
-
-        auto computePatchBounds =
-            [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C, const simd::vec3f &D
-            ) -> CoAxisAlignedBoundingBox {
-            return CoAxisAlignedBoundingBox{
-                .min = simd::min(simd::min(A, B), simd::min(C, D)),
-                .max = simd::max(simd::max(A, B), simd::max(C, D)),
-            };
-        };
-
-        for (size_t patchIdx = 0; patchIdx < _positionsBuffer.patchCount; ++patchIdx) {
-            const vec4u &patch = _positionsBuffer.patchIndices[patchIdx];
-
-            const CoAxisAlignedBoundingBox boundingBox = computePatchBounds(
-                _positionsBuffer.positions[patch.x],
-                _positionsBuffer.positions[patch.y],
-                _positionsBuffer.positions[patch.z],
-                _positionsBuffer.positions[patch.w]
-            );
-
-            primitives.push_back(MortonPrimitive{
-                .mortonCode = computeMortonCode(boundingBox),
-                .primitive =
-                    Primitive{
-                              .type = PrimitiveType::kPatch,
-                              .index = uint32_t(patchIdx),
-                              },
-                .boundingBox = boundingBox,
-            });
-        }
-
-        return primitives;
-    }
+    // Bounding Volume Private methods
 
     [[nodiscard]] Extents findExtents(std::span<const MortonPrimitive> primitives) const {
         const auto expandExtent = [](const PrimitiveExtent extent, const Primitive &primitive) -> PrimitiveExtent {
@@ -214,7 +205,7 @@ public:
         return extents;
     }
 
-    [[nodiscard]] IntersectionResult intersects(const Extents &extents, const CoRay &ray) {
+    [[nodiscard]] IntersectionResult intersects(const Extents &extents, const CoRay &ray) const {
         IntersectionResult result;
 
         const PrimitiveExtent &triangles = extents.triangles;
@@ -225,9 +216,9 @@ public:
 
             const bool hitTriangle = rayTriangleIntersection(
                 ray,
-                _positionsBuffer.positions[triangle.x],
-                _positionsBuffer.positions[triangle.y],
-                _positionsBuffer.positions[triangle.z],
+                _positionsBuffer.vertices[triangle.x],
+                _positionsBuffer.vertices[triangle.y],
+                _positionsBuffer.vertices[triangle.z],
                 localTimeMin,
                 coordinates
             );
@@ -251,10 +242,10 @@ public:
 
             const bool hitPatch = rayPatchIntersection(
                 ray,
-                _positionsBuffer.positions[patch.x],
-                _positionsBuffer.positions[patch.y],
-                _positionsBuffer.positions[patch.z],
-                _positionsBuffer.positions[patch.w],
+                _positionsBuffer.vertices[patch.x],
+                _positionsBuffer.vertices[patch.y],
+                _positionsBuffer.vertices[patch.z],
+                _positionsBuffer.vertices[patch.w],
                 localTimeMin,
                 localTimeMax,
                 coordinates
@@ -275,7 +266,7 @@ public:
 private:
     CoAxisAlignedBoundingBox _bounds;
 
-    VertexBuffer _positionsBuffer;
+    core::VertexAttributeBuffer<simd::vec3f> _positionsBuffer;
 
     CoAxisAlignedBoundingBox bounds() const {
         return _bounds;

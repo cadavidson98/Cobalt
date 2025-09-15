@@ -9,7 +9,8 @@ set(COBALT_CORE_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/morton_encoding.h
     ${CMAKE_CURRENT_SOURCE_DIR}/size_types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/string_utilities.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/system.h)
+    ${CMAKE_CURRENT_SOURCE_DIR}/system.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/vertex_buffer.h)
 
 set(COBALT_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/logging.cpp
@@ -17,4 +18,5 @@ set(COBALT_CORE_SOURCES
 
 target_compile_definitions(CobaltCore PUBLIC CBLT_LOG_DEBUG CBLT_LOG_INFO CBLT_LOG_WARN CBLT_LOG_ERROR)
 target_sources(CobaltCore PUBLIC ${COBALT_CORE_HEADERS} PRIVATE ${COBALT_CORE_SOURCES})
-target_include_directories(CobaltCore BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(CobaltCore BEFORE PUBLIC ${COBALT_ROOT_DIR} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(CobaltCore PUBLIC CobaltMath)

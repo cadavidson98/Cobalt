@@ -213,6 +213,10 @@ IntersectionResult CoBoundingVolume<StorageType>::intersects(const CoRay &ray) c
             .type = kNone,
             .index = kInvalidIndex,
         },
+        .geometry = {
+            .type = kNone,
+            .index = kInvalidIndex,
+        }
     };
 }
 

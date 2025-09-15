@@ -25,7 +25,7 @@ public:
         uint8_t maxPrimsInLeaf = kMaxPrimitivesPerLeaf;
     };
 
-    CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions);
+    CoBoundingVolume(const CreateWithPrimitivesInfo &createInfo);
 
     ~CoBoundingVolume();
 

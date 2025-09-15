@@ -32,9 +32,9 @@ std::shared_ptr<CoMeshStorage> makeCubeMesh(size_t width) {
     const size_t triangleCount = width * width;
     const size_t patchCount = (width * width) / 2;
 
-    CoMeshStorage::VertexBuffer buffer = {
-        .positions = std::make_shared<simd::vec3f[]>(vertexCount),
-        .positionCount = vertexCount,
+    core::VertexAttributeBuffer<simd::vec3f> buffer = {
+        .vertices = std::make_shared<simd::vec3f[]>(vertexCount),
+        .vertexCount = vertexCount,
         .triangleIndices = std::make_shared<vec3u[]>(triangleCount),
         .triangleCount = triangleCount,
         .patchIndices = std::make_shared<vec4u[]>(patchCount),
@@ -43,7 +43,7 @@ std::shared_ptr<CoMeshStorage> makeCubeMesh(size_t width) {
 
     for (size_t y = 0; y < verticesPerRow; ++y) {
         for (size_t x = 0; x < verticesPerRow; ++x) {
-            buffer.positions[y * verticesPerRow + x] = simd::vec3f(x, y, 0);
+            buffer.vertices[y * verticesPerRow + x] = simd::vec3f(x, y, 0);
         }
     }
 
