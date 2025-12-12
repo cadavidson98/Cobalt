@@ -36,7 +36,11 @@ private:
     CoAxisAlignedBoundingBox _bounds;
 
     CoMesh() = delete;
-    CoMesh(std::shared_ptr<CoMeshStorage> meshStorage, CoAxisAlignedBoundingBox bounds);
+    CoMesh(
+        std::shared_ptr<CoMeshStorage> meshStorage,
+        std::span<const MortonPrimitive> meshPrimitives,
+        CoAxisAlignedBoundingBox bounds
+    );
 };
 
 } // namespace cblt::geom

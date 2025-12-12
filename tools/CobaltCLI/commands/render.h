@@ -15,13 +15,6 @@ struct RenderTarget {
     uint32_t height;
 };
 
-struct RenderConfiguration {
-    uint32_t maxPathDepth;
-    uint32_t numThreads;
-    uint32_t samplesPerPixel;
-    uint32_t tileSize;
-};
-
 struct CoCLIParams {
     // input file
     std::string inputFile;
@@ -29,7 +22,6 @@ struct CoCLIParams {
     std::string outputFile;
     // configuration file
     std::optional<RenderTarget> outputImageTarget;
-    std::optional<RenderConfiguration> runtimeSettings;
 };
 
 } // namespace cblt::cli

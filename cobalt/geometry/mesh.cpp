@@ -115,25 +115,29 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
         .max = simd::max(patchBounds.max, triangleBounds.max),
     };
 
+    auto mortonKeyer = [](const geom::MortonPrimitive &lhs) {
+        return lhs.mortonCode;
+    };
+
     const std::shared_ptr<CoMeshStorage> meshStorage = std::make_shared<CoMeshStorage>(positions);
 
-    // BoundingVolumeBuilder<CoMeshStorage> builder(meshStorage);
-    // builder.sort();
+    std::vector<geom::MortonPrimitive> mortonEncodedPrimitives = meshStorage->mortonEncodePrimitives();
 
-    // // this span will be empty if the caller didn't sort
-    // const std::span<const Primitive> sortedPrimitives = builder.sortedPrimitives();
+    core::radix_sort<30>(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), mortonKeyer);
 
-    // // do whatev here; being a pedantic ahole here, technically we don't need to fail, we can just sort implicitly
-    // // if we haven't sorted explictly
-    // // new problem; we need to pass MortonEncodedPrimitive to the BVH constructor :(
-    // builder.makeBoundingVolume();
+    // TODO: structure of array here; looks like I can "coarsen these reorders"
+    meshStorage->reorder(mortonEncodedPrimitives);
 
-    return std::shared_ptr<CoMesh>(new CoMesh(meshStorage, meshBounds));
+    return std::shared_ptr<CoMesh>(new CoMesh(meshStorage, mortonEncodedPrimitives, meshBounds));
 }
 
 // there is a "function with side effects" assumption here
-CoMesh::CoMesh(std::shared_ptr<CoMeshStorage> meshStorage, CoAxisAlignedBoundingBox bounds)
-    : _accelerator({meshStorage}), _bounds{bounds} {
+CoMesh::CoMesh(
+    std::shared_ptr<CoMeshStorage> meshStorage,
+    std::span<const MortonPrimitive> meshPrimitives,
+    CoAxisAlignedBoundingBox bounds
+)
+    : _accelerator(meshStorage, meshPrimitives), _bounds{bounds} {
 }
 
 CoAxisAlignedBoundingBox CoMesh::bounds() const {

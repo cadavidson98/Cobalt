@@ -1,6 +1,7 @@
 #ifndef CBLT_MATH_TYPES_H
 #define CBLT_MATH_TYPES_H
 
+#include "mat3.h"
 #include "mat4.h"
 #include "quat.h"
 #include "vec2.h"

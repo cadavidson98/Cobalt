@@ -96,20 +96,10 @@ inline std::vector<NodeOffsets> prefixSum(std::span<const Cluster> clusters) {
 
 template<typename StorageType>
     requires isStorage<StorageType>
-CoBoundingVolume<StorageType>::CoBoundingVolume(const CreateWithPrimitivesInfo &createOptions)
-    : primitivesPerLeaf{createOptions.maxPrimsInLeaf}, storage{createOptions.primitives} {
-
-        // spatial sort & reordering
-
-        auto mortonKeyer = [](const MortonPrimitive &lhs) {
-            return lhs.mortonCode;
-        };
-
-        std::vector<MortonPrimitive> mortonEncodedPrimitives = storage->mortonEncodePrimitives();
-
-        core::radix_sort<30>(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), mortonKeyer);
-
-        storage->reorder(mortonEncodedPrimitives);
+CoBoundingVolume<StorageType>::CoBoundingVolume(
+    std::shared_ptr<StorageType> primitives,
+    std::span<const MortonPrimitive> mortonEncodedPrimitives)
+    : primitivesPerLeaf{kMaxPrimitivesPerLeaf}, storage{primitives} {
 
         // find treelet clusters
 

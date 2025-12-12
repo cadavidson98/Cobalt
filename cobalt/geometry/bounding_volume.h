@@ -20,12 +20,10 @@ template<typename StorageType>
     requires isStorage<StorageType>
 class CoBoundingVolume {
 public:
-    struct CreateWithPrimitivesInfo {
-        std::shared_ptr<StorageType> primitives;
-        uint8_t maxPrimsInLeaf = kMaxPrimitivesPerLeaf;
-    };
-
-    CoBoundingVolume(const CreateWithPrimitivesInfo &createInfo);
+    CoBoundingVolume(
+        const std::shared_ptr<StorageType> primitives,
+        std::span<const MortonPrimitive> mortonEncodedPrimitives
+    );
 
     ~CoBoundingVolume();
 

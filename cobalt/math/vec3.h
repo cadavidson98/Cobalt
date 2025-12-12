@@ -56,6 +56,34 @@ struct vec3 {
     friend vec3<T> operator* <>(T lhs, const vec3<T> &rhs);
     friend vec3<T> operator/ <>(const vec3<T> &lhs, T rhs);
 
+    vec3<T> &operator+=(const vec3<T> &rhs) {
+        x += rhs.x;
+        y += rhs.y;
+        z += rhs.z;
+        return *this;
+    };
+
+    vec3<T> &operator-=(const vec3<T> &rhs) {
+        x -= rhs.x;
+        y -= rhs.y;
+        z -= rhs.z;
+        return *this;
+    };
+
+    vec3<T> &operator*=(const vec3<T> &rhs) {
+        x *= rhs.x;
+        y *= rhs.y;
+        z *= rhs.z;
+        return *this;
+    };
+
+    vec3<T> &operator/=(const vec3<T> &rhs) {
+        x /= rhs.x;
+        y /= rhs.y;
+        z /= rhs.z;
+        return *this;
+    };
+
     friend bool operator== <>(const vec3<T> lhs, const vec3<T> rhs);
 };
 
@@ -72,6 +100,11 @@ inline vec3<T> operator-(const vec3<T> &lhs, const vec3<T> &rhs) {
 template<typename T>
 vec3<T> operator*(T lhs, const vec3<T> &rhs) {
     return {lhs * rhs.x, lhs * rhs.y, lhs * rhs.z};
+}
+
+template<typename T>
+vec3<T> operator*(const vec3<T> &lhs, T rhs) {
+    return {lhs.x * rhs, lhs.y * rhs, lhs.z * rhs};
 }
 
 template<typename T>

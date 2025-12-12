@@ -1,9 +1,5 @@
 #include "scene.h"
 
-#include <cmath>
-#include <cstring>
-#include <memory>
-
 namespace cblt::render {
 
 std::shared_ptr<CoScene> CoScene::create(const CoScene::CreateInfo &createInfo) {
@@ -13,7 +9,8 @@ std::shared_ptr<CoScene> CoScene::create(const CoScene::CreateInfo &createInfo) 
 }
 
 CoScene::CoScene(const CreateInfo &createInfo)
-    : _camera{createInfo.camera}, _environmentMap{createInfo.environmentMap}, _geometry{createInfo.geometry} {
+    : _camera{createInfo.camera}, _environmentMap{createInfo.environmentMap}, _geometry{createInfo.geometry},
+      _components{createInfo.components} {
 }
 
 std::shared_ptr<CoCamera> CoScene::camera() const {

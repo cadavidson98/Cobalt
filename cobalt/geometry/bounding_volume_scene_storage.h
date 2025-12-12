@@ -34,7 +34,7 @@ public:
     }
 
     // MARK: adding primitives methods
-    void addSphere(const CoSphere &sphere) {
+    [[nodiscard]] Primitive addSphere(const CoSphere &sphere) {
         _spherePrimitives.push_back(sphere);
         const CoAxisAlignedBoundingBox sphereBounds = {
             .min = sphere.center - simd::vec3f(sphere.radius, sphere.radius, sphere.radius),
@@ -42,11 +42,19 @@ public:
         };
 
         _bounds = CoAxisAlignedBoundingBox::Union(_bounds, sphereBounds);
+        return Primitive{
+            .type = PrimitiveType::kSphere,
+            .index = uint32_t(_spherePrimitives.size() - 1),
+        };
     }
 
-    void addMesh(const std::shared_ptr<CoMesh> mesh) {
+    [[nodiscard]] Primitive addMesh(const std::shared_ptr<CoMesh> mesh) {
         _meshPrimitives.push_back(mesh);
         _bounds = CoAxisAlignedBoundingBox::Union(_bounds, mesh->bounds());
+        return Primitive{
+            .type = PrimitiveType::kMesh,
+            .index = uint32_t(_meshPrimitives.size() - 1),
+        };
     }
 
     // MARK: bounding volume helper methods
@@ -128,6 +136,7 @@ public:
         return primitives;
     }
 
+    // MARK: Actual things BVH cares about
     [[nodiscard]] Extents findExtents(std::span<const MortonPrimitive> primitives) const {
         const auto expandExtent = [](const PrimitiveExtent extent, const Primitive &primitive) -> PrimitiveExtent {
             return {

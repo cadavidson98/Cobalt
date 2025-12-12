@@ -1,12 +1,6 @@
-#include "image_reader.h"
-
-#include "byte_texture.h"
-#include "texture.h"
+#include "exr_reader.h"
 
 #include "core/logging.h"
-#include "core/size_types.h"
-#include "core/string_utilities.h"
-#include "math/math_types.h"
 
 #include <Imath/ImathBox.h>
 #include <Imath/half.h>
@@ -15,33 +9,16 @@
 #include <OpenEXR/ImfInputFile.h>
 #include <OpenEXR/ImfPixelType.h>
 
-#include <algorithm>
-#include <csetjmp>
-#include <limits>
-#include <stdexcept>
+namespace cblt::io::exr {
 
-namespace cblt::render {
-
-namespace {
-
-bool checkReadInfo(const ReadInfo &readInfo) {
-    if (!readInfo.fileName.length()) {
-        CoLogError("File name must be not empty");
-        return false;
-    }
-
-    return true;
-}
-
-std::shared_ptr<render::CoTexture> readExr(const ReadInfo &readInfo) {
-
+std::optional<Image> read(const std::filesystem::path filePath) {
     std::shared_ptr<void> textureData = nullptr;
-    CoPixelFormat textureFormat = CoPixelFormat::Half;
     const uint32_t numChannels = 3;
     vec2u textureSize = {};
+    Imf::PixelType type = Imf::PixelType::HALF;
 
     try {
-        Imf::InputFile inputFile(readInfo.fileName.c_str(), 1);
+        Imf::InputFile inputFile(filePath.c_str(), 1);
         Imf::FrameBuffer frameBuffer;
 
         const Imf::ChannelList &channels = inputFile.header().channels();
@@ -56,12 +33,12 @@ std::shared_ptr<render::CoTexture> readExr(const ReadInfo &readInfo) {
 
         if (!numChannels) {
             CoLogError("Exr: missing valid color channels");
-            return nullptr;
+            return std::nullopt;
         }
 
         if (red->type != green->type || green->type != blue->type) {
             CoLogError("Mismatch in pixel width in exr image");
-            return nullptr;
+            return std::nullopt;
         }
 
         textureSize = {width, height};
@@ -70,10 +47,9 @@ std::shared_ptr<render::CoTexture> readExr(const ReadInfo &readInfo) {
 
         if (red->type == Imf::PixelType::HALF) {
             textureData = std::make_shared<Imath::half[]>(allocSize);
-            textureFormat = CoPixelFormat::Half;
         } else {
             textureData = std::make_shared<float[]>(allocSize);
-            textureFormat = CoPixelFormat::Float;
+            type = Imf::PixelType::FLOAT;
         }
 
         uint currentChannel = 0;
@@ -108,31 +84,15 @@ std::shared_ptr<render::CoTexture> readExr(const ReadInfo &readInfo) {
         inputFile.readPixels(window.min.y, window.max.y);
     } catch (Iex::BaseExc &e) {
         CoLogError(e.what());
-        return nullptr;
+        return std::nullopt;
     }
 
-    return CoByteTexture::create({
-        .bytes = textureData,
-        .format = textureFormat,
-        .numChannels = numChannels,
-        .dimensions = textureSize,
-    });
+    return Image{
+        .data = textureData,
+        .format = type,
+        .size = textureSize,
+        .channelCount = 3,
+    };
 }
 
-} // namespace
-
-std::shared_ptr<CoTexture> readImage(const ReadInfo &readInfo) {
-    if (!checkReadInfo(readInfo)) {
-        return nullptr;
-    }
-
-    const std::string fileExtension = core::fileExtension(readInfo.fileName);
-
-    if (fileExtension == "exr") {
-        return readExr(readInfo);
-    }
-
-    return nullptr;
-}
-
-} // namespace cblt::render
+} // namespace cblt::io::exr

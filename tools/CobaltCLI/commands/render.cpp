@@ -1,23 +1,19 @@
 #include "render.h"
 
 #include "assets.h"
-#include "cli_progress.h"
 #include "commands.h"
 #include "image_writer.h"
 
-#include "core/callback.h"
-#include "core/logging.h"
 #include "core/size_types.h"
 #include "core/system.h"
-#include "geometry/ray.h"
-#include "render/data/color.h"
 #include "render/data/render_target.h"
+#include "render/renderer.h"
 #include "render/scene/scene.h"
 #include "render/scene/scene_factory.h"
 
-#include <fstream>
+#include <filesystem>
 #include <iostream>
-#include <mutex>
+#include <memory>
 #include <string>
 
 namespace cblt::cli {
@@ -25,33 +21,6 @@ namespace cblt::cli {
 namespace {
 void printUsage() {
     std::cout << "render -i [input file] -o [output file] -c [renderer configuration]";
-}
-
-bool loadConfiguration(const std::string &file_path, RenderConfiguration &settings, RenderTarget &outputImageTarget) {
-    std::ifstream fin(file_path);
-    if (!fin.good()) {
-        return false;
-    }
-
-    std::string line;
-    while (!fin.eof()) {
-        fin >> line;
-        if (!line.compare("width:")) {
-            fin >> outputImageTarget.width;
-        } else if (!line.compare("height:")) {
-            fin >> outputImageTarget.height;
-        } else if (!line.compare("path_depth:")) {
-            fin >> settings.maxPathDepth;
-        } else if (!line.compare("num_samples:")) {
-            fin >> settings.samplesPerPixel;
-        } else if (!line.compare("tile_size:")) {
-            fin >> settings.tileSize;
-        } else if (!line.compare("num_threads:")) {
-            fin >> settings.numThreads;
-        }
-    }
-
-    return true;
 }
 
 std::optional<CoCLIParams> parseArguments(int numArgs, char **argv) {
@@ -69,15 +38,6 @@ std::optional<CoCLIParams> parseArguments(int numArgs, char **argv) {
             continue;
         } else if (command.compare("-o") == 0U || command.compare("--output") == 0U) {
             params.outputFile = argv[++arg];
-            continue;
-        } else if (command.compare("-c") == 0U || command.compare("--configuration") == 0U) {
-            RenderConfiguration fileConfiguration;
-            RenderTarget fileRenderTarget;
-            std::string inputConfigFile = argv[++arg];
-            if (loadConfiguration(inputConfigFile, fileConfiguration, fileRenderTarget)) {
-                params.outputImageTarget.emplace(fileRenderTarget);
-                params.runtimeSettings.emplace(fileConfiguration);
-            }
             continue;
         } else {
             printUsage();
@@ -97,23 +57,13 @@ bool renderCommand(int argc, char **argv) {
     }
 
     const uint64_t loadStart = core::time();
-    std::mutex progressMutex;
-    core::CoCallback progressCallback;
-    progressCallback.functor = [&progressMutex](const char *message, int totalProgress) {
-        std::scoped_lock lock(progressMutex);
-        printProgress(totalProgress, message);
-    };
 
-    std::shared_ptr<render::CoScene> defaultScene = render::CoSceneFactory::buildScene(
-        {
-            .fileName = settings->inputFile,
-            .parentDirectory = tools::asset::kAssetsBaseDir,
-            .format = render::CoSceneFactory::SceneFormat::kMitsuba,
-        },
-        progressCallback
-    );
+    std::shared_ptr<render::CoScene> scene = render::CoSceneFactory::buildScene({
+        .fileName = settings->inputFile,
+        .format = render::CoSceneFactory::SceneFormat::kMitsuba,
+    });
 
-    if (!defaultScene) {
+    if (!scene) {
         std::cout << "Failed to load scene" << std::endl;
         return false;
     }
@@ -125,10 +75,7 @@ bool renderCommand(int argc, char **argv) {
     static constexpr uint32_t kWidth = 800;
     static constexpr uint32_t kHeight = 800;
     std::shared_ptr<render::CoRenderTarget> renderTarget = render::CoRenderTarget::create({
-        .size =
-            {
-                   kWidth, kHeight,
-                   },
+        .size = {kWidth, kHeight},
     });
 
     if (!renderTarget) {
@@ -136,50 +83,13 @@ bool renderCommand(int argc, char **argv) {
         return false;
     }
 
-    const vec2f viewportDimensions = {
-        float(kWidth),
-        float(kHeight),
-    };
+    const uint64_t renderStartTime = core::time();
 
-    auto viewportToNDC = [&viewportDimensions](vec2f pixelPos) {
-        return ((pixelPos / viewportDimensions) * vec2f{2.f, -2.f} + vec2f{-1.f, 1.f});
-    };
-
-    int renderProgress = 0;
-    auto renderCallback = [&progressMutex, &renderProgress](uint32_t currentProgress) {
-        std::scoped_lock lock(progressMutex);
-        renderProgress += currentProgress;
-        printProgress(renderProgress, "rendering scene");
-    };
-
-    std::shared_ptr<render::CoCamera> camera = defaultScene->camera();
-    if (!camera) {
-        std::cerr << "Missing Camera" << std::endl;
+    if (!render::render(*scene, renderTarget)) {
+        std::cerr << "Failed to render image";
         return false;
     }
 
-    const uint32_t numTotalPixels = kWidth * kHeight;
-    const uint32_t pumpValue = 5;
-    const uint32_t pixelProgress = numTotalPixels / 20;
-    const uint64_t renderStartTime = core::time();
-    for (uint32_t pixelY = 0; pixelY < kHeight; ++pixelY) {
-        for (uint32_t pixelX = 0; pixelX < kWidth; ++pixelX) {
-            geom::IntersectionEvent intersectionEvent;
-            const geom::CoRay ray = camera->createRay(viewportToNDC({float(pixelX), float(pixelY)}));
-            const bool hitMesh = defaultScene->closestIntersection(ray, intersectionEvent);
-            if (hitMesh) {
-                renderTarget->write({pixelX, pixelY}, {1.f, 0.f, 0.f, 1.f});
-            } else {
-                // FIXME: This is garbage (literally)
-                const render::CoColor environmentColor = defaultScene->environment(ray);
-                renderTarget->write({pixelX, pixelY}, environmentColor);
-            }
-            const uint32_t currentPixel = pixelY * kWidth + pixelX;
-            if (currentPixel % pixelProgress == 0) {
-                renderCallback(pumpValue);
-            }
-        }
-    }
     const uint64_t renderEndTime = core::time();
 
     std::cout << "Rendered image in " << (renderEndTime - renderStartTime) * 1e-9 << " s\n";
@@ -187,7 +97,7 @@ bool renderCommand(int argc, char **argv) {
     const bool wrote = writeImage({
         .fileName = settings->outputFile,
         .type = ImageType::kEXR,
-        .renderTarget = *renderTarget.get(),
+        .renderTarget = *renderTarget,
     });
 
     if (!wrote) {

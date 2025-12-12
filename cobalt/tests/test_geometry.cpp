@@ -76,7 +76,7 @@ std::shared_ptr<CoSceneStorage> makeScene(size_t gridSizeX, size_t gridSizeY) {
 
     for (uint32_t y = 0; y < gridSizeY; ++y) {
         for (uint32_t x = 0; x < gridSizeX; ++x) {
-            scene->addSphere({
+            [[maybe_unused]] geom::Primitive sphereIdx = scene->addSphere({
                 .center = cblt::simd::vec3f(float(x), float(y), 0.f),
                 .radius = .5f,
             });
@@ -282,9 +282,19 @@ TEST_F(CobaltGeometryTest, TestBoundingBoxPerformance) {
 
 TEST_F(CobaltGeometryTest, TestCreateMeshStorage) {
     using namespace cblt::geom;
-    CoBoundingVolume<CoMeshStorage> boundingVolume({
-        .primitives = meshStorage,
-    });
+
+    auto mortonKeyer = [](const MortonPrimitive &lhs) {
+        return lhs.mortonCode;
+    };
+
+    std::vector<MortonPrimitive> mortonEncodedPrimitives = meshStorage->mortonEncodePrimitives();
+
+    cblt::core::radix_sort<30>(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), mortonKeyer);
+
+    // TODO: structure of array here; looks like I can "coarsen these reorders"
+    meshStorage->reorder(mortonEncodedPrimitives);
+
+    CoBoundingVolume<CoMeshStorage> boundingVolume(meshStorage, mortonEncodedPrimitives);
 
     for (size_t y = 0; y < kCubeSize; ++y) {
         const size_t offset = (y & 1);
@@ -312,9 +322,18 @@ TEST_F(CobaltGeometryTest, TestCreateMeshStorage) {
 
 TEST_F(CobaltGeometryTest, TestCreateSceneStorage) {
     using namespace cblt::geom;
-    CoBoundingVolume<CoSceneStorage> boundingVolume({
-        .primitives = storage,
-    });
+    auto mortonKeyer = [](const MortonPrimitive &lhs) {
+        return lhs.mortonCode;
+    };
+
+    std::vector<MortonPrimitive> mortonEncodedPrimitives = storage->mortonEncodePrimitives();
+
+    cblt::core::radix_sort<30>(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), mortonKeyer);
+
+    // TODO: structure of array here; looks like I can "coarsen these reorders"
+    storage->reorder(mortonEncodedPrimitives);
+
+    CoBoundingVolume<CoSceneStorage> boundingVolume(storage, mortonEncodedPrimitives);
 
     for (size_t y = 0; y < kGridSizeY; ++y) {
         for (size_t x = 0; x < kGridSizeX; ++x) {

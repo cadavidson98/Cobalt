@@ -1,16 +1,20 @@
 #include "scene_factory.h"
 
-#include "image_reader.h"
+#include "byte_texture.h"
+#include "component_storage.h"
 #include "resolver.h"
 #include "scene.h"
 #include "texture.h"
 
 #include "core/logging.h"
 #include "geometry/bounding_volume_scene_storage.h"
+#include "geometry/bounding_volume_types.h"
 #include "geometry/mesh.h"
 #include "geometry/sphere.h"
+#include "io/exr_reader.h"
 #include "io/mitsuba_reader.h"
 #include "io/obj_reader.h"
+#include "io/png_reader.h"
 #include "math/math_types.h"
 
 #include <cstring>
@@ -23,14 +27,25 @@ namespace {
 class SceneDelegate final : public io::mitsuba::FileReaderDelegate {
 public:
     SceneDelegate(std::filesystem::path rootDirectory)
-        : _rootDirectory{rootDirectory}, _sceneGeometry{std::make_shared<geom::CoSceneStorage>()} {
+        : _rootDirectory{rootDirectory}, _sceneGeometry{std::make_shared<geom::CoSceneStorage>()},
+          _sceneComponents{std::make_shared<ComponentStorage>()} {
     }
 
     bool readSphere(const io::mitsuba::Shape<io::mitsuba::Sphere> &sphere) override {
-        _sceneGeometry->addSphere(geom::CoSphere{
+        const geom::Primitive spherePrimitive = _sceneGeometry->addSphere(geom::CoSphere{
             .center = simd::vec3f(sphere.shape.center.x, sphere.shape.center.y, sphere.shape.center.z),
             .radius = sphere.shape.radius,
         });
+
+        const io::mitsuba::Spectrum &spectrum = sphere.spectrum;
+        _sceneComponents->addColor(
+            spherePrimitive,
+            CoColor{
+                spectrum.red,
+                spectrum.green,
+                spectrum.blue,
+            }
+        );
 
         return true;
     }
@@ -42,15 +57,7 @@ public:
             const std::optional<io::obj::Mesh> objMesh = io::obj::read(filePath.c_str());
             if (objMesh) {
                 cobaltMesh = geom::CoMesh::create({
-                    .positions =
-                        {
-                                    .vertices = objMesh->positions.vertices,
-                                    .vertexCount = objMesh->positions.vertexCount,
-                                    .triangleIndices = objMesh->positions.triangleIndices,
-                                    .triangleCount = objMesh->positions.triangleCount,
-                                    .patchIndices = objMesh->positions.patchIndices,
-                                    .patchCount = objMesh->positions.patchCount,
-                                    },
+                    .positions = objMesh->positions,
                 });
             }
         }
@@ -59,32 +66,17 @@ public:
             return false;
         }
 
-        _sceneGeometry->addMesh(cobaltMesh);
-        _spectrums.push_back(mesh.spectrum);
-        // 2 different options here
-        // 1) we PROMOTE the reorder to here, so we properly reorder the spectrums
-        /*
-            a) need a "structure of arrays" - actually not, this is going to devolve to the original problem we had w/
-           union b) need to "recursively reorder" i) we need to "Promote" the "Entity" & "Component" to Core - not a
-           crime, not a smell This would "suggest" the IntersectionResult Signature is actually: struct
-           IntersectionResult { float hitTime = std::numeric_limits<float>::max(); Entity hitEntity; Primitive geometry;
-                    };
+        const io::mitsuba::Spectrum &spectrum = mesh.spectrum;
 
-                ii) Embrace the "typed index" - same size as a raw ptr (and less than a shared), but no semantics (only
-           const) struct Primitive { PrimitiveType type; uint32_t idx;
-                };
-
-                std::zip_view<StringHash, BasicRendererEntity> entities = builder->makeSlice();
-                std::span<const Primitives> primitives = storage->primitives();
-                // explicitly sorted
-                geom::BoundingVolume::Sorter sorter;
-                std::span<const MortonPrimitive> mortonEncodedPrimtives = sorter->encodeAndSort(storage);
-                // reorder primitives
-                for (const Primitive &primitive : std::member_view<const Primitive>(mortonEncodedPrimitives)) {
-
-                }
-                geom::BoundingVolume<geom::SceneStorage>(storage, mortonEncodedPrimitives);
-        */
+        const geom::Primitive meshPrimitive = _sceneGeometry->addMesh(cobaltMesh);
+        _sceneComponents->addColor(
+            meshPrimitive,
+            CoColor{
+                spectrum.red,
+                spectrum.green,
+                spectrum.blue,
+            }
+        );
 
         return true;
     }
@@ -98,9 +90,31 @@ public:
         std::shared_ptr<CoTexture> emissionMap = nullptr;
         if (emitter.emissionMap) {
             std::filesystem::path filePath = _rootDirectory / emitter.emissionMap.fileName;
-            emissionMap = readImage({
-                .fileName = filePath.c_str(),
-            });
+            if (filePath.extension() == ".png") {
+                const std::optional<io::png::ByteImage> image = io::png::read(filePath);
+                if (!image) {
+                    return false;
+                }
+
+                emissionMap = CoByteTexture::create({
+                    .bytes = image->data,
+                    .format = CoPixelFormat::Float,
+                    .numChannels = image->channelCount,
+                    .dimensions = image->size,
+                });
+            } else if (filePath.extension() == ".exr") {
+                const std::optional<io::exr::Image> image = io::exr::read(filePath);
+                if (!image) {
+                    return false;
+                }
+
+                emissionMap = CoByteTexture::create({
+                    .bytes = image->data,
+                    .format = image->format == Imf::PixelType::HALF ? CoPixelFormat::Half : CoPixelFormat::Float,
+                    .numChannels = image->channelCount,
+                    .dimensions = image->size,
+                });
+            }
 
             if (!emissionMap) {
                 return false;
@@ -132,6 +146,7 @@ public:
             .camera = _camera,
             .environmentMap = _environmentMap,
             .geometry = _sceneGeometry,
+            .components = _sceneComponents,
         };
 
         return CoScene::create(createInfo);
@@ -141,7 +156,7 @@ private:
     std::filesystem::path _rootDirectory;
 
     std::shared_ptr<geom::CoSceneStorage> _sceneGeometry;
-    std::vector<io::mitsuba::Spectrum> _spectrums;
+    std::shared_ptr<ComponentStorage> _sceneComponents;
 
     std::shared_ptr<CoCamera> _camera = {};
     std::shared_ptr<CoTexture> _environmentMap = {};

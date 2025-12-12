@@ -1,5 +1,7 @@
 #include "renderer.h"
 
+#include "component_storage.h"
+
 #include "core/logging.h"
 #include "core/size_types.h"
 #include "data/camera.h"
@@ -10,6 +12,8 @@
 #include "geometry/ray.h"
 #include "math/math_utilities.h"
 #include "scene/scene.h"
+
+#include <memory>
 
 namespace cblt::render {
 
@@ -88,6 +92,7 @@ struct CollisionKernel {
 struct ResolveKernel {
     vec2u size;
     std::shared_ptr<CoRenderTarget> renderTarget = {};
+    std::shared_ptr<ComponentStorage> components = {};
     std::shared_ptr<const geom::IntersectionResult[]> results = {};
 
     void operator()(vec2u threadID) {
@@ -99,15 +104,8 @@ struct ResolveKernel {
 
         const geom::IntersectionResult &result = results[threadIdx];
         if (result) {
-            std::array<render::CoColor, 4> colors{
-                {
-                 {1.f, 0.f, 0.f, 1.f},
-                 {0.f, 0.f, 1.f, 1.f},
-                 {0.5f, 0.5f, 0.5f, 1.f},
-                 {0.f, .6f, .9f, 1.f},
-                 }
-            };
-            renderTarget->write(threadID, colors[result.geometry.index % 4]);
+            const uint32_t colorIdx = (*components)(result.primitive).materialIdx;
+            renderTarget->write(threadID, components->colors[colorIdx]);
         }
     }
 };
@@ -117,6 +115,7 @@ struct ResolveKernel {
 bool render(const CoScene &scene, std::shared_ptr<CoRenderTarget> renderTarget) {
     std::shared_ptr<render::CoCamera> camera = scene.camera();
     std::shared_ptr<geom::CoSceneStorage> sceneStorage = scene.storage();
+    std::shared_ptr<ComponentStorage> componentStorage = scene.componentStorage();
 
     if (!camera) {
         CoLogError("Missing Camera");
@@ -135,16 +134,28 @@ bool render(const CoScene &scene, std::shared_ptr<CoRenderTarget> renderTarget) 
             {
                            utils::divUp(viewSize.x, uint32_t(kTileSize)),
                            utils::divUp(viewSize.y, uint32_t(kTileSize)),
-                           }
+                           },
     };
 
     const size_t pixelCount = viewSize.x * viewSize.y;
     std::shared_ptr<geom::IntersectionResult[]> results = std::make_shared<geom::IntersectionResult[]>(pixelCount);
 
+    auto mortonKeyer = [](const geom::MortonPrimitive &lhs) {
+        return lhs.mortonCode;
+    };
+
+    std::vector<geom::MortonPrimitive> mortonEncodedPrimitives = sceneStorage->mortonEncodePrimitives();
+
+    core::radix_sort<30>(mortonEncodedPrimitives.begin(), mortonEncodedPrimitives.end(), mortonKeyer);
+
+    // TODO: structure of array here; looks like I can "coarsen these reorders"
+    sceneStorage->reorder(mortonEncodedPrimitives);
+    componentStorage->reorder(mortonEncodedPrimitives);
+
     CollisionKernel collisionKernel{
         .size = viewSize,
         .camera = camera,
-        .accelerator = geom::CoBoundingVolume<geom::CoSceneStorage>({sceneStorage}),
+        .accelerator = geom::CoBoundingVolume<geom::CoSceneStorage>(sceneStorage, mortonEncodedPrimitives),
         .results = results,
     };
 
@@ -153,6 +164,7 @@ bool render(const CoScene &scene, std::shared_ptr<CoRenderTarget> renderTarget) 
     ResolveKernel resolveKernel{
         .size = viewSize,
         .renderTarget = renderTarget,
+        .components = componentStorage,
         .results = results,
     };
 

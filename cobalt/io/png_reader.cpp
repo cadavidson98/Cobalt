@@ -30,8 +30,8 @@ void pngWarning([[maybe_unused]] png_structp pngPtr, png_const_charp errorMessag
 
 } // anonymous namespace
 
-std::optional<ByteImage> read(const std::string_view fileName) {
-    std::FILE *pngFile = std::fopen(fileName.data(), "rb");
+std::optional<ByteImage> read(const std::filesystem::path filePath) {
+    std::FILE *pngFile = std::fopen(filePath.c_str(), "rb");
     if (!pngFile) {
         CoLogError("Failed to open '%s' for reading");
         return std::nullopt;

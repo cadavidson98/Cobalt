@@ -3,9 +3,9 @@
 
 #include "math/math_types.h"
 
+#include <filesystem>
 #include <memory>
 #include <optional>
-#include <string_view>
 
 namespace cblt::io::png {
 
@@ -15,7 +15,7 @@ struct ByteImage {
     vec2u size;
 };
 
-std::optional<ByteImage> read(const std::string_view fileName);
+std::optional<ByteImage> read(const std::filesystem::path filePath);
 
 } // namespace cblt::io::png
 

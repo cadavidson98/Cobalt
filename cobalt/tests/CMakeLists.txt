@@ -9,6 +9,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/resources.h.in ${CMAKE_CURRENT_SOURCE
 set(COBALT_TEST_SOURCES
     resources.h
     test_algorithms.cpp
+    test_color.cpp
     test_geometry.cpp
     test_math.cpp
     test_material.cpp
