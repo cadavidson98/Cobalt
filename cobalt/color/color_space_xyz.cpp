@@ -48,16 +48,16 @@ struct Samples {
         return {};
     }
 
-    static constexpr float kYIntegral = 106.856917101172f;
+    static constexpr float kYIntegral = 106.856895f;
 
     vec3f total = {};
 
     for (size_t wavelength = kSpectrumMinWavelength; wavelength < kSpectrumMaxWavelength; ++wavelength) {
         const float sample = spectrum[wavelength];
-        const float blueSample = samples->z[wavelength];
+        [[maybe_unused]] const float blueSample = samples->z[wavelength];
         total.x += sample * samples->x[wavelength];
         total.y += sample * samples->y[wavelength];
-        total.z += sample * blueSample;
+        total.z += sample * samples->z[wavelength];
     }
 
     return total / kYIntegral;
