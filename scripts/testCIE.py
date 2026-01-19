@@ -3,28 +3,54 @@ import colour
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
+import math
+
+def blackbodySpectra(temp, l):
+    c = 299792458.0
+    h = 6.62606957e-34
+    k_b = 1.3806488e-23
+    numerator = 2.0 * h * c * c
+    denominator = np.pow(l, 5) * (np.exp((h * c) / (k_b * l * temp)) - 1.0) 
+    return numerator / denominator
+
+def spectraToRGB(x, y, z, s):
+    y_integral = 106.856895
+
+    cie_x = np.dot(x, s) / y_integral
+    cie_y = np.dot(y, s) / y_integral
+    cie_z = np.dot(z, s) / y_integral
+
+    rgb = colour.XYZ_to_RGB(np.array([cie_x, cie_y, cie_z]), colour.models.RGB_COLOURSPACE_sRGB)
+    return np.clip(rgb, 0, 1)
 
 def plotCIE(filename, spectra):
     with open(filename) as ciefile:
         l, x, y, z = np.loadtxt(ciefile, delimiter=',', unpack=True)
+        t = np.row_stack((l, x, y, z))
+        np.savetxt("/home/cole/Downloads/cie.csv", t, fmt='%6f', delimiter=',')
 
     fig, ax = plt.subplots(layout='constrained')
     # ax.plot(l, x, 'r', l, y, 'g', l, z, 'b')
 
     # ax.set(xlabel='wavelength')
 
+    cmfs = (colour.MSDS_CMFS["CIE 1931 2 Degree Standard Observer"].copy().align(colour.SpectralShape(360, 780, 10)))
+
+    illuminant = colour.SDS_ILLUMINANTS["D65"].copy().align(cmfs.shape)
+
+    blueXYZ = colour.RGB_to_XYZ([0.0, 0.0, 1.0], colour.models.RGB_COLOURSPACE_sRGB)
+    spectra = colour.XYZ_to_sd(blueXYZ, 'Jakob 2019', cmfs=cmfs, illuminant=illuminant)
+
+    print(spectra.wavelengths)
+
+    ax.plot(spectra.wavelengths, spectra.values)
+
+    show_blackbody = False
     if spectra is not None:
-        with open(spectra) as csvfile:
-            l_s, x_s = np.loadtxt(spectra, delimiter=',', unpack=True)
-        x_s = np.interp(l, l_s, x_s)
+        s = np.interp(l, spectra.wavelengths, spectra.values, left=0.0, right=0.0)
 
-        y_integral = 106.856895
-
-        cie_x = np.dot(x, x_s) / y_integral
-        cie_y = np.dot(y, x_s) / y_integral
-        cie_z = np.dot(z, x_s) / y_integral
-
-        rgb = colour.XYZ_to_RGB(np.array([cie_x, cie_y, cie_z]), colour.models.RGB_COLOURSPACE_sRGB)
+        rgb = spectraToRGB(x, y, z, s)
+        print(f"approximated rgb: {rgb}")
 
         ax.add_patch(Rectangle((1, 1), 1, 1, color=rgb))
         ax.add_patch(Rectangle((2.5, 1), 1, 1, color=[.0858, .3465, .7368]))
@@ -33,10 +59,19 @@ def plotCIE(filename, spectra):
         ax.set_ylim(0, 2)
 
         print(f"CIE color is {rgb}")
+    elif show_blackbody:
+        temps = np.linspace(1000, 8000, 500)
 
-        # ax.plot(l, x_s, 'k')
+        for idx in range(temps.size):
+            t = temps[idx]
+            l_max = 2.8977721e-3 / t
+            radiation = blackbodySpectra(t, l * 1e-9) / blackbodySpectra(t, l_max)
+            rgb = spectraToRGB(x, y, z, radiation)
+            # print(f"{t} -> {rgb}")
+            ax.add_patch(Rectangle((idx, 0), 1, 1, color=rgb))
+            # ax.plot(l, radiation)
 
-    # ax.axis('off')
+        ax.set_xlim(0, temps.size + 1)
 
     plt.show()
 

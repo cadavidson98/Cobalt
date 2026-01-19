@@ -10,6 +10,8 @@
 #include <libxml2/libxml/xmlreader.h>
 #include <libxml2/libxml/xpath.h>
 
+#include "rgb2spec/rgb2spec.h"
+
 #include <cassert>
 #include <optional>
 
@@ -177,27 +179,22 @@ Spectrum loadBSDF(xmlNodePtr bsdfNode, xmlXPathContextPtr context, const Schema 
         if (xml2::xmlHoldsAlternative<XPATH_NODESET>(spectrum.get())) {
             xml2::xmlString valueString = xmlGetProp(*spectrum->nodesetval->nodeTab, schema.valueName.xml_str());
             const std::vector<float> rgb = core::split<float>(valueString.c_str(), ' ');
-            if (rgb.size() != 3) {
-                return Spectrum{
-                    .red = 1.0,
-                    .green = 1.0,
-                    .blue = 1.0,
-                };
+            assert(rgb.size() == 3);
+            static RGB2Spec *sRGBModel = nullptr;
+            if (!sRGBModel) {
+                sRGBModel = rgb2spec_load(RGB2SPEC_COLOR_SRGB);
+                assert(sRGBModel);
             }
 
-            return Spectrum{
-                .red = rgb[0],
-                .green = rgb[1],
-                .blue = rgb[2],
-            };
+            Spectrum spectrum;
+
+            rgb2spec_fetch(sRGBModel, const_cast<float *>(rgb.data()), spectrum.coefficients.data());
+
+            return spectrum;
         }
     }
 
-    return Spectrum{
-        .red = 1.0f,
-        .green = 1.0f,
-        .blue = 1.0f,
-    };
+    return Spectrum{};
 }
 
 std::optional<Camera> loadCamera(xmlNodePtr cameraNode, xmlXPathContextPtr context, const Schema &schema) {
@@ -293,7 +290,7 @@ std::optional<Shape<ShapeType>> loadTypedShape(
     LoadShapeFunctor functor
 ) {
     mat4f shapeToWorld(1.f);
-    Spectrum color{1.f, 1.f, 1.f};
+    Spectrum spectrum;
 
     xml2::xmlResource<xmlXPathObject> transform =
         xmlXPathNodeEval(shapeNode, schema.transformExpression.xml_str(), context);
@@ -306,7 +303,7 @@ std::optional<Shape<ShapeType>> loadTypedShape(
     xml2::xmlResource<xmlXPathObject> bsdf = xmlXPathNodeEval(shapeNode, schema.bsdfType.xml_str(), context);
     if (xml2::xmlHoldsAlternative<XPATH_NODESET>(bsdf.get())) {
         xmlNodeSetPtr bsdfNode = bsdf->nodesetval;
-        color = loadBSDF(*bsdfNode->nodeTab, context, schema);
+        spectrum = loadBSDF(*bsdfNode->nodeTab, context, schema);
     }
 
     std::optional<ShapeType> shape = functor(shapeNode, context, schema);
@@ -317,7 +314,7 @@ std::optional<Shape<ShapeType>> loadTypedShape(
     return Shape<ShapeType>{
         .shape = std::move(*shape),
         .transform = shapeToWorld,
-        .spectrum = color,
+        .spectrum = spectrum,
     };
 }
 
@@ -368,11 +365,10 @@ bool read(const std::string_view fileName, std::shared_ptr<FileReaderDelegate> d
                     }
 
                     const Emitter emitter = {
-                        .emissionMap =
-                            {
-                                          .fileName = fileName.c_str(),
-                                          .fileExtension = cblt::core::fileExtension(fileName.c_str()),
-                                          },
+                        .emissionMap = {
+                                        .fileName = fileName.c_str(),
+                                        .fileExtension = cblt::core::fileExtension(fileName.c_str()),
+                                        },
                     };
 
                     if (!delegate->readEmitter(emitter)) {

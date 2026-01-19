@@ -4,7 +4,7 @@ find_package(Imath REQUIRED)
 find_package(Ptex REQUIRED)
 
 target_compile_features(CobaltRender PUBLIC cxx_std_20)
-target_link_libraries(CobaltRender PUBLIC CobaltCore CobaltMath CobaltGeometry CobaltIO Imath::Imath Ptex)
+target_link_libraries(CobaltRender PUBLIC CobaltCore CobaltMath CobaltGeometry CobaltIO CobaltColor Imath::Imath Ptex)
 
 add_subdirectory(bsdf)
 add_subdirectory(data)

@@ -73,12 +73,21 @@ std::optional<ByteImage> read(const std::filesystem::path filePath) {
         png_get_IHDR(pngReader, pngInfo, &headerWidth, &headerHeight, &bitDepth, &colorType, NULL, NULL, NULL);
 
         switch (colorType) {
-        case PNG_COLOR_TYPE_GRAY : channelCount = 1; break;
-        case PNG_COLOR_TYPE_GRAY_ALPHA : channelCount = 2; break;
+        case PNG_COLOR_TYPE_GRAY :
+            channelCount = 1;
+            break;
+        case PNG_COLOR_TYPE_GRAY_ALPHA :
+            channelCount = 2;
+            break;
         case PNG_COLOR_TYPE_PALETTE :
-        case PNG_COLOR_TYPE_RGB : channelCount = 3; break;
-        case PNG_COLOR_TYPE_RGB_ALPHA : channelCount = 4; break;
-        default : channelCount = 0;
+        case PNG_COLOR_TYPE_RGB :
+            channelCount = 3;
+            break;
+        case PNG_COLOR_TYPE_RGB_ALPHA :
+            channelCount = 4;
+            break;
+        default :
+            channelCount = 0;
         }
 
         if (!channelCount) {

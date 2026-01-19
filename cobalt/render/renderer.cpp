@@ -2,6 +2,8 @@
 
 #include "component_storage.h"
 
+#include "color/color_space_xyz.h"
+#include "color/jakob.h"
 #include "core/logging.h"
 #include "core/size_types.h"
 #include "data/camera.h"
@@ -105,7 +107,14 @@ struct ResolveKernel {
         const geom::IntersectionResult &result = results[threadIdx];
         if (result) {
             const uint32_t colorIdx = (*components)(result.primitive).materialIdx;
-            renderTarget->write(threadID, components->colors[colorIdx]);
+            const color::PolynomialSpectrum &spectrum = components->spectrums[colorIdx];
+            const vec3f xyzColor = color::xyz::convert(spectrum);
+            const vec3f sRGBColor = color::xyz::toLinearSRGB(xyzColor);
+            renderTarget->write(threadID, CoColor {
+                .r = sRGBColor.x,
+                .g = sRGBColor.y,
+                .b = sRGBColor.z,
+            });
         }
     }
 };
@@ -130,11 +139,10 @@ bool render(const CoScene &scene, std::shared_ptr<CoRenderTarget> renderTarget) 
     const vec2u viewSize = renderTarget->size();
 
     const TileDispatchSize<kTileSize> dispatchSize{
-        .tilesPerGrid =
-            {
-                           utils::divUp(viewSize.x, uint32_t(kTileSize)),
-                           utils::divUp(viewSize.y, uint32_t(kTileSize)),
-                           },
+        .tilesPerGrid = {
+                         utils::divUp(viewSize.x, uint32_t(kTileSize)),
+                         utils::divUp(viewSize.y, uint32_t(kTileSize)),
+                         },
     };
 
     const size_t pixelCount = viewSize.x * viewSize.y;

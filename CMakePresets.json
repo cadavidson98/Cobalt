@@ -23,7 +23,7 @@
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "g++",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-                "CMAKE_CXX_FLAGS": "-march=native -Werror -Wall -Wextra -Wpedantic -Wunused -Wreorder -Wformat -Wimplicit-fallthrough -Wuninitialized -Winit-self" ,
+                "CMAKE_CXX_FLAGS": "-march=native -Werror -Wall -Wextra -Wpedantic -Wunused -Wreorder -Wformat -Wimplicit-fallthrough -Wuninitialized -Winit-self",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
             }
         },

@@ -48,9 +48,10 @@ public:
             _bounds = CoAxisAlignedBoundingBox::Union(_bounds, bounds);
         }
 
-        auto computePatchBounds =
-            [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C, const simd::vec3f &D
-            ) -> CoAxisAlignedBoundingBox {
+        auto computePatchBounds = [](const simd::vec3f &A,
+                                     const simd::vec3f &B,
+                                     const simd::vec3f &C,
+                                     const simd::vec3f &D) -> CoAxisAlignedBoundingBox {
             return CoAxisAlignedBoundingBox{
                 .min = simd::min(simd::min(A, B), simd::min(C, D)),
                 .max = simd::max(simd::max(A, B), simd::max(C, D)),
@@ -103,20 +104,23 @@ public:
                 _positionsBuffer.vertices[triangle.z]
             );
 
-            primitives.push_back(MortonPrimitive{
-                .mortonCode = computeMortonCode(boundingBox),
-                .primitive =
-                    Primitive{
-                              .type = PrimitiveType::kTriangle,
-                              .index = uint32_t(triangleIdx),
-                              },
-                .boundingBox = boundingBox,
-            });
+            primitives.push_back(
+                MortonPrimitive{
+                    .mortonCode = computeMortonCode(boundingBox),
+                    .primitive =
+                        Primitive{
+                                  .type = PrimitiveType::kTriangle,
+                                  .index = uint32_t(triangleIdx),
+                                  },
+                    .boundingBox = boundingBox,
+            }
+            );
         }
 
-        auto computePatchBounds =
-            [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C, const simd::vec3f &D
-            ) -> CoAxisAlignedBoundingBox {
+        auto computePatchBounds = [](const simd::vec3f &A,
+                                     const simd::vec3f &B,
+                                     const simd::vec3f &C,
+                                     const simd::vec3f &D) -> CoAxisAlignedBoundingBox {
             return CoAxisAlignedBoundingBox{
                 .min = simd::min(simd::min(A, B), simd::min(C, D)),
                 .max = simd::max(simd::max(A, B), simd::max(C, D)),
@@ -133,15 +137,17 @@ public:
                 _positionsBuffer.vertices[patch.w]
             );
 
-            primitives.push_back(MortonPrimitive{
-                .mortonCode = computeMortonCode(boundingBox),
-                .primitive =
-                    Primitive{
-                              .type = PrimitiveType::kPatch,
-                              .index = uint32_t(patchIdx),
-                              },
-                .boundingBox = boundingBox,
-            });
+            primitives.push_back(
+                MortonPrimitive{
+                    .mortonCode = computeMortonCode(boundingBox),
+                    .primitive =
+                        Primitive{
+                                  .type = PrimitiveType::kPatch,
+                                  .index = uint32_t(patchIdx),
+                                  },
+                    .boundingBox = boundingBox,
+            }
+            );
         }
 
         return primitives;
@@ -175,7 +181,8 @@ public:
                 mortonPrimitive.primitive.index = newIdx;
                 continue;
             }
-            default : assert(false);
+            default :
+                assert(false);
             }
         }
     }
@@ -195,10 +202,15 @@ public:
         for (const MortonPrimitive &mortonPrimitive : primitives) {
             const Primitive &primitive = mortonPrimitive.primitive;
             switch (primitive.type) {
-            case PrimitiveType::kTriangle : extents.triangles = expandExtent(extents.triangles, primitive); continue;
-            case PrimitiveType::kPatch : extents.patches = expandExtent(extents.patches, primitive); continue;
+            case PrimitiveType::kTriangle :
+                extents.triangles = expandExtent(extents.triangles, primitive);
+                continue;
+            case PrimitiveType::kPatch :
+                extents.patches = expandExtent(extents.patches, primitive);
+                continue;
 
-            default : assert(false);
+            default :
+                assert(false);
             }
         }
 

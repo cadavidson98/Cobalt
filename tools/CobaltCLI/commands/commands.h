@@ -1,11 +1,13 @@
 #ifndef CBLT_CLI_COMMANDS_H
 #define CBLT_CLI_COMMANDS_H
 
+#include <span>
+
 namespace cblt::cli {
 
-bool renderCommand(int argc, char **argv);
+bool renderCommand(std::span<char *> args);
 
-bool debugCommand(int argc, char **argv);
+bool preprocessCommand(std::span<char *> args);
 
 } // namespace cblt::cli
 

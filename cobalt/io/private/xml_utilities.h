@@ -146,10 +146,14 @@ bool xmlHoldsAlternative(xmlXPathObjectPtr xPathObject) {
     switch (xPathObject->type) {
     case XPATH_NODESET :
         return xPathObject->nodesetval && xPathObject->nodesetval->nodeNr && xPathObject->nodesetval->nodeTab;
-    case XPATH_STRING : return xPathObject->stringval;
-    case XPATH_BOOLEAN : [[fallthrough]];
-    case XPATH_NUMBER : return true;
-    default : break;
+    case XPATH_STRING :
+        return xPathObject->stringval;
+    case XPATH_BOOLEAN :
+        [[fallthrough]];
+    case XPATH_NUMBER :
+        return true;
+    default :
+        break;
     }
 
     return false;

@@ -210,9 +210,12 @@ bool writeImage(const WriteInfo &writeInfo) {
     }
 
     switch (writeInfo.type) {
-    case ImageType::kPNG : return writePng(writeInfo);
-    case ImageType::kEXR : return writeExr(writeInfo);
-    default : break;
+    case ImageType::kPNG :
+        return writePng(writeInfo);
+    case ImageType::kEXR :
+        return writeExr(writeInfo);
+    default :
+        break;
     }
 
     return false;

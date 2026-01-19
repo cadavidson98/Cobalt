@@ -26,4 +26,4 @@ target_sources(CobaltIO PUBLIC ${COBALT_IO_HEADERS} PRIVATE ${COBALT_IO_PRIVATE_
 target_include_directories(CobaltIO PUBLIC ${COBALT_ROOT_DIR} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_include_directories(CobaltIO PRIVATE ${OpenEXR_includedir})
-target_link_libraries(CobaltIO PUBLIC CobaltCore CobaltMath PRIVATE OpenEXR::OpenEXR LibXml2::LibXml2 png)
+target_link_libraries(CobaltIO PUBLIC CobaltCore CobaltMath PRIVATE OpenEXR::OpenEXR LibXml2::LibXml2 png rgb2spec)

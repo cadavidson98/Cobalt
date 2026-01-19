@@ -1,9 +1,9 @@
 #ifndef CBLT_RENDER_COMPONENT_H
 #define CBLT_RENDER_COMPONENT_H
 
+#include "color/jakob.h"
 #include "core/size_types.h"
 #include "geometry/bounding_volume_types.h"
-#include "render/data/color.h"
 
 #include <cassert>
 
@@ -16,15 +16,21 @@ struct Component {
 struct ComponentStorage {
     std::vector<Component> meshIndices = {};
     std::vector<Component> sphereIndices = {};
-    std::vector<CoColor> colors = {};
+    std::vector<color::PolynomialSpectrum> spectrums = {};
 
     Component operator()(const geom::Primitive primitive) {
         switch (primitive.type) {
-        case geom::kMesh : return meshIndices[primitive.index];
-        case geom::kSphere : return sphereIndices[primitive.index];
-        case geom::kTriangle : [[fallthrough]];
-        case geom::kPatch : [[fallthrough]];
-        default : assert(false); return Component{};
+        case geom::kMesh :
+            return meshIndices[primitive.index];
+        case geom::kSphere :
+            return sphereIndices[primitive.index];
+        case geom::kTriangle :
+            [[fallthrough]];
+        case geom::kPatch :
+            [[fallthrough]];
+        default :
+            assert(false);
+            return Component{};
         }
     }
 
@@ -38,24 +44,43 @@ struct ComponentStorage {
         for (const geom::MortonPrimitive &mortonPrimitive : primitives) {
             const geom::Primitive &primitive = mortonPrimitive.primitive;
             switch (primitive.type) {
-            case geom::PrimitiveType::kMesh : meshIndices[meshIdx++] = meshCopy[primitive.index]; break;
-            case geom::PrimitiveType::kSphere : sphereIndices[sphereIdx++] = sphereCopy[primitive.index]; break;
-            case geom::PrimitiveType::kTriangle : [[fallthrough]];
-            case geom::PrimitiveType::kPatch : [[fallthrough]];
-            default : assert(false && "Unsupported type in scene storage"); break;
+            case geom::PrimitiveType::kMesh :
+                meshIndices[meshIdx++] = meshCopy[primitive.index];
+                break;
+            case geom::PrimitiveType::kSphere :
+                sphereIndices[sphereIdx++] = sphereCopy[primitive.index];
+                break;
+            case geom::PrimitiveType::kTriangle :
+                [[fallthrough]];
+            case geom::PrimitiveType::kPatch :
+                [[fallthrough]];
+            default :
+                assert(false && "Unsupported type in scene storage");
+                break;
             }
         }
     }
 
-    void addColor(const geom::Primitive primitive, const CoColor color) {
-        colors.push_back(color);
-        const uint32_t colorIdx = colors.size() - 1;
+    void addSpectrum(const geom::Primitive primitive, const color::PolynomialSpectrum spectrum) {
+        spectrums.push_back(spectrum);
+        const uint32_t spectrumIdx = spectrums.size() - 1;
         switch (primitive.type) {
-        case geom::kMesh : meshIndices.push_back({colorIdx}); return;
-        case geom::kSphere : sphereIndices.push_back({colorIdx}); return;
-        case geom::kTriangle : [[fallthrough]];
-        case geom::kPatch : [[fallthrough]];
-        default : assert(false); break;
+        case geom::kMesh :
+            meshIndices.push_back({
+                .materialIdx = spectrumIdx,
+            });
+            return;
+        case geom::kSphere :
+            sphereIndices.push_back({
+                .materialIdx = spectrumIdx,
+            });
+            return;
+        case geom::kTriangle :
+            [[fallthrough]];
+        case geom::kPatch :
+            [[fallthrough]];
+        default :
+            assert(false);
         }
     }
 };

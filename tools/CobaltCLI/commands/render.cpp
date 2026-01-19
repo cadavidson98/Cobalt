@@ -1,5 +1,3 @@
-#include "render.h"
-
 #include "assets.h"
 #include "commands.h"
 #include "image_writer.h"
@@ -18,26 +16,30 @@
 
 namespace cblt::cli {
 
+struct CoCLIParams {
+    std::string inputFile;
+    std::string outputFile;
+};
+
 namespace {
 void printUsage() {
     std::cout << "render -i [input file] -o [output file] -c [renderer configuration]";
 }
 
-std::optional<CoCLIParams> parseArguments(int numArgs, char **argv) {
-    if (numArgs == 1) {
+std::optional<CoCLIParams> parseArguments(std::span<char *> args) {
+    if (args.size() == 1) {
         printUsage();
         return std::nullopt;
     }
 
     CoCLIParams params;
-    for (int arg = 1; arg < numArgs; ++arg) {
-        std::string command(argv[arg]);
-        if (command.compare("-i") == 0U || command.compare("--input") == 0U) {
-            std::string inputFileName = argv[++arg];
-            params.inputFile = inputFileName;
+    for (size_t idx = 0; idx < args.size(); ++idx) {
+        const std::string_view command = args[idx];
+        if (command == "-i" || command == "--input") {
+            params.inputFile = args[++idx];
             continue;
-        } else if (command.compare("-o") == 0U || command.compare("--output") == 0U) {
-            params.outputFile = argv[++arg];
+        } else if (command == "-o" || command == "--output") {
+            params.outputFile = args[++idx];
             continue;
         } else {
             printUsage();
@@ -49,9 +51,9 @@ std::optional<CoCLIParams> parseArguments(int numArgs, char **argv) {
 
 } // anonymous namespace
 
-bool renderCommand(int argc, char **argv) {
+bool renderCommand(std::span<char *> args) {
 
-    const std::optional<CoCLIParams> settings = parseArguments(argc - 1, argv + 1);
+    const std::optional<CoCLIParams> settings = parseArguments(args);
     if (!settings) {
         return false;
     }

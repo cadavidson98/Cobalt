@@ -1,1 +1,2 @@
 add_subdirectory(stbimage)
+add_subdirectory(rgb2spec)

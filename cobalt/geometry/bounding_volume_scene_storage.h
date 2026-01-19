@@ -79,9 +79,12 @@ public:
                 mortonPrimitive.primitive.index = newIdx;
                 continue;
             };
-            case PrimitiveType::kPatch : [[fallthrough]];
-            case PrimitiveType::kTriangle : [[fallthrough]];
-            default : assert(false);
+            case PrimitiveType::kPatch :
+                [[fallthrough]];
+            case PrimitiveType::kTriangle :
+                [[fallthrough]];
+            default :
+                assert(false);
             }
         }
     }
@@ -108,29 +111,33 @@ public:
                 .max = sphere.center + simd::vec3f(sphere.radius),
             };
 
-            primitives.push_back(MortonPrimitive{
-                .mortonCode = encodePrimitive(boundingBox),
-                .primitive =
-                    {
-                                .type = PrimitiveType::kSphere,
-                                .index = uint32_t(index),
-                                },
-                .boundingBox = boundingBox,
-            });
+            primitives.push_back(
+                MortonPrimitive{
+                    .mortonCode = encodePrimitive(boundingBox),
+                    .primitive =
+                        {
+                                    .type = PrimitiveType::kSphere,
+                                    .index = uint32_t(index),
+                                    },
+                    .boundingBox = boundingBox,
+            }
+            );
         }
 
         for (size_t index = 0; index < _meshPrimitives.size(); ++index) {
             const CoMesh &mesh = *_meshPrimitives[index];
             const CoAxisAlignedBoundingBox boundingBox = mesh.bounds();
-            primitives.push_back(MortonPrimitive{
-                .mortonCode = encodePrimitive(boundingBox),
-                .primitive =
-                    {
-                                .type = PrimitiveType::kMesh,
-                                .index = uint32_t(index),
-                                },
-                .boundingBox = boundingBox,
-            });
+            primitives.push_back(
+                MortonPrimitive{
+                    .mortonCode = encodePrimitive(boundingBox),
+                    .primitive =
+                        {
+                                    .type = PrimitiveType::kMesh,
+                                    .index = uint32_t(index),
+                                    },
+                    .boundingBox = boundingBox,
+            }
+            );
         }
 
         return primitives;
@@ -150,9 +157,14 @@ public:
         for (const MortonPrimitive &mortonPrimitive : primitives) {
             const Primitive &primitive = mortonPrimitive.primitive;
             switch (primitive.type) {
-            case PrimitiveType::kSphere : extents.spheres = expandExtent(extents.spheres, primitive); continue;
-            case PrimitiveType::kMesh : extents.meshes = expandExtent(extents.meshes, primitive); continue;
-            default : assert(false);
+            case PrimitiveType::kSphere :
+                extents.spheres = expandExtent(extents.spheres, primitive);
+                continue;
+            case PrimitiveType::kMesh :
+                extents.meshes = expandExtent(extents.meshes, primitive);
+                continue;
+            default :
+                assert(false);
             }
         }
 

@@ -6,6 +6,7 @@
 #include "scene.h"
 #include "texture.h"
 
+#include "color/jakob.h"
 #include "core/logging.h"
 #include "geometry/bounding_volume_scene_storage.h"
 #include "geometry/bounding_volume_types.h"
@@ -32,18 +33,18 @@ public:
     }
 
     bool readSphere(const io::mitsuba::Shape<io::mitsuba::Sphere> &sphere) override {
-        const geom::Primitive spherePrimitive = _sceneGeometry->addSphere(geom::CoSphere{
-            .center = simd::vec3f(sphere.shape.center.x, sphere.shape.center.y, sphere.shape.center.z),
-            .radius = sphere.shape.radius,
-        });
+        const geom::Primitive spherePrimitive = _sceneGeometry->addSphere(
+            geom::CoSphere{
+                .center = simd::vec3f(sphere.shape.center.x, sphere.shape.center.y, sphere.shape.center.z),
+                .radius = sphere.shape.radius,
+            }
+        );
 
         const io::mitsuba::Spectrum &spectrum = sphere.spectrum;
-        _sceneComponents->addColor(
+        _sceneComponents->addSpectrum(
             spherePrimitive,
-            CoColor{
-                spectrum.red,
-                spectrum.green,
-                spectrum.blue,
+            color::PolynomialSpectrum {
+                .coefficients = spectrum.coefficients,
             }
         );
 
@@ -69,12 +70,10 @@ public:
         const io::mitsuba::Spectrum &spectrum = mesh.spectrum;
 
         const geom::Primitive meshPrimitive = _sceneGeometry->addMesh(cobaltMesh);
-        _sceneComponents->addColor(
+        _sceneComponents->addSpectrum(
             meshPrimitive,
-            CoColor{
-                spectrum.red,
-                spectrum.green,
-                spectrum.blue,
+            color::PolynomialSpectrum {
+                .coefficients = spectrum.coefficients,
             }
         );
 
@@ -176,7 +175,8 @@ inline std::shared_ptr<CoScene> loadMitsubaScene(const CoSceneFactory::CreateInf
 
 std::shared_ptr<CoScene> CoSceneFactory::buildScene(const CoSceneFactory::CreateInfo &createInfo) {
     switch (createInfo.format) {
-    case SceneFormat::kMitsuba : return loadMitsubaScene(createInfo);
+    case SceneFormat::kMitsuba :
+        return loadMitsubaScene(createInfo);
     }
 
     return nullptr;

@@ -10,9 +10,8 @@
 namespace cblt::io::mitsuba {
 
 struct Spectrum {
-    float red;
-    float green;
-    float blue;
+    static constexpr size_t kNumCoeffs = 3;
+    std::array<float, kNumCoeffs> coefficients = {};
 };
 
 struct Texture {

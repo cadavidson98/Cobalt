@@ -129,7 +129,8 @@ CoColor CoByteTexture::sample(const vec2f &uvCoord) const {
         break;
     }
     case CoPixelFormat::Invalid :
-    default : break;
+    default :
+        break;
     }
 
     return textureColor;

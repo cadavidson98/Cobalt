@@ -1,13 +1,13 @@
 #ifndef CBLT_COLOR_COLORSPACE_XYZ_H
 #define CBLT_COLOR_COLORSPACE_XYZ_H
 
-#include "spectrum.h"
+#include "jakob.h"
 
 #include "math/math_types.h"
 
 namespace cblt::color::xyz {
 
-[[nodiscard]] vec3f convert(const Spectrum &spectrum);
+[[nodiscard]] vec3f convert(const PolynomialSpectrum &spectrum);
 
 [[nodiscard]] vec3f toLinearSRGB(vec3f xyz);
 
