@@ -15,7 +15,7 @@
 
 namespace cblt::geom {
 
-bool raySphereIntersection(const CoRay &ray, const CoSphere &sphere, float &timeMin, float &timeMax) {
+bool raySphereIntersection(const Ray &ray, const Sphere &sphere, float &timeMin, float &timeMax) {
     simd::vec3f centerToPoint = ray.pos - sphere.center;
     // solve quadratic equation At^2 + Bt + C = 0
     const float A = simd::dot(ray.dir, ray.dir);
@@ -38,7 +38,7 @@ bool raySphereIntersection(const CoRay &ray, const CoSphere &sphere, float &time
 }
 
 bool rayTriangleIntersection(
-    const CoRay &ray,
+    const Ray &ray,
     simd::vec3f position1,
     simd::vec3f position2,
     simd::vec3f position3,
@@ -73,7 +73,7 @@ bool rayTriangleIntersection(
 }
 
 bool rayPatchIntersection(
-    const CoRay &ray,
+    const Ray &ray,
     simd::vec3f position1,
     simd::vec3f position2,
     simd::vec3f position3,
@@ -180,8 +180,8 @@ bool rayPatchIntersection(
 }
 
 bool rayAxisAlignedBoundingBoxIntersection(
-    const CoRay &ray,
-    const CoAxisAlignedBoundingBox &aabb,
+    const Ray &ray,
+    const AxisAlignedBoundingBox &aabb,
     float &minTime,
     float &maxTime
 ) {

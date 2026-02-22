@@ -4,13 +4,12 @@
 #include "core/string_utilities.h"
 #include "math/math_utilities.h"
 #include "private/xml_utilities.h"
+#include "rgb2spec/rgb2spec.h"
 
 #include <libxml2/libxml/tree.h>
 #include <libxml2/libxml/xmlmemory.h>
 #include <libxml2/libxml/xmlreader.h>
 #include <libxml2/libxml/xpath.h>
-
-#include "rgb2spec/rgb2spec.h"
 
 #include <cassert>
 #include <optional>

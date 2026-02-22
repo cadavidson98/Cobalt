@@ -75,12 +75,37 @@ def plotCIE(filename, spectra):
 
     plt.show()
 
+def xyYToXYZ(chromaticity):
+    return np.array([chromaticity[0] / chromaticity[1], 1, (1 - chromaticity[0] - chromaticity[1]) / chromaticity[1]])
+
+def xyzToRGB():
+    primaries = np.array([[0.64, 0.30, 0.15], [0.33, 0.60, 0.06], [0.03, 0.10, 0.79]])
+    whitepoint = xyYToXYZ(np.array([0.3127, 0.3290]))
+
+    f = np.linalg.inv(primaries) @ whitepoint
+    rgb_to_xyz = primaries @ np.diag(f)
+    xyz_to_rgb = np.linalg.inv(rgb_to_xyz)
+    print("===== Derived =====")
+    print(f"foo: {f}")
+    print(f"primaries: {primaries}")
+    print(f"whitepoint: {whitepoint}")
+    print(f"rgb_to_xyz: {rgb_to_xyz}")
+    print(xyz_to_rgb)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
                     prog='CSVPlotter',
                     description='Plots CIE CSV files for debug vis')
-    parser.add_argument('filename', help='CSV file to read')
-    parser.add_argument('--spectrum', help='CSV file of color spectra data')
-    args = parser.parse_args()
-    plotCIE(args.filename, args.spectrum)
+    #parser.add_argument('filename', help='CSV file to read')
+    #parser.add_argument('--spectrum', help='CSV file of color spectra data')
+    #args = parser.parse_args()
+    #plotCIE(args.filename, args.spectrum)
+
+    print("===== Reference =====")
+    illuminant = np.array([0.3127, 0.3290])
+    sRGB = colour.models.RGB_COLOURSPACE_sRGB
+    print(f"primaries: {sRGB.primaries}")
+    print(f"whitepoint: {sRGB.whitepoint}")
+    print(f"rgb_to_xyz: {sRGB.matrix_RGB_to_XYZ}")
+    print(f"rgb_to_xyz: {sRGB.matrix_XYZ_to_RGB}")
+    xyzToRGB()

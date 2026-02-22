@@ -11,13 +11,15 @@
 
 namespace cblt::core {
 
-class CoLogInternal {
+namespace {
+
+class Logger {
 public:
-    CoLogInternal() {
+    Logger() {
         openlog("Cobalt", LOG_PID, LOG_USER);
     }
 
-    ~CoLogInternal() {
+    ~Logger() {
         closelog();
     }
 
@@ -28,31 +30,33 @@ public:
 private:
 };
 
-static std::unique_ptr<CoLogInternal> gLog = nullptr;
+std::unique_ptr<Logger> gLog = nullptr;
 
-void CoLogWrite(CoLogLevel level, const char *trace, const char *message, ...) {
+} // anonymous namespace
+
+void LogWrite(Log level, const char *trace, const char *message, ...) {
     int osLogLevel = LOG_DEBUG;
     switch (level) {
 #ifdef CBLT_LOG_DEBUG
-    case CoLogLevelDebug : {
+    case Log::kDebug : {
         osLogLevel = LOG_DEBUG;
         break;
     }
 #endif
 #ifdef CBLT_LOG_INFO
-    case CoLogLevelInfo : {
+    case Log::kInfo : {
         osLogLevel = LOG_INFO;
         break;
     }
 #endif
 #ifdef CBLT_LOG_WARN
-    case CoLogLevelWarn : {
+    case Log::kWarn : {
         osLogLevel = LOG_WARNING;
         break;
     }
 #endif
 #ifdef CBLT_LOG_ERROR
-    case CoLogLevelError : {
+    case Log::kError : {
         osLogLevel = LOG_ERR;
         break;
     }
@@ -60,7 +64,7 @@ void CoLogWrite(CoLogLevel level, const char *trace, const char *message, ...) {
     };
 
     if (!gLog) {
-        gLog = std::make_unique<CoLogInternal>();
+        gLog = std::make_unique<Logger>();
     }
 
     char logMessage[256];

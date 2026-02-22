@@ -7,39 +7,39 @@
 
 namespace cblt::core {
 
-enum CoLogLevel {
+enum class Log {
 #ifdef CBLT_LOG_DEBUG
-    CoLogLevelDebug,
+    kDebug,
 #endif
 #ifdef CBLT_LOG_INFO
-    CoLogLevelInfo,
+    kInfo,
 #endif
 #ifdef CBLT_LOG_WARN
-    CoLogLevelWarn,
+    kWarn,
 #endif
 #ifdef CBLT_LOG_ERROR
-    CoLogLevelError
+    kError
 #endif
 };
 
-void CoLogWrite(CoLogLevel, const char *trace, const char *message, ...);
+void LogWrite(Log log, const char *trace, const char *message, ...);
 
 } // namespace cblt::core
 
 #ifdef CBLT_LOG_DEBUG
-#define CoLogDebug(...) cblt::core::CoLogWrite(cblt::core::CoLogLevelDebug, __PRETTY_FUNCTION__, __VA_ARGS__)
+#define CoLogDebug(...) cblt::core::LogWrite(cblt::core::Log::kDebug, __PRETTY_FUNCTION__, __VA_ARGS__)
 #endif // CBLT_LOG_DEBUG
 
 #ifdef CBLT_LOG_INFO
-#define CoLogInfo(...) cblt::core::CoLogWrite(cblt::core::CoLogLevelInfo, __PRETTY_FUNCTION__, __VA_ARGS__)
+#define CoLogInfo(...) cblt::core::LogWrite(cblt::core::Log::kInfo, __PRETTY_FUNCTION__, __VA_ARGS__)
 #endif // CBLT_LOG_INFO
 
 #ifdef CBLT_LOG_WARN
-#define CoLogWarning(...) cblt::core::CoLogWrite(cblt::core::CoLogLevelWarn, __PRETTY_FUNCTION__, __VA_ARGS__)
+#define CoLogWarning(...) cblt::core::LogWrite(cblt::core::Log::kWarn, __PRETTY_FUNCTION__, __VA_ARGS__)
 #endif // CBLT_LOG_WARN
 
 #ifdef CBLT_LOG_ERROR
-#define CoLogError(...) cblt::core::CoLogWrite(cblt::core::CoLogLevelError, __PRETTY_FUNCTION__, __VA_ARGS__)
+#define CoLogError(...) cblt::core::LogWrite(cblt::core::Log::kError, __PRETTY_FUNCTION__, __VA_ARGS__)
 #endif // CBLT_LOG_ERROR
 
 #endif // CBLT_LOGGING_H

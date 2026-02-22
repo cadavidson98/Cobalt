@@ -1,1 +1,0 @@
-target_sources(CobaltTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/testTexture.cpp)

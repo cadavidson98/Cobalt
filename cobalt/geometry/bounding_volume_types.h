@@ -29,7 +29,7 @@ struct Primitive {
 struct MortonPrimitive {
     uint32_t mortonCode;
     Primitive primitive;
-    CoAxisAlignedBoundingBox boundingBox;
+    AxisAlignedBoundingBox boundingBox;
 };
 
 struct PrimitiveExtent {
@@ -56,7 +56,7 @@ template<class StorageType>
 concept isStorage = requires(
     StorageType storage,
     const storageExtent<StorageType>::value &extent,
-    const CoRay &ray,
+    const Ray &ray,
     std::span<MortonPrimitive> mortonPrimitives
 ) {
     { !std::is_void_v<storageExtent<StorageType>> };

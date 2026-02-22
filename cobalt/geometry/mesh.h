@@ -14,32 +14,32 @@
 
 namespace cblt::geom {
 
-struct CoRay;
+struct Ray;
 struct IntersectionEvent;
 
-class CoMesh {
+class Mesh {
 public:
     struct CreateInfo {
         core::VertexAttributeBuffer<simd::vec3f> positions;
     };
 
-    static std::shared_ptr<CoMesh> create(const CreateInfo &createInfo);
+    static std::shared_ptr<Mesh> create(const CreateInfo &createInfo);
 
-    CoAxisAlignedBoundingBox bounds() const;
+    AxisAlignedBoundingBox bounds() const;
 
-    geom::IntersectionResult intersects(const CoRay &ray) const;
+    geom::IntersectionResult intersects(const Ray &ray) const;
 
 private:
-    using MeshAccelerator = CoBoundingVolume<CoMeshStorage>;
+    using MeshAccelerator = BoundingVolume<MeshStorage>;
 
     MeshAccelerator _accelerator;
-    CoAxisAlignedBoundingBox _bounds;
+    AxisAlignedBoundingBox _bounds;
 
-    CoMesh() = delete;
-    CoMesh(
-        std::shared_ptr<CoMeshStorage> meshStorage,
+    Mesh() = delete;
+    Mesh(
+        std::shared_ptr<MeshStorage> meshStorage,
         std::span<const MortonPrimitive> meshPrimitives,
-        CoAxisAlignedBoundingBox bounds
+        AxisAlignedBoundingBox bounds
     );
 };
 

@@ -1,4 +1,5 @@
 add_library(CobaltMath STATIC)
+target_compile_features(CobaltMath PUBLIC cxx_std_20)
 
 set(COBALT_MATH_HEADERS
     ${CMAKE_CURRENT_SOURCE_DIR}/constants.h

@@ -7,7 +7,6 @@
 #include "core/algorithms.h"
 #include "geometry/bounding_box.h"
 #include "geometry/intersection.h"
-#include "geometry/mesh.h"
 #include "math/math_utilities.h"
 
 #include <algorithm>
@@ -96,7 +95,7 @@ inline std::vector<NodeOffsets> prefixSum(std::span<const Cluster> clusters) {
 
 template<typename StorageType>
     requires isStorage<StorageType>
-CoBoundingVolume<StorageType>::CoBoundingVolume(
+BoundingVolume<StorageType>::BoundingVolume(
     std::shared_ptr<StorageType> primitives,
     std::span<const MortonPrimitive> mortonEncodedPrimitives)
     : primitivesPerLeaf{kMaxPrimitivesPerLeaf}, storage{primitives} {
@@ -144,17 +143,17 @@ CoBoundingVolume<StorageType>::CoBoundingVolume(
         buildTree(treeletRoots, interiorNodes, currentNodeIdx);
 
         const InteriorNode &root = interiorNodes[0];
-        boundingBox = CoAxisAlignedBoundingBox::Union(root.left.boundingBox, root.right.boundingBox);
+        boundingBox = AxisAlignedBoundingBox::Union(root.left.boundingBox, root.right.boundingBox);
 }
 
 template<typename StorageType>
     requires isStorage<StorageType>
-CoBoundingVolume<StorageType>::~CoBoundingVolume() {
+BoundingVolume<StorageType>::~BoundingVolume() {
 }
 
 template<typename StorageType>
     requires isStorage<StorageType>
-IntersectionResult CoBoundingVolume<StorageType>::intersects(const CoRay &ray) const {
+IntersectionResult BoundingVolume<StorageType>::intersects(const Ray &ray) const {
     const TypedNode kRootNode = {
         .boundingBox = boundingBox,
         .index = 0,
@@ -212,7 +211,7 @@ IntersectionResult CoBoundingVolume<StorageType>::intersects(const CoRay &ray) c
 
 template<typename StorageType>
     requires isStorage<StorageType>
-CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTreelet(
+BoundingVolume<StorageType>::TypedNode BoundingVolume<StorageType>::buildTreelet(
     std::span<const MortonPrimitive> mortonEncodedPrimitives,
     std::span<InteriorNode> interiorNodes,
     std::span<LeafNode> leafNodes,
@@ -220,13 +219,13 @@ CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTre
     uint32_t &currentInteriorNodeIdx,
     const uint32_t mask
 ) {
-    auto mergeBoundingBoxes = [](const CoAxisAlignedBoundingBox &lhs, const MortonPrimitive &rhs) {
-        return CoAxisAlignedBoundingBox::Union(lhs, rhs.boundingBox);
+    auto mergeBoundingBoxes = [](const AxisAlignedBoundingBox &lhs, const MortonPrimitive &rhs) {
+        return AxisAlignedBoundingBox::Union(lhs, rhs.boundingBox);
     };
 
     assert(mortonEncodedPrimitives.size() > 0);
 
-    const CoAxisAlignedBoundingBox boundingBox = std::accumulate(
+    const AxisAlignedBoundingBox boundingBox = std::accumulate(
         mortonEncodedPrimitives.begin(),
         mortonEncodedPrimitives.end(),
         mortonEncodedPrimitives.front().boundingBox,
@@ -307,7 +306,7 @@ CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTre
 
 template<typename StorageType>
     requires isStorage<StorageType>
-CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTree(
+BoundingVolume<StorageType>::TypedNode BoundingVolume<StorageType>::buildTree(
     std::span<const TypedNode> treeletRoots,
     std::span<InteriorNode> nodes,
     uint32_t &currentNodeIdx
@@ -318,11 +317,11 @@ CoBoundingVolume<StorageType>::TypedNode CoBoundingVolume<StorageType>::buildTre
         return TypedNode{};
     }
 
-    auto mergeBoundingBoxes = [](const CoAxisAlignedBoundingBox &lhs, const TypedNode &rhs) {
-        return CoAxisAlignedBoundingBox::Union(lhs, rhs.boundingBox);
+    auto mergeBoundingBoxes = [](const AxisAlignedBoundingBox &lhs, const TypedNode &rhs) {
+        return AxisAlignedBoundingBox::Union(lhs, rhs.boundingBox);
     };
 
-    CoAxisAlignedBoundingBox boundingBox = std::accumulate(
+    AxisAlignedBoundingBox boundingBox = std::accumulate(
         treeletRoots.begin(),
         treeletRoots.end(),
         treeletRoots.front().boundingBox,

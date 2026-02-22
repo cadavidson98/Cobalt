@@ -9,24 +9,24 @@
 namespace cblt {
 
 template<typename T>
-class CoDynamicArray final {
+class DynamicArray final {
 public:
-    CoDynamicArray(size_t capacity = 0ul): _size{capacity} {
+    DynamicArray(size_t capacity = 0ul): _size{capacity} {
         if (_size > 0) {
             _array = new Storage[_size];
         }
     }
 
-    CoDynamicArray(std::nullptr_t): _size{0} {
+    DynamicArray(std::nullptr_t): _size{0} {
         _array = nullptr;
     }
 
-    CoDynamicArray(CoDynamicArray &&other): _size{other._size}, _array{other._array} {
+    DynamicArray(DynamicArray &&other): _size{other._size}, _array{other._array} {
         other._size = 0;
         other._array = nullptr;
     }
 
-    CoDynamicArray &operator=(CoDynamicArray &&other) {
+    DynamicArray &operator=(DynamicArray &&other) {
         _size = std::move(other._size);
         _array = std::move(other._array);
 
@@ -36,7 +36,7 @@ public:
         return *this;
     }
 
-    ~CoDynamicArray() {
+    ~DynamicArray() {
         delete[] _array;
     }
 
@@ -73,8 +73,8 @@ private:
 
     size_t _size = 0;
 
-    CoDynamicArray(CoDynamicArray &) = delete;
-    CoDynamicArray &operator=(CoDynamicArray &) = delete;
+    DynamicArray(DynamicArray &) = delete;
+    DynamicArray &operator=(DynamicArray &) = delete;
 };
 
 } // namespace cblt

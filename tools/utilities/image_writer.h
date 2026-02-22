@@ -1,15 +1,15 @@
 #ifndef COBALT_CLI_IMAGE_WRITER_H
 #define COBALT_CLI_IMAGE_WRITER_H
 
-#include <array>
-#include <memory>
+#include "color/pixel_buffer.h"
+
 #include <string>
 
 namespace cblt {
 
-namespace render {
-class CoRenderTarget;
-} // namespace render
+namespace color {
+class PixelBuffer;
+}
 
 namespace cli {
 
@@ -21,7 +21,7 @@ enum class ImageType {
 struct WriteInfo {
     std::string fileName;
     ImageType type;
-    std::reference_wrapper<render::CoRenderTarget> renderTarget;
+    std::shared_ptr<color::PixelBuffer> pixelBuffer;
 };
 
 bool writeImage(const WriteInfo &writeInfo);

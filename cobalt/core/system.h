@@ -7,7 +7,7 @@ namespace cblt::core {
 
 uint64_t time();
 
-struct CoDateTime {
+struct DateTime {
     uint16_t year;
     uint8_t month;
     uint8_t day;
@@ -16,7 +16,7 @@ struct CoDateTime {
     uint8_t second;
 };
 
-CoDateTime dateAndTime();
+DateTime dateAndTime();
 
 } // namespace cblt::core
 

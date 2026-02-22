@@ -8,7 +8,7 @@ namespace cblt {
 struct mat4f {
     vec4f columns[4];
 
-    mat4f(float diagonal = 1.f)
+    constexpr mat4f(float diagonal = 1.f)
         : columns{
               {diagonal,      0.f,      0.f,      0.f},
               {     0.f, diagonal,      0.f,      0.f},
@@ -16,7 +16,7 @@ struct mat4f {
               {     0.f,      0.f,      0.f, diagonal}
     } {};
 
-    mat4f(const vec4f &diagonal)
+    constexpr mat4f(const vec4f &diagonal)
         : columns{
               {diagonal.x,        0.f,        0.f,        0.f},
               {       0.f, diagonal.y,        0.f,        0.f},
@@ -25,19 +25,19 @@ struct mat4f {
     } {
     }
 
-    mat4f(const vec4f &column1, const vec4f &column2, const vec4f &column3, const vec4f &column4)
+    constexpr mat4f(const vec4f &column1, const vec4f &column2, const vec4f &column3, const vec4f &column4)
         : columns{column1, column2, column3, column4} {
     }
 
-    vec4f &operator[](size_t idx) {
+    constexpr vec4f &operator[](size_t idx) {
         return columns[idx];
     }
 
-    const vec4f &operator[](size_t idx) const {
+    constexpr const vec4f &operator[](size_t idx) const {
         return columns[idx];
     }
 
-    friend vec4f operator*(const mat4f &a, vec4f b) {
+    constexpr friend vec4f operator*(const mat4f &a, vec4f b) {
         vec4f out = a.columns[0] * b.x;
         out += a.columns[1] * b.y;
         out += a.columns[2] * b.z;
@@ -45,7 +45,7 @@ struct mat4f {
         return out;
     }
 
-    friend mat4f operator*(const mat4f &a, const mat4f &b) {
+    constexpr friend mat4f operator*(const mat4f &a, const mat4f &b) {
         mat4f out(0.f);
         out.columns[0] = a * b.columns[0];
         out.columns[1] = a * b.columns[1];
@@ -54,7 +54,7 @@ struct mat4f {
         return out;
     }
 
-    friend mat4f operator+(const mat4f &a, const mat4f &b) {
+    constexpr friend mat4f operator+(const mat4f &a, const mat4f &b) {
         mat4f out(0.f);
         out.columns[0] = a.columns[0] + b.columns[0];
         out.columns[1] = a.columns[1] + b.columns[1];
@@ -63,7 +63,7 @@ struct mat4f {
         return out;
     }
 
-    friend mat4f operator-(const mat4f &a, const mat4f &b) {
+    constexpr friend mat4f operator-(const mat4f &a, const mat4f &b) {
         mat4f out(0.f);
         out.columns[0] = a.columns[0] - b.columns[0];
         out.columns[1] = a.columns[1] - b.columns[1];
@@ -72,7 +72,7 @@ struct mat4f {
         return out;
     }
 
-    friend mat4f operator*(const mat4f &a, float b) {
+    constexpr friend mat4f operator*(const mat4f &a, float b) {
         mat4f out(0.f);
         out.columns[0] = a.columns[0] * b;
         out.columns[1] = a.columns[1] * b;
@@ -81,7 +81,7 @@ struct mat4f {
         return out;
     }
 
-    friend mat4f operator*(float a, const mat4f &b) {
+    constexpr friend mat4f operator*(float a, const mat4f &b) {
         return b * a;
     }
 };

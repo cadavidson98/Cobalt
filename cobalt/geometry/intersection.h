@@ -6,9 +6,9 @@
 
 namespace cblt::geom {
 
-struct CoAxisAlignedBoundingBox;
-struct CoRay;
-struct CoSphere;
+struct AxisAlignedBoundingBox;
+struct Ray;
+struct Sphere;
 
 struct IntersectionEvent {
     float timeMin = std::numeric_limits<float>::max();
@@ -19,10 +19,10 @@ struct IntersectionEvent {
     uint32_t primitiveIndex = 0;
 };
 
-bool raySphereIntersection(const CoRay &ray, const CoSphere &sphere, float &timeMin, float &timeMax);
+bool raySphereIntersection(const Ray &ray, const Sphere &sphere, float &timeMin, float &timeMax);
 
 bool rayTriangleIntersection(
-    const CoRay &ray,
+    const Ray &ray,
     simd::vec3f position1,
     simd::vec3f position2,
     simd::vec3f position3,
@@ -31,7 +31,7 @@ bool rayTriangleIntersection(
 );
 
 bool rayPatchIntersection(
-    const CoRay &ray,
+    const Ray &ray,
     simd::vec3f position1,
     simd::vec3f position2,
     simd::vec3f position3,
@@ -42,8 +42,8 @@ bool rayPatchIntersection(
 );
 
 bool rayAxisAlignedBoundingBoxIntersection(
-    const CoRay &ray,
-    const CoAxisAlignedBoundingBox &boundingBox,
+    const Ray &ray,
+    const AxisAlignedBoundingBox &boundingBox,
     float &minTime,
     float &maxTime
 );

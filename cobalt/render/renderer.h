@@ -3,13 +3,22 @@
 
 #include <memory>
 
-namespace cblt::render {
+namespace cblt {
 
-class CoScene;
-class CoRenderTarget;
+namespace color {
 
-[[nodiscard]] bool render(const CoScene &scene, std::shared_ptr<CoRenderTarget> renderTarget);
+class PixelBuffer;
 
-} // namespace cblt::render
+} // namespace color
+
+namespace render {
+
+class Scene;
+
+[[nodiscard]] bool render(std::shared_ptr<const Scene> scene, std::shared_ptr<color::PixelBuffer> pixelBuffer);
+
+} // namespace render
+
+} // namespace cblt
 
 #endif // CBLT_RENDER_RENDERER_H

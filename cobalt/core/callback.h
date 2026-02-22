@@ -8,7 +8,7 @@
 
 namespace cblt::core {
 
-struct CoCallback {
+struct Callback {
     mutable std::mutex mutex;
     mutable uint32_t totalProgress = 0;
     std::function<void(const char *, int)> functor;

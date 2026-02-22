@@ -2,7 +2,7 @@
 
 namespace cblt::render {
 
-CoColor evaluatePrincipledBSDF(vec3f incoming, vec3f normal, vec3f outgoing, const CoPrincipledParameters &parameters) {
+Color evaluatePrincipledBSDF(vec3f incoming, vec3f normal, vec3f outgoing, const PrincipledParameters &parameters) {
     const vec3f halfway = normalize(incoming + outgoing);
     [[maybe_unused]] const float nDotH = dot(normal, halfway);
     [[maybe_unused]] const float nDotI = dot(normal, incoming);

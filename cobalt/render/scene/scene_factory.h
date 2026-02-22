@@ -5,15 +5,13 @@
 
 #include <filesystem>
 #include <memory>
-#include <optional>
-#include <string>
 
 namespace cblt::render {
 
-class CoScene;
-class CoMaterial;
+class Scene;
+class Material;
 
-class CoSceneFactory {
+class SceneFactory {
 public:
     enum class SceneFormat {
         kMitsuba,
@@ -22,7 +20,7 @@ public:
     enum class BuildingError {
         kMissingFile,     // Failed to open the scene file, or a dependency
         kParsingError,    // Failed to read the contents of a file
-        kInvalidArgument, // Failed to convert data to the Cobalt format
+        kInvalidArgument, // Failed to convert data to the balt format
     };
 
     struct CreateInfo {
@@ -30,7 +28,7 @@ public:
         SceneFormat format;
     };
 
-    static std::shared_ptr<CoScene> buildScene(const CreateInfo &createInfo);
+    static std::shared_ptr<Scene> buildScene(const CreateInfo &createInfo);
 };
 
 } // namespace cblt::render

@@ -5,7 +5,7 @@
 
 namespace cblt {
 
-constexpr float kPI = 3.14159265f;
+constexpr float kPI = float(M_PI);
 
 } // namespace cblt
 

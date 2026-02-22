@@ -7,8 +7,8 @@
 
 namespace cblt::render {
 
-struct CoPrincipledParameters {
-    CoColor baseColor;
+struct PrincipledParameters {
+    Color baseColor;
     float metallic;
     float subsurface;
     float ior;
@@ -23,7 +23,7 @@ struct CoPrincipledParameters {
     float clearcoatGloss;
 };
 
-CoColor evaluatePrincipledBSDF(vec3f incoming, vec3f normal, vec3f outgoing, const CoPrincipledParameters &parameters);
+Color evaluatePrincipledBSDF(vec3f incoming, vec3f normal, vec3f outgoing, const PrincipledParameters &parameters);
 
 } // namespace cblt::render
 

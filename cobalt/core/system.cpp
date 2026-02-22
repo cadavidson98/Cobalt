@@ -13,13 +13,13 @@ uint64_t time() {
     return (systemTime.tv_sec) * kSecondsToNanoSeconds + (systemTime.tv_nsec);
 }
 
-CoDateTime dateAndTime() {
+DateTime dateAndTime() {
     timespec posixTime;
     clock_gettime(CLOCK_REALTIME, &posixTime);
 
     tm *posixDateTime = gmtime(&posixTime.tv_sec);
     assert(posixDateTime && "date time must be not null");
-    return CoDateTime{
+    return DateTime{
         .year = uint16_t(posixDateTime->tm_year + 1900),
         .month = uint8_t(posixDateTime->tm_mon),
         .day = uint8_t(posixDateTime->tm_mday),

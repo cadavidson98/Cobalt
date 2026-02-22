@@ -4,26 +4,24 @@
 #include "geometry/bounding_volume_scene_storage.h"
 #include "render/component_storage.h"
 #include "render/data/camera.h"
-#include "render/data/texture.h"
 
 #include <memory>
 
 namespace cblt::render {
 
-class CoScene {
+class Scene {
 public:
     struct CreateInfo {
-        std::shared_ptr<CoCamera> camera;
-        std::shared_ptr<CoTexture> environmentMap;
-        std::shared_ptr<geom::CoSceneStorage> geometry;
+        std::shared_ptr<Camera> camera;
+        std::shared_ptr<geom::SceneStorage> geometry;
         std::shared_ptr<ComponentStorage> components;
     };
 
-    static std::shared_ptr<CoScene> create(const CreateInfo &createInfo);
+    static std::shared_ptr<Scene> create(const CreateInfo &createInfo);
 
-    std::shared_ptr<CoCamera> camera() const;
+    std::shared_ptr<Camera> camera() const;
 
-    std::shared_ptr<geom::CoSceneStorage> storage() const {
+    std::shared_ptr<geom::SceneStorage> storage() const {
         return _geometry;
     };
 
@@ -32,12 +30,12 @@ public:
     }
 
 private:
-    CoScene(const CreateInfo &createInfo);
-    CoScene() = delete;
+    Scene(const CreateInfo &createInfo);
+    Scene() = delete;
 
-    std::shared_ptr<CoCamera> _camera;
-    std::shared_ptr<CoTexture> _environmentMap;
-    std::shared_ptr<geom::CoSceneStorage> _geometry;
+    std::shared_ptr<Camera> _camera;
+    // fixme: need to change to spectrum std::shared_ptr<Texture> _environmentMap;
+    std::shared_ptr<geom::SceneStorage> _geometry;
     std::shared_ptr<ComponentStorage> _components;
 };
 

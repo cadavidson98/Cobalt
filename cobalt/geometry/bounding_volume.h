@@ -15,19 +15,19 @@
 namespace cblt::geom {
 
 // Linear Bounding Volume Heirarchy based on Karras:
-// 'Maximizing Parallelism in the Construction of BVHs, Octrees, and k-d Trees'
+// 'Maximizing Parallelism in the nstruction of BVHs, Octrees, and k-d Trees'
 template<typename StorageType>
     requires isStorage<StorageType>
-class CoBoundingVolume {
+class BoundingVolume {
 public:
-    CoBoundingVolume(
+    BoundingVolume(
         const std::shared_ptr<StorageType> primitives,
         std::span<const MortonPrimitive> mortonEncodedPrimitives
     );
 
-    ~CoBoundingVolume();
+    ~BoundingVolume();
 
-    IntersectionResult intersects(const CoRay &ray) const;
+    IntersectionResult intersects(const Ray &ray) const;
 
 private:
     static constexpr uint32_t kInvalidIndex = -1;
@@ -40,7 +40,7 @@ private:
     };
 
     struct TypedNode {
-        CoAxisAlignedBoundingBox boundingBox;
+        AxisAlignedBoundingBox boundingBox;
         uint32_t index = kInvalidIndex;
         Type type = Type::kInvalid;
     };
@@ -54,7 +54,7 @@ private:
         typename StorageType::Extents extents;
     };
 
-    CoAxisAlignedBoundingBox boundingBox;
+    AxisAlignedBoundingBox boundingBox;
     std::vector<InteriorNode> interiorNodes;
     std::vector<LeafNode> leafNodes;
 

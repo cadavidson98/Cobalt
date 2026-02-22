@@ -1,7 +1,7 @@
 #ifndef CBLT_RENDER_COMPONENT_H
 #define CBLT_RENDER_COMPONENT_H
 
-#include "color/jakob.h"
+#include "color/polynomial_spectrum.h"
 #include "core/size_types.h"
 #include "geometry/bounding_volume_types.h"
 

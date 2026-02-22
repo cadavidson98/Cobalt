@@ -5,13 +5,12 @@
 
 namespace cblt::render {
 
-struct CoTransform {
+struct Transform {
     vec3f translation;
     vec3f scale;
     quatf rotation;
 };
 
-} // namespace
-  // cblt::render
+} // namespace cblt::render
 
 #endif // CBLT_RENDER_TRANSFORM_H

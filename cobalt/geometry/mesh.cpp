@@ -45,12 +45,12 @@ template<typename T>
     return true;
 }
 
-[[nodiscard]] bool checkCreateInfo(const CoMesh::CreateInfo &createInfo) {
+[[nodiscard]] bool checkCreateInfo(const Mesh::CreateInfo &createInfo) {
     return checkVertexAttributeBuffer(createInfo.positions);
 }
 } // anonymous namespace
 
-std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
+std::shared_ptr<Mesh> Mesh::create(const Mesh::CreateInfo &createInfo) {
     if (!checkCreateInfo(createInfo)) {
         return nullptr;
     }
@@ -62,12 +62,12 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
         positions.triangleCount,
     };
 
-    const CoAxisAlignedBoundingBox triangleBounds = std::accumulate(
+    const AxisAlignedBoundingBox triangleBounds = std::accumulate(
         triangles.begin(),
         triangles.end(),
-        CoAxisAlignedBoundingBox{.min = simd::vec3f(kMaxFloat), .max = simd::vec3f(kMinFloat)},
-        [positions = positions.vertices](const CoAxisAlignedBoundingBox &bounds, const vec3u triangle) {
-            return CoAxisAlignedBoundingBox{
+        AxisAlignedBoundingBox{.min = simd::vec3f(kMaxFloat), .max = simd::vec3f(kMinFloat)},
+        [positions = positions.vertices](const AxisAlignedBoundingBox &bounds, const vec3u triangle) {
+            return AxisAlignedBoundingBox{
                 .min = simd::min(
                     simd::min(positions[triangle.x], positions[triangle.y]),
                     simd::min(bounds.min, positions[triangle.y])
@@ -85,12 +85,12 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
         positions.patchCount,
     };
 
-    const CoAxisAlignedBoundingBox patchBounds = std::accumulate(
+    const AxisAlignedBoundingBox patchBounds = std::accumulate(
         patches.begin(),
         patches.end(),
-        CoAxisAlignedBoundingBox{.min = simd::vec3f(kMaxFloat), .max = simd::vec3f(kMinFloat)},
-        [positions = positions.vertices](const CoAxisAlignedBoundingBox &bounds, const vec4u patch) {
-            return CoAxisAlignedBoundingBox{
+        AxisAlignedBoundingBox{.min = simd::vec3f(kMaxFloat), .max = simd::vec3f(kMinFloat)},
+        [positions = positions.vertices](const AxisAlignedBoundingBox &bounds, const vec4u patch) {
+            return AxisAlignedBoundingBox{
                 .min = simd::min(
                     simd::min(
                         simd::min(positions[patch.x], positions[patch.y]),
@@ -110,7 +110,7 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
     );
 
     // TODO: do I need to check for 'Max' when computing mins (and mins when computing Max)
-    const CoAxisAlignedBoundingBox meshBounds = {
+    const AxisAlignedBoundingBox meshBounds = {
         .min = simd::min(patchBounds.min, triangleBounds.min),
         .max = simd::max(patchBounds.max, triangleBounds.max),
     };
@@ -119,7 +119,7 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
         return lhs.mortonCode;
     };
 
-    const std::shared_ptr<CoMeshStorage> meshStorage = std::make_shared<CoMeshStorage>(positions);
+    const std::shared_ptr<MeshStorage> meshStorage = std::make_shared<MeshStorage>(positions);
 
     std::vector<geom::MortonPrimitive> mortonEncodedPrimitives = meshStorage->mortonEncodePrimitives();
 
@@ -128,23 +128,23 @@ std::shared_ptr<CoMesh> CoMesh::create(const CoMesh::CreateInfo &createInfo) {
     // TODO: structure of array here; looks like I can "coarsen these reorders"
     meshStorage->reorder(mortonEncodedPrimitives);
 
-    return std::shared_ptr<CoMesh>(new CoMesh(meshStorage, mortonEncodedPrimitives, meshBounds));
+    return std::shared_ptr<Mesh>(new Mesh(meshStorage, mortonEncodedPrimitives, meshBounds));
 }
 
 // there is a "function with side effects" assumption here
-CoMesh::CoMesh(
-    std::shared_ptr<CoMeshStorage> meshStorage,
+Mesh::Mesh(
+    std::shared_ptr<MeshStorage> meshStorage,
     std::span<const MortonPrimitive> meshPrimitives,
-    CoAxisAlignedBoundingBox bounds
+    AxisAlignedBoundingBox bounds
 )
     : _accelerator(meshStorage, meshPrimitives), _bounds{bounds} {
 }
 
-CoAxisAlignedBoundingBox CoMesh::bounds() const {
+AxisAlignedBoundingBox Mesh::bounds() const {
     return _bounds;
 }
 
-geom::IntersectionResult CoMesh::intersects(const CoRay &ray) const {
+geom::IntersectionResult Mesh::intersects(const Ray &ray) const {
     return _accelerator.intersects(ray);
 }
 

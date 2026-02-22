@@ -3,7 +3,7 @@
 
 namespace cblt::core {
 template<typename T>
-struct CoError {};
+struct Error {};
 } // namespace cblt::core
 
 #endif // CBLT_CORE_ERROR_H

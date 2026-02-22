@@ -16,7 +16,7 @@
 
 namespace cblt::geom {
 
-class CoSceneStorage {
+class SceneStorage {
 public:
     struct Extents {
         PrimitiveExtent spheres;
@@ -24,7 +24,7 @@ public:
         PrimitiveExtent meshes;
     };
 
-    CoSceneStorage() {
+    SceneStorage() {
         static constexpr float kMinValue = std::numeric_limits<float>::lowest();
         static constexpr float kMaxValue = std::numeric_limits<float>::max();
         _bounds = {
@@ -34,23 +34,23 @@ public:
     }
 
     // MARK: adding primitives methods
-    [[nodiscard]] Primitive addSphere(const CoSphere &sphere) {
+    [[nodiscard]] Primitive addSphere(const Sphere &sphere) {
         _spherePrimitives.push_back(sphere);
-        const CoAxisAlignedBoundingBox sphereBounds = {
+        const AxisAlignedBoundingBox sphereBounds = {
             .min = sphere.center - simd::vec3f(sphere.radius, sphere.radius, sphere.radius),
             .max = sphere.center + simd::vec3f(sphere.radius, sphere.radius, sphere.radius),
         };
 
-        _bounds = CoAxisAlignedBoundingBox::Union(_bounds, sphereBounds);
+        _bounds = AxisAlignedBoundingBox::Union(_bounds, sphereBounds);
         return Primitive{
             .type = PrimitiveType::kSphere,
             .index = uint32_t(_spherePrimitives.size() - 1),
         };
     }
 
-    [[nodiscard]] Primitive addMesh(const std::shared_ptr<CoMesh> mesh) {
+    [[nodiscard]] Primitive addMesh(const std::shared_ptr<Mesh> mesh) {
         _meshPrimitives.push_back(mesh);
-        _bounds = CoAxisAlignedBoundingBox::Union(_bounds, mesh->bounds());
+        _bounds = AxisAlignedBoundingBox::Union(_bounds, mesh->bounds());
         return Primitive{
             .type = PrimitiveType::kMesh,
             .index = uint32_t(_meshPrimitives.size() - 1),
@@ -62,8 +62,8 @@ public:
         uint32_t sphereIdx = 0;
         uint32_t meshIdx = 0;
 
-        std::vector<CoSphere> spheresCopy = _spherePrimitives;
-        std::vector<std::shared_ptr<CoMesh>> meshesCopy = _meshPrimitives;
+        std::vector<Sphere> spheresCopy = _spherePrimitives;
+        std::vector<std::shared_ptr<Mesh>> meshesCopy = _meshPrimitives;
 
         for (MortonPrimitive &mortonPrimitive : primitives) {
             switch (mortonPrimitive.primitive.type) {
@@ -90,14 +90,14 @@ public:
     }
 
     [[nodiscard]] std::vector<MortonPrimitive> mortonEncodePrimitives() const {
-        const CoAxisAlignedBoundingBox primitiveBounds = bounds();
+        const AxisAlignedBoundingBox primitiveBounds = bounds();
         const simd::vec3f boundsExtent = primitiveBounds.Scales();
         const simd::vec3f boundsMin = primitiveBounds.min;
 
         std::vector<MortonPrimitive> primitives;
         primitives.reserve(_spherePrimitives.size() + _meshPrimitives.size());
 
-        auto encodePrimitive = [&boundsExtent, &boundsMin](const CoAxisAlignedBoundingBox &boundingBox) -> uint32_t {
+        auto encodePrimitive = [&boundsExtent, &boundsMin](const AxisAlignedBoundingBox &boundingBox) -> uint32_t {
             static constexpr float kFloatToUint = float((1 << 10) - 1);
             const simd::vec3f normalizedPosition = (boundingBox.Center() - boundsMin) / boundsExtent;
             const std::array<float, 4> values = (kFloatToUint * normalizedPosition).Values();
@@ -105,8 +105,8 @@ public:
         };
 
         for (size_t index = 0; index < _spherePrimitives.size(); ++index) {
-            const CoSphere &sphere = _spherePrimitives[index];
-            const CoAxisAlignedBoundingBox boundingBox = {
+            const Sphere &sphere = _spherePrimitives[index];
+            const AxisAlignedBoundingBox boundingBox = {
                 .min = sphere.center - simd::vec3f(sphere.radius),
                 .max = sphere.center + simd::vec3f(sphere.radius),
             };
@@ -125,8 +125,8 @@ public:
         }
 
         for (size_t index = 0; index < _meshPrimitives.size(); ++index) {
-            const CoMesh &mesh = *_meshPrimitives[index];
-            const CoAxisAlignedBoundingBox boundingBox = mesh.bounds();
+            const Mesh &mesh = *_meshPrimitives[index];
+            const AxisAlignedBoundingBox boundingBox = mesh.bounds();
             primitives.push_back(
                 MortonPrimitive{
                     .mortonCode = encodePrimitive(boundingBox),
@@ -171,14 +171,14 @@ public:
         return extents;
     }
 
-    [[nodiscard]] IntersectionResult intersects(const Extents &extents, const CoRay &ray) const {
+    [[nodiscard]] IntersectionResult intersects(const Extents &extents, const Ray &ray) const {
         IntersectionResult result;
 
         const PrimitiveExtent &spheres = extents.spheres;
         for (size_t idx = spheres.start; idx < spheres.start + spheres.count; ++idx) {
             float localTimeMin = std::numeric_limits<float>::max();
             float localTimeMax = std::numeric_limits<float>::max();
-            const CoSphere &sphere = _spherePrimitives[idx];
+            const Sphere &sphere = _spherePrimitives[idx];
             if (raySphereIntersection(ray, sphere, localTimeMin, localTimeMax) && localTimeMin < result.hitTime) {
                 result.hitTime = localTimeMin;
                 result.primitive = {
@@ -194,7 +194,7 @@ public:
 
         const PrimitiveExtent &meshes = extents.meshes;
         for (size_t idx = meshes.start; idx < meshes.start + meshes.count; ++idx) {
-            const CoMesh &mesh = *_meshPrimitives[idx];
+            const Mesh &mesh = *_meshPrimitives[idx];
             const IntersectionResult meshResult = mesh.intersects(ray);
             if (meshResult.primitive.type != kNone && meshResult.hitTime < result.hitTime) {
                 result.hitTime = meshResult.hitTime;
@@ -210,19 +210,19 @@ public:
     }
 
 private:
-    CoAxisAlignedBoundingBox _bounds;
+    AxisAlignedBoundingBox _bounds;
 
-    std::vector<cblt::geom::CoSphere> _spherePrimitives;
-    std::vector<std::shared_ptr<cblt::geom::CoMesh>> _meshPrimitives;
+    std::vector<Sphere> _spherePrimitives;
+    std::vector<std::shared_ptr<Mesh>> _meshPrimitives;
 
-    CoAxisAlignedBoundingBox bounds() const {
+    AxisAlignedBoundingBox bounds() const {
         return _bounds;
     }
 };
 
 template<>
-struct storageExtent<CoSceneStorage> {
-    using value = CoSceneStorage::Extents;
+struct storageExtent<SceneStorage> {
+    using value = SceneStorage::Extents;
 };
 
 } // namespace cblt::geom

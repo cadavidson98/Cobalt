@@ -23,7 +23,7 @@ static constexpr float kEpsilon = 1e-4f;
 
 namespace cblt::geom::test {
 
-std::shared_ptr<CoMeshStorage> makeCubeMesh(size_t width) {
+std::shared_ptr<MeshStorage> makeCubeMesh(size_t width) {
     assert((width & 1) == 0);
 
     const size_t verticesPerRow = width + 1;
@@ -68,11 +68,11 @@ std::shared_ptr<CoMeshStorage> makeCubeMesh(size_t width) {
         }
     }
 
-    return std::make_shared<CoMeshStorage>(std::move(buffer));
+    return std::make_shared<MeshStorage>(std::move(buffer));
 }
 
-std::shared_ptr<CoSceneStorage> makeScene(size_t gridSizeX, size_t gridSizeY) {
-    std::shared_ptr<CoSceneStorage> scene = std::make_shared<cblt::geom::CoSceneStorage>();
+std::shared_ptr<SceneStorage> makeScene(size_t gridSizeX, size_t gridSizeY) {
+    std::shared_ptr<SceneStorage> scene = std::make_shared<cblt::geom::SceneStorage>();
 
     for (uint32_t y = 0; y < gridSizeY; ++y) {
         for (uint32_t x = 0; x < gridSizeX; ++x) {
@@ -95,8 +95,8 @@ protected:
         meshStorage = cblt::geom::test::makeCubeMesh(kCubeSize);
     }
 
-    std::shared_ptr<cblt::geom::CoSceneStorage> storage;
-    std::shared_ptr<cblt::geom::CoMeshStorage> meshStorage;
+    std::shared_ptr<cblt::geom::SceneStorage> storage;
+    std::shared_ptr<cblt::geom::MeshStorage> meshStorage;
 
     static constexpr size_t kGridSizeX = 512;
     static constexpr size_t kGridSizeY = 512;
@@ -107,13 +107,13 @@ protected:
 TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
     static const cblt::simd::vec3f origin(0.f, 0.f, 0.f);
     static const cblt::simd::vec3f xDir(1.f, 0.f, 0.f);
-    static const cblt::geom::CoRay xRay(origin, xDir, 10.f);
+    static const cblt::geom::Ray xRay(origin, xDir, 10.f);
 
     {
         // hit (in front)
         static const cblt::simd::vec3f boxMin(2.f, -1.f, -1.f);
         static const cblt::simd::vec3f boxMax(4.f, 1.f, 1.f);
-        const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
+        const cblt::geom::AxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
         const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, timeMin, timeMax);
@@ -125,7 +125,7 @@ TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
         // hit (inside)
         static const cblt::simd::vec3f boxMin(-1.f, -1.f, -1.f);
         static const cblt::simd::vec3f boxMax(1.f, 1.f, 1.f);
-        const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
+        const cblt::geom::AxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
         const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, timeMin, timeMax);
@@ -136,7 +136,7 @@ TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
         // miss (behind)
         static const cblt::simd::vec3f boxMin(-4.f, -1.f, -1.f);
         static const cblt::simd::vec3f boxMax(-2.f, 1.f, 1.f);
-        const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
+        const cblt::geom::AxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
         const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, timeMin, timeMax);
@@ -146,7 +146,7 @@ TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
         // miss
         static const cblt::simd::vec3f boxMin(-3.f, 4.f, -1.f);
         static const cblt::simd::vec3f boxMax(-1.f, 6.f, 1.f);
-        const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
+        const cblt::geom::AxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
         const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, timeMin, timeMax);
@@ -156,8 +156,8 @@ TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
         // miss
         static const cblt::simd::vec3f boxMin(-.5f, -.5f, -.5f);
         static const cblt::simd::vec3f boxMax(.5f, .5f, .5f);
-        static const cblt::geom::CoRay zRay(cblt::simd::vec3f(2.f, 0.f, 4.f), cblt::simd::vec3f(0.f, 0.f, -1.f), 10.f);
-        const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
+        static const cblt::geom::Ray zRay(cblt::simd::vec3f(2.f, 0.f, 4.f), cblt::simd::vec3f(0.f, 0.f, -1.f), 10.f);
+        const cblt::geom::AxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
         const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(zRay, aabb, timeMin, timeMax);
@@ -167,7 +167,7 @@ TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
         // miss (beyond terminal dist)
         static const cblt::simd::vec3f boxMin(12.f, -1.f, -1.f);
         static const cblt::simd::vec3f boxMax(14.f, 1.f, 1.f);
-        const cblt::geom::CoAxisAlignedBoundingBox aabb(boxMin, boxMax);
+        const cblt::geom::AxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
         const bool hit = cblt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, aabb, timeMin, timeMax);
@@ -177,12 +177,12 @@ TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
 
 TEST(CobaltGeometryTests, TestSphereIntersect) {
     {
-        static const cblt::geom::CoSphere sphere{
+        static const cblt::geom::Sphere sphere{
             .center = cblt::simd::vec3f(0.f, 0.f, 0.f),
             .radius = 1.f,
         };
 
-        static const cblt::geom::CoRay ray(cblt::simd::vec3f(0.f, 0.f, -5.f), cblt::simd::vec3f(0.f, 0.f, 1.f), 10.f);
+        static const cblt::geom::Ray ray(cblt::simd::vec3f(0.f, 0.f, -5.f), cblt::simd::vec3f(0.f, 0.f, 1.f), 10.f);
 
         float timeMin, timeMax;
         EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, timeMin, timeMax));
@@ -190,12 +190,12 @@ TEST(CobaltGeometryTests, TestSphereIntersect) {
         EXPECT_EQ(timeMax, 6.f);
     }
     {
-        static const cblt::geom::CoSphere sphere{
+        static const cblt::geom::Sphere sphere{
             .center = cblt::simd::vec3f(0.f, 0.f, 0.f),
             .radius = 4.f,
         };
 
-        static const cblt::geom::CoRay ray(cblt::simd::vec3f(0.f, 0.f, 0.f), cblt::simd::vec3f(1.f, 0.f, 0.f), 10.f);
+        static const cblt::geom::Ray ray(cblt::simd::vec3f(0.f, 0.f, 0.f), cblt::simd::vec3f(1.f, 0.f, 0.f), 10.f);
 
         float timeMin, timeMax;
         EXPECT_TRUE(cblt::geom::raySphereIntersection(ray, sphere, timeMin, timeMax));
@@ -203,23 +203,23 @@ TEST(CobaltGeometryTests, TestSphereIntersect) {
         EXPECT_EQ(timeMax, 4.f);
     }
     {
-        static const cblt::geom::CoSphere sphere{
+        static const cblt::geom::Sphere sphere{
             .center = cblt::simd::vec3f(5.f, 5.f, 5.f),
             .radius = 5.f,
         };
 
-        static const cblt::geom::CoRay ray(cblt::simd::vec3f(0.f, 10.f, 0.f), cblt::simd::vec3f(0.f, -1.f, 0.f), 10.f);
+        static const cblt::geom::Ray ray(cblt::simd::vec3f(0.f, 10.f, 0.f), cblt::simd::vec3f(0.f, -1.f, 0.f), 10.f);
 
         float timeMin, timeMax;
         EXPECT_FALSE(cblt::geom::raySphereIntersection(ray, sphere, timeMin, timeMax));
     }
     {
-        static const cblt::geom::CoSphere sphere{
+        static const cblt::geom::Sphere sphere{
             .center = cblt::simd::vec3f(3.f, 0.f, 3.f),
             .radius = 3.f,
         };
 
-        static const cblt::geom::CoRay ray(
+        static const cblt::geom::Ray ray(
             cblt::simd::vec3f(0.f, 0.f, 6.f),
             cblt::simd::vec3f(0.7071f, 0, -.7071f),
             10.f
@@ -234,14 +234,14 @@ TEST(CobaltGeometryTests, TestSphereIntersect) {
 
 TEST(CobaltGeometryTests, TestTriangleIntersect) {
     {
-        static const cblt::geom::CoTriangle triangle{
+        static const cblt::geom::Triangle triangle{
             .position1 = cblt::simd::vec3f{ 0.f, 1.f, 1.f},
             .position2 = cblt::simd::vec3f{ 1.f, 0.f, 1.f},
             .position3 = cblt::simd::vec3f{-1.f, 0.f, 1.f},
         };
 
-        static const cblt::geom::CoRay ray =
-            cblt::geom::CoRay(cblt::simd::vec3f{0.f, .5f, 0.f}, cblt::simd::vec3f{0.f, 0.f, 1.f}, 10.f);
+        static const cblt::geom::Ray ray =
+            cblt::geom::Ray(cblt::simd::vec3f{0.f, .5f, 0.f}, cblt::simd::vec3f{0.f, 0.f, 1.f}, 10.f);
 
         float hitTime;
         cblt::vec2f hitCoordinates;
@@ -261,11 +261,11 @@ TEST(CobaltGeometryTests, TestTriangleIntersect) {
 TEST_F(CobaltGeometryTest, TestBoundingBoxPerformance) {
     static const cblt::simd::vec3f origin(0.f, 0.f, 0.f);
     static const cblt::simd::vec3f xDir(1.f, 0.f, 0.f);
-    static const cblt::geom::CoRay xRay(origin, xDir, 10.f);
+    static const cblt::geom::Ray xRay(origin, xDir, 10.f);
 
     // make a bunch of BBoxes
     static const size_t numBoxes = 100000;
-    std::vector<cblt::geom::CoAxisAlignedBoundingBox> boxes;
+    std::vector<cblt::geom::AxisAlignedBoundingBox> boxes;
     boxes.reserve(numBoxes);
     for (size_t idx = 0; idx < numBoxes; ++idx) {
         cblt::simd::vec3f boxMin(idx, idx, idx);
@@ -294,13 +294,13 @@ TEST_F(CobaltGeometryTest, TestCreateMeshStorage) {
     // TODO: structure of array here; looks like I can "coarsen these reorders"
     meshStorage->reorder(mortonEncodedPrimitives);
 
-    CoBoundingVolume<CoMeshStorage> boundingVolume(meshStorage, mortonEncodedPrimitives);
+    BoundingVolume<MeshStorage> boundingVolume(meshStorage, mortonEncodedPrimitives);
 
     for (size_t y = 0; y < kCubeSize; ++y) {
         const size_t offset = (y & 1);
         for (size_t x = 0; x < kCubeSize; ++x) {
             cblt::geom::IntersectionEvent event;
-            const cblt::geom::CoRay ray(
+            const cblt::geom::Ray ray(
                 cblt::simd::vec3f(x + .25f, y + .25f, 4.f),
                 cblt::simd::vec3f(0.f, 0.f, -1.f),
                 10.f
@@ -333,12 +333,12 @@ TEST_F(CobaltGeometryTest, TestCreateSceneStorage) {
     // TODO: structure of array here; looks like I can "coarsen these reorders"
     storage->reorder(mortonEncodedPrimitives);
 
-    CoBoundingVolume<CoSceneStorage> boundingVolume(storage, mortonEncodedPrimitives);
+    BoundingVolume<SceneStorage> boundingVolume(storage, mortonEncodedPrimitives);
 
     for (size_t y = 0; y < kGridSizeY; ++y) {
         for (size_t x = 0; x < kGridSizeX; ++x) {
             cblt::geom::IntersectionEvent event;
-            const cblt::geom::CoRay ray(cblt::simd::vec3f(x, y, 4.f), cblt::simd::vec3f(0.f, 0.f, -1.f), 10.f);
+            const cblt::geom::Ray ray(cblt::simd::vec3f(x, y, 4.f), cblt::simd::vec3f(0.f, 0.f, -1.f), 10.f);
             const cblt::geom::IntersectionResult result = boundingVolume.intersects(ray);
             ASSERT_NEAR(result.hitTime, 3.5f, kEpsilon);
             // FIXME: Need to "remap" the index from the original grid values to the reordered indices in order to check

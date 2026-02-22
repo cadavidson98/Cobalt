@@ -5,7 +5,7 @@
 
 namespace cblt::geom {
 
-struct CoSphere {
+struct Sphere {
     simd::vec3f center;
     float radius;
 };

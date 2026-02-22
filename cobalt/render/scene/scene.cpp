@@ -2,18 +2,17 @@
 
 namespace cblt::render {
 
-std::shared_ptr<CoScene> CoScene::create(const CoScene::CreateInfo &createInfo) {
-    std::shared_ptr<CoScene> scene = std::shared_ptr<CoScene>(new CoScene(createInfo));
+std::shared_ptr<Scene> Scene::create(const Scene::CreateInfo &createInfo) {
+    std::shared_ptr<Scene> scene = std::shared_ptr<Scene>(new Scene(createInfo));
 
     return scene;
 }
 
-CoScene::CoScene(const CreateInfo &createInfo)
-    : _camera{createInfo.camera}, _environmentMap{createInfo.environmentMap}, _geometry{createInfo.geometry},
-      _components{createInfo.components} {
+Scene::Scene(const CreateInfo &createInfo)
+    : _camera{createInfo.camera}, _geometry{createInfo.geometry}, _components{createInfo.components} {
 }
 
-std::shared_ptr<CoCamera> CoScene::camera() const {
+std::shared_ptr<Camera> Scene::camera() const {
     return _camera;
 }
 

@@ -9,7 +9,7 @@
 
 namespace cblt::geom {
 
-struct CoAxisAlignedBoundingBox {
+struct AxisAlignedBoundingBox {
     simd::vec3f min;
     simd::vec3f max;
 
@@ -21,7 +21,7 @@ struct CoAxisAlignedBoundingBox {
         return max - min;
     }
 
-    static CoAxisAlignedBoundingBox Union(const CoAxisAlignedBoundingBox &lhs, const CoAxisAlignedBoundingBox &rhs) {
+    static AxisAlignedBoundingBox Union(const AxisAlignedBoundingBox &lhs, const AxisAlignedBoundingBox &rhs) {
         return {
             .min = simd::min(lhs.min, rhs.min),
             .max = simd::max(lhs.max, rhs.max),

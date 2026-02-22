@@ -1,68 +1,69 @@
-#include "assets.h"
 #include "commands.h"
 #include "image_writer.h"
 
+#include "color/pixel_buffer.h"
 #include "core/size_types.h"
 #include "core/system.h"
-#include "render/data/render_target.h"
 #include "render/renderer.h"
 #include "render/scene/scene.h"
 #include "render/scene/scene_factory.h"
 
-#include <filesystem>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace cblt::cli {
 
-struct CoCLIParams {
+namespace {
+
+struct Arguments {
     std::string inputFile;
     std::string outputFile;
 };
 
-namespace {
 void printUsage() {
     std::cout << "render -i [input file] -o [output file] -c [renderer configuration]";
 }
 
-std::optional<CoCLIParams> parseArguments(std::span<char *> args) {
+std::optional<Arguments> parseArguments(std::span<char *> args) {
     if (args.size() == 1) {
         printUsage();
         return std::nullopt;
     }
 
-    CoCLIParams params;
+    Arguments arguments;
     for (size_t idx = 0; idx < args.size(); ++idx) {
         const std::string_view command = args[idx];
         if (command == "-i" || command == "--input") {
-            params.inputFile = args[++idx];
+            arguments.inputFile = args[++idx];
             continue;
         } else if (command == "-o" || command == "--output") {
-            params.outputFile = args[++idx];
+            arguments.outputFile = args[++idx];
             continue;
         } else {
-            printUsage();
             return std::nullopt;
         }
     }
-    return params;
+
+    return arguments;
 }
 
 } // anonymous namespace
 
 bool renderCommand(std::span<char *> args) {
 
-    const std::optional<CoCLIParams> settings = parseArguments(args);
+    const std::optional<Arguments> settings = parseArguments(args);
     if (!settings) {
+        printUsage();
         return false;
     }
 
     const uint64_t loadStart = core::time();
 
-    std::shared_ptr<render::CoScene> scene = render::CoSceneFactory::buildScene({
+    std::shared_ptr<render::Scene> scene = render::SceneFactory::buildScene({
         .fileName = settings->inputFile,
-        .format = render::CoSceneFactory::SceneFormat::kMitsuba,
+        .format = render::SceneFactory::SceneFormat::kMitsuba,
     });
 
     if (!scene) {
@@ -71,24 +72,25 @@ bool renderCommand(std::span<char *> args) {
     }
 
     const uint64_t loadEnd = core::time();
-    // report load time
+
     std::cout << "Loaded Scene in " << (loadEnd - loadStart) * 1e-6 << " ms " << std::endl;
 
     static constexpr uint32_t kWidth = 800;
     static constexpr uint32_t kHeight = 800;
-    std::shared_ptr<render::CoRenderTarget> renderTarget = render::CoRenderTarget::create({
+    std::shared_ptr<color::PixelBuffer> pixelBuffer = color::PixelBuffer::create({
+        .colorspace = color::PixelBuffer::Colorspace::kSRGB,
         .size = {kWidth, kHeight},
     });
 
-    if (!renderTarget) {
+    if (!pixelBuffer) {
         std::cerr << "no render target" << std::endl;
         return false;
     }
 
     const uint64_t renderStartTime = core::time();
 
-    if (!render::render(*scene, renderTarget)) {
-        std::cerr << "Failed to render image";
+    if (!render::render(scene, pixelBuffer)) {
+        std::cerr << "Failed to render scene";
         return false;
     }
 
@@ -99,7 +101,7 @@ bool renderCommand(std::span<char *> args) {
     const bool wrote = writeImage({
         .fileName = settings->outputFile,
         .type = ImageType::kEXR,
-        .renderTarget = *renderTarget,
+        .pixelBuffer = pixelBuffer,
     });
 
     if (!wrote) {

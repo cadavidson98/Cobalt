@@ -1,9 +1,8 @@
 #include "image_writer.h"
 
+#include "color/pixel_buffer.h"
 #include "core/logging.h"
 #include "core/system.h"
-#include "render/data/color.h"
-#include "render/data/render_target.h"
 
 #include <OpenEXR/ImfRgbaFile.h>
 
@@ -89,8 +88,8 @@ bool writePng(const WriteInfo &writeInfo) {
     png_init_io(pngWriter, png_FILE_p(pngFile));
 
     static constexpr png_uint_32 kBitDepth = 8;
-    const render::CoRenderTarget &renderTarget = writeInfo.renderTarget.get();
-    const vec2u size = renderTarget.size();
+    const color::PixelBuffer &pixelBuffer = *writeInfo.pixelBuffer.get();
+    const vec2u size = pixelBuffer.size();
     png_set_IHDR(
         pngWriter,
         pngInfo,
@@ -103,7 +102,7 @@ bool writePng(const WriteInfo &writeInfo) {
         PNG_FILTER_TYPE_DEFAULT
     );
 
-    const core::CoDateTime imageWriteTimestamp = core::dateAndTime();
+    const core::DateTime imageWriteTimestamp = core::dateAndTime();
 
     const png_time_struct pngTime{
         .year = imageWriteTimestamp.year,
@@ -143,21 +142,15 @@ bool writePng(const WriteInfo &writeInfo) {
     };
 
     std::vector<pngSample> rowData(size.x);
-    std::span<const render::CoColor> renderTargetBytes = renderTarget.data();
     for (size_t rowIdx = 0; rowIdx < size.y; ++rowIdx) {
-        std::span<const render::CoColor> renderTargetRow = renderTargetBytes.subspan(rowIdx * size.x, size.x);
-        std::transform(
-            renderTargetRow.begin(),
-            renderTargetRow.end(),
-            rowData.begin(),
-            [](const render::CoColor &color) {
-                return pngSample{
-                    png_byte(std::clamp(gamma(color.r), kMinValue, kMaxValue)),
-                    png_byte(std::clamp(gamma(color.g), kMinValue, kMaxValue)),
-                    png_byte(std::clamp(gamma(color.b), kMinValue, kMaxValue)),
-                };
-            }
-        );
+        std::span<const color::rgb::Value> scanline = pixelBuffer.scanline(rowIdx);
+        std::transform(scanline.begin(), scanline.end(), rowData.begin(), [](const color::rgb::Value &color) {
+            return pngSample{
+                png_byte(std::clamp(gamma(color.r), kMinValue, kMaxValue)),
+                png_byte(std::clamp(gamma(color.g), kMinValue, kMaxValue)),
+                png_byte(std::clamp(gamma(color.b), kMinValue, kMaxValue)),
+            };
+        });
 
         png_write_row(pngWriter, reinterpret_cast<const png_byte *>(rowData.data()));
     }
@@ -171,22 +164,21 @@ bool writePng(const WriteInfo &writeInfo) {
 
 bool writeExr(const WriteInfo &writeInfo) {
     try {
-        const render::CoRenderTarget &renderTarget = writeInfo.renderTarget.get();
-        const vec2u size = renderTarget.size();
+        const color::PixelBuffer &pixelBuffer = *writeInfo.pixelBuffer.get();
+        const vec2u size = pixelBuffer.size();
         Imf::RgbaOutputFile outputFile(writeInfo.fileName.c_str(), size.x, size.y, Imf::WRITE_RGB);
 
         std::vector<Imf::Rgba> outputScanline(size.x);
         outputFile.setFrameBuffer(outputScanline.data(), 1, 0);
 
-        std::span<const render::CoColor> renderTargetBytes = renderTarget.data();
         for (size_t rowIdx = 0; rowIdx < size.y; ++rowIdx) {
-            std::span<const render::CoColor> renderTargetRow = renderTargetBytes.subspan(rowIdx * size.x, size.x);
+            std::span<const color::rgb::Value> scanline = pixelBuffer.scanline(rowIdx);
 
             std::transform(
-                renderTargetRow.begin(),
-                renderTargetRow.end(),
+                scanline.begin(),
+                scanline.end(),
                 outputScanline.begin(),
-                [](const render::CoColor &color) {
+                [](const color::rgb::Value &color) {
                     return Imf::Rgba(Imath::half(color.r), Imath::half(color.g), Imath::half(color.b));
                 }
             );

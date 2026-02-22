@@ -5,7 +5,7 @@
 
 namespace cblt::geom {
 
-struct CoTriangle {
+struct Triangle {
     simd::vec3f position1;
     simd::vec3f position2;
     simd::vec3f position3;

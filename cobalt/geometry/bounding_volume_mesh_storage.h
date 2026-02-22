@@ -15,23 +15,23 @@
 
 namespace cblt::geom {
 
-class CoMeshStorage {
+class MeshStorage {
 public:
     struct Extents {
         PrimitiveExtent triangles;
         PrimitiveExtent patches;
     };
 
-    CoMeshStorage(core::VertexAttributeBuffer<simd::vec3f> buffer): _positionsBuffer(buffer) {
+    MeshStorage(core::VertexAttributeBuffer<simd::vec3f> buffer): _positionsBuffer(buffer) {
         static constexpr float kMinFloat = std::numeric_limits<float>::lowest();
         static constexpr float kMaxFloat = std::numeric_limits<float>::max();
-        _bounds = CoAxisAlignedBoundingBox{
+        _bounds = AxisAlignedBoundingBox{
             .min = {kMaxFloat, kMaxFloat, kMaxFloat},
             .max = {kMinFloat, kMinFloat, kMinFloat},
         };
 
         auto computeTriangleBounds = [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C) {
-            return CoAxisAlignedBoundingBox{
+            return AxisAlignedBoundingBox{
                 .min = simd::min(simd::min(A, B), C),
                 .max = simd::max(simd::max(A, B), C),
             };
@@ -40,19 +40,19 @@ public:
         for (size_t triangleIdx = 0; triangleIdx < _positionsBuffer.triangleCount; ++triangleIdx) {
             const vec3u &triangle = _positionsBuffer.triangleIndices[triangleIdx];
 
-            const CoAxisAlignedBoundingBox bounds = computeTriangleBounds(
+            const AxisAlignedBoundingBox bounds = computeTriangleBounds(
                 _positionsBuffer.vertices[triangle.x],
                 _positionsBuffer.vertices[triangle.y],
                 _positionsBuffer.vertices[triangle.z]
             );
-            _bounds = CoAxisAlignedBoundingBox::Union(_bounds, bounds);
+            _bounds = AxisAlignedBoundingBox::Union(_bounds, bounds);
         }
 
         auto computePatchBounds = [](const simd::vec3f &A,
                                      const simd::vec3f &B,
                                      const simd::vec3f &C,
-                                     const simd::vec3f &D) -> CoAxisAlignedBoundingBox {
-            return CoAxisAlignedBoundingBox{
+                                     const simd::vec3f &D) -> AxisAlignedBoundingBox {
+            return AxisAlignedBoundingBox{
                 .min = simd::min(simd::min(A, B), simd::min(C, D)),
                 .max = simd::max(simd::max(A, B), simd::max(C, D)),
             };
@@ -61,27 +61,27 @@ public:
         for (size_t patchIdx = 0; patchIdx < _positionsBuffer.patchCount; ++patchIdx) {
             const vec4u &patch = _positionsBuffer.patchIndices[patchIdx];
 
-            const CoAxisAlignedBoundingBox bounds = computePatchBounds(
+            const AxisAlignedBoundingBox bounds = computePatchBounds(
                 _positionsBuffer.vertices[patch.x],
                 _positionsBuffer.vertices[patch.y],
                 _positionsBuffer.vertices[patch.z],
                 _positionsBuffer.vertices[patch.w]
             );
 
-            _bounds = CoAxisAlignedBoundingBox::Union(_bounds, bounds);
+            _bounds = AxisAlignedBoundingBox::Union(_bounds, bounds);
         }
     }
 
     // To be pulled out into a new interface prior to storage creation
     [[nodiscard]] std::vector<MortonPrimitive> mortonEncodePrimitives() const {
-        const CoAxisAlignedBoundingBox primitiveBounds = bounds();
+        const AxisAlignedBoundingBox primitiveBounds = bounds();
         const simd::vec3f boundsExtent = primitiveBounds.Scales();
         const simd::vec3f boundsMin = primitiveBounds.min;
 
         std::vector<MortonPrimitive> primitives;
         primitives.reserve(_positionsBuffer.triangleCount + _positionsBuffer.patchCount);
 
-        auto computeMortonCode = [&boundsExtent, &boundsMin](const CoAxisAlignedBoundingBox &boundingBox) -> uint32_t {
+        auto computeMortonCode = [&boundsExtent, &boundsMin](const AxisAlignedBoundingBox &boundingBox) -> uint32_t {
             static constexpr float kFloatToUint = float((1 << 10) - 1);
             const simd::vec3f normalizedPosition = (boundingBox.Center() - boundsMin) / boundsExtent;
             const std::array<float, 4> values = (kFloatToUint * normalizedPosition).Values();
@@ -89,7 +89,7 @@ public:
         };
 
         auto computeTriangleBounds = [](const simd::vec3f &A, const simd::vec3f &B, const simd::vec3f &C) {
-            return CoAxisAlignedBoundingBox{
+            return AxisAlignedBoundingBox{
                 .min = simd::min(simd::min(A, B), C),
                 .max = simd::max(simd::max(A, B), C),
             };
@@ -98,7 +98,7 @@ public:
         for (size_t triangleIdx = 0; triangleIdx < _positionsBuffer.triangleCount; ++triangleIdx) {
             const vec3u &triangle = _positionsBuffer.triangleIndices[triangleIdx];
 
-            const CoAxisAlignedBoundingBox boundingBox = computeTriangleBounds(
+            const AxisAlignedBoundingBox boundingBox = computeTriangleBounds(
                 _positionsBuffer.vertices[triangle.x],
                 _positionsBuffer.vertices[triangle.y],
                 _positionsBuffer.vertices[triangle.z]
@@ -120,8 +120,8 @@ public:
         auto computePatchBounds = [](const simd::vec3f &A,
                                      const simd::vec3f &B,
                                      const simd::vec3f &C,
-                                     const simd::vec3f &D) -> CoAxisAlignedBoundingBox {
-            return CoAxisAlignedBoundingBox{
+                                     const simd::vec3f &D) -> AxisAlignedBoundingBox {
+            return AxisAlignedBoundingBox{
                 .min = simd::min(simd::min(A, B), simd::min(C, D)),
                 .max = simd::max(simd::max(A, B), simd::max(C, D)),
             };
@@ -130,7 +130,7 @@ public:
         for (size_t patchIdx = 0; patchIdx < _positionsBuffer.patchCount; ++patchIdx) {
             const vec4u &patch = _positionsBuffer.patchIndices[patchIdx];
 
-            const CoAxisAlignedBoundingBox boundingBox = computePatchBounds(
+            const AxisAlignedBoundingBox boundingBox = computePatchBounds(
                 _positionsBuffer.vertices[patch.x],
                 _positionsBuffer.vertices[patch.y],
                 _positionsBuffer.vertices[patch.z],
@@ -217,7 +217,7 @@ public:
         return extents;
     }
 
-    [[nodiscard]] IntersectionResult intersects(const Extents &extents, const CoRay &ray) const {
+    [[nodiscard]] IntersectionResult intersects(const Extents &extents, const Ray &ray) const {
         IntersectionResult result;
 
         const PrimitiveExtent &triangles = extents.triangles;
@@ -276,18 +276,18 @@ public:
     }
 
 private:
-    CoAxisAlignedBoundingBox _bounds;
+    AxisAlignedBoundingBox _bounds;
 
     core::VertexAttributeBuffer<simd::vec3f> _positionsBuffer;
 
-    CoAxisAlignedBoundingBox bounds() const {
+    AxisAlignedBoundingBox bounds() const {
         return _bounds;
     }
 };
 
 template<>
-struct storageExtent<CoMeshStorage> {
-    using value = CoMeshStorage::Extents;
+struct storageExtent<MeshStorage> {
+    using value = MeshStorage::Extents;
 };
 
 } // namespace cblt::geom

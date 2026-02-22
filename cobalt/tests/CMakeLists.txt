@@ -14,11 +14,9 @@ set(COBALT_TEST_SOURCES
     test_math.cpp
     test_material.cpp
     test_string.cpp
-    test_utilities.cpp
 )
 
 add_executable(CobaltTests ${COBALT_TEST_SOURCES})
 
-add_subdirectory(render)
 target_include_directories(CobaltTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(CobaltTests PUBLIC Cobalt GTest::gtest_main GTest::gtest)

@@ -10,10 +10,10 @@ namespace cblt::math {
 
 template<typename T>
 T bilinearInterpolation(const T &a, const T &b, const T &c, const T &d, vec2f weights) {
-    const T ab = lerp(a, b, weights.x);
-    const T cd = lerp(c, d, weights.x);
+    const T ab = std::lerp(a, b, weights.x);
+    const T cd = std::lerp(c, d, weights.x);
 
-    return lerp(ab, cd, weights.y);
+    return std::lerp(ab, cd, weights.y);
 }
 
 template<typename T>

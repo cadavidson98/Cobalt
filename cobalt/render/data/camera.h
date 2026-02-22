@@ -8,7 +8,7 @@
 
 namespace cblt::render {
 
-class CoCamera {
+class Camera {
 public:
     struct CreateFromProjectionInfo {
         float hFov = cblt::utils::toRadians(35.f);
@@ -17,9 +17,15 @@ public:
         mat4f cameraToWorld = cblt::utils::translationMatrix({0.f, 0.f, -5.f});
     };
 
-    CoCamera(const CreateFromProjectionInfo &createInfo);
+    Camera(const CreateFromProjectionInfo &createInfo);
 
-    geom::CoRay createRay(vec2f pixelPos) const;
+    struct Sample {
+        vec4f wavelengths;
+        vec4f pdfs;
+    };
+
+    Sample sampleWavelengths(float uniformValue) const;
+    geom::Ray createRay(vec2f pixelPos) const;
 
 private:
     mat4f _viewportToWorld;
