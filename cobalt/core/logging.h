@@ -1,45 +1,45 @@
-#ifndef CBLT_LOGGING_H
-#define CBLT_LOGGING_H
+#ifndef COBALT_LOGGING_H
+#define COBALT_LOGGING_H
 
 #include <iostream>
 #include <memory>
 #include <ostream>
 
-namespace cblt::core {
+namespace cobalt::core {
 
 enum class Log {
-#ifdef CBLT_LOG_DEBUG
+#ifdef COBALT_LOG_DEBUG
     kDebug,
 #endif
-#ifdef CBLT_LOG_INFO
+#ifdef COBALT_LOG_INFO
     kInfo,
 #endif
-#ifdef CBLT_LOG_WARN
+#ifdef COBALT_LOG_WARN
     kWarn,
 #endif
-#ifdef CBLT_LOG_ERROR
+#ifdef COBALT_LOG_ERROR
     kError
 #endif
 };
 
 void LogWrite(Log log, const char *trace, const char *message, ...);
 
-} // namespace cblt::core
+} // namespace cobalt::core
 
-#ifdef CBLT_LOG_DEBUG
-#define CoLogDebug(...) cblt::core::LogWrite(cblt::core::Log::kDebug, __PRETTY_FUNCTION__, __VA_ARGS__)
-#endif // CBLT_LOG_DEBUG
+#ifdef COBALT_LOG_DEBUG
+#define CoLogDebug(...) cobalt::core::LogWrite(cobalt::core::Log::kDebug, __PRETTY_FUNCTION__, __VA_ARGS__)
+#endif // COBALT_LOG_DEBUG
 
-#ifdef CBLT_LOG_INFO
-#define CoLogInfo(...) cblt::core::LogWrite(cblt::core::Log::kInfo, __PRETTY_FUNCTION__, __VA_ARGS__)
-#endif // CBLT_LOG_INFO
+#ifdef COBALT_LOG_INFO
+#define CoLogInfo(...) cobalt::core::LogWrite(cobalt::core::Log::kInfo, __PRETTY_FUNCTION__, __VA_ARGS__)
+#endif // COBALT_LOG_INFO
 
-#ifdef CBLT_LOG_WARN
-#define CoLogWarning(...) cblt::core::LogWrite(cblt::core::Log::kWarn, __PRETTY_FUNCTION__, __VA_ARGS__)
-#endif // CBLT_LOG_WARN
+#ifdef COBALT_LOG_WARN
+#define CoLogWarning(...) cobalt::core::LogWrite(cobalt::core::Log::kWarn, __PRETTY_FUNCTION__, __VA_ARGS__)
+#endif // COBALT_LOG_WARN
 
-#ifdef CBLT_LOG_ERROR
-#define CoLogError(...) cblt::core::LogWrite(cblt::core::Log::kError, __PRETTY_FUNCTION__, __VA_ARGS__)
-#endif // CBLT_LOG_ERROR
+#ifdef COBALT_LOG_ERROR
+#define CoLogError(...) cobalt::core::LogWrite(cobalt::core::Log::kError, __PRETTY_FUNCTION__, __VA_ARGS__)
+#endif // COBALT_LOG_ERROR
 
-#endif // CBLT_LOGGING_H
+#endif // COBALT_LOGGING_H

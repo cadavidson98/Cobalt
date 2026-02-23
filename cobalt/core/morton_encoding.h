@@ -1,11 +1,11 @@
-#ifndef CBLT_CORE_MORTON_ENCODING_H
-#define CBLT_CORE_MORTON_ENCODING_H
+#ifndef COBALT_CORE_MORTON_ENCODING_H
+#define COBALT_CORE_MORTON_ENCODING_H
 
 #include "size_types.h"
 
 #include <cassert>
 
-namespace cblt::core {
+namespace cobalt::core {
 
 // Morton Encoding adopted from 'Physically Based Rendering: From Theory to Implementation' 4th Edition
 // Assumes that x, y, z are all in the range 0, (1^10 - 1)
@@ -24,6 +24,6 @@ constexpr uint32_t mortonEncode(const uint32_t x, const uint32_t y, const uint32
     return (shift(z) << 2) | (shift(y) << 1) | shift(x);
 }
 
-} // namespace cblt::core
+} // namespace cobalt::core
 
-#endif // CBLT_CORE_MORTON_ENCODING_H
+#endif // COBALT_CORE_MORTON_ENCODING_H

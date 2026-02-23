@@ -1,12 +1,12 @@
-#ifndef CBLT_CORE_STRING_UTILITIES_H
-#define CBLT_CORE_STRING_UTILITIES_H
+#ifndef COBALT_CORE_STRING_UTILITIES_H
+#define COBALT_CORE_STRING_UTILITIES_H
 
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <vector>
 
-namespace cblt::core {
+namespace cobalt::core {
 
 template<typename T = std::string>
 inline std::vector<T> split(const std::string_view valuesString, char delim) {
@@ -47,6 +47,6 @@ inline std::string appendFileToPath(const std::string_view path, const std::stri
     return std::string(path) + '/' + std::string(fileName);
 }
 
-} // namespace cblt::core
+} // namespace cobalt::core
 
-#endif // CBLT_CORE_STRING_UTILITIES_H
+#endif // COBALT_CORE_STRING_UTILITIES_H

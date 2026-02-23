@@ -1,9 +1,9 @@
-#ifndef CBLT_GEOM_TRIANGLE_H
-#define CBLT_GEOM_TRIANGLE_H
+#ifndef COBALT_GEOM_TRIANGLE_H
+#define COBALT_GEOM_TRIANGLE_H
 
 #include "math/math_types.h"
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 struct Triangle {
     simd::vec3f position1;
@@ -11,6 +11,6 @@ struct Triangle {
     simd::vec3f position3;
 };
 
-} // namespace cblt::geom
+} // namespace cobalt::geom
 
-#endif // CBLT_GEOM_TRIANGLE_H
+#endif // COBALT_GEOM_TRIANGLE_H

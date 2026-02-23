@@ -1,10 +1,10 @@
-#ifndef CBLT_VEC3_H
-#define CBLT_VEC3_H
+#ifndef COBALT_VEC3_H
+#define COBALT_VEC3_H
 
 #include <cmath>
 #include <cstdint>
 
-namespace cblt {
+namespace cobalt {
 
 template<typename T>
 struct vec3;
@@ -170,6 +170,6 @@ using vec3f = vec3<float>;
 using vec3i = vec3<int>;
 using vec3u = vec3<uint32_t>;
 
-} // namespace cblt
+} // namespace cobalt
 
-#endif // CBLT_VEC3_H
+#endif // COBALT_VEC3_H

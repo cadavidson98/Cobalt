@@ -1,9 +1,9 @@
-#ifndef CBLT_SIMD_MATH_MAT3_H
-#define CBLT_SIMD_MATH_MAT3_H
+#ifndef COBALT_SIMD_MATH_MAT3_H
+#define COBALT_SIMD_MATH_MAT3_H
 
 #include "simd_vec3.h"
 
-namespace cblt::simd {
+namespace cobalt::simd {
 
 struct mat3f {
     vec3f columns[3];
@@ -71,6 +71,6 @@ struct mat3f {
     }
 };
 
-} // namespace cblt::simd
+} // namespace cobalt::simd
 
-#endif // CBLT_SIMD_MATH_MAT3_H
+#endif // COBALT_SIMD_MATH_MAT3_H

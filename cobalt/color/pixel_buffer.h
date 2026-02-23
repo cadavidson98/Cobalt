@@ -9,7 +9,7 @@
 #include <memory>
 #include <span>
 
-namespace cblt::color {
+namespace cobalt::color {
 
 class PixelBuffer {
 public:
@@ -36,6 +36,6 @@ private:
     std::unique_ptr<rgb::Value[]> _data;
 };
 
-} // namespace cblt::color
+} // namespace cobalt::color
 
 #endif // COBALT_RENDER_PIXEL_BUFFER_H

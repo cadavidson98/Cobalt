@@ -1,6 +1,6 @@
 #include "sample_buffer.h"
 
-namespace cblt::render {
+namespace cobalt::render {
 
 namespace {
 
@@ -46,4 +46,4 @@ vec2u SampleBuffer::size() const {
     return _size;
 }
 
-} // namespace cblt::render
+} // namespace cobalt::render

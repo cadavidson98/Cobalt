@@ -1,11 +1,11 @@
-#ifndef CBLT_RENDER_FRESNEL_H
-#define CBLT_RENDER_FRESNEL_H
+#ifndef COBALT_RENDER_FRESNEL_H
+#define COBALT_RENDER_FRESNEL_H
 
 #include "math/math_utilities.h"
 
 #include <cmath>
 
-namespace cblt::render {
+namespace cobalt::render {
 inline float FresnelSchlick(float F0, float cosTheta) {
     return F0 + (1.f - F0) * std::pow(1.f - cosTheta, 5.f);
 }
@@ -40,6 +40,6 @@ inline float DielectricFresnel(float cos_theta_i, float eta_i, float eta_t) {
 inline float SchlickR0(float eta_i, float eta_t) {
     return sqr((eta_i - eta_t) / (eta_i + eta_t));
 }
-} // namespace cblt::render
+} // namespace cobalt::render
 
-#endif // CBLT_RENDER_FRESNEL_H
+#endif // COBALT_RENDER_FRESNEL_H

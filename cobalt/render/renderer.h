@@ -1,9 +1,9 @@
-#ifndef CBLT_RENDER_RENDERER_H
-#define CBLT_RENDER_RENDERER_H
+#ifndef COBALT_RENDER_RENDERER_H
+#define COBALT_RENDER_RENDERER_H
 
 #include <memory>
 
-namespace cblt {
+namespace cobalt {
 
 namespace color {
 
@@ -19,6 +19,6 @@ class Scene;
 
 } // namespace render
 
-} // namespace cblt
+} // namespace cobalt
 
-#endif // CBLT_RENDER_RENDERER_H
+#endif // COBALT_RENDER_RENDERER_H

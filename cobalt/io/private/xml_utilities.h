@@ -1,5 +1,5 @@
-#ifndef CBLT_RENDER_XML_UTILITIES_H
-#define CBLT_RENDER_XML_UTILITIES_H
+#ifndef COBALT_RENDER_XML_UTILITIES_H
+#define COBALT_RENDER_XML_UTILITIES_H
 
 #include <libxml2/libxml/parser.h>
 #include <libxml2/libxml/tree.h>
@@ -163,4 +163,4 @@ using TextReader = xmlResource<xmlTextReader, xmlTextReaderDeleter>;
 
 } // namespace xml2
 
-#endif // CBLT_RENDER_XML_UTILITIES_H
+#endif // COBALT_RENDER_XML_UTILITIES_H

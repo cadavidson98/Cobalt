@@ -1,9 +1,9 @@
-#ifndef CBLT_RENDER_TRANSFORM_H
-#define CBLT_RENDER_TRANSFORM_H
+#ifndef COBALT_RENDER_TRANSFORM_H
+#define COBALT_RENDER_TRANSFORM_H
 
 #include "math/math_types.h"
 
-namespace cblt::render {
+namespace cobalt::render {
 
 struct Transform {
     vec3f translation;
@@ -11,6 +11,6 @@ struct Transform {
     quatf rotation;
 };
 
-} // namespace cblt::render
+} // namespace cobalt::render
 
-#endif // CBLT_RENDER_TRANSFORM_H
+#endif // COBALT_RENDER_TRANSFORM_H

@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-namespace cblt::utils {
+namespace cobalt::utils {
 
 mat4f perspectiveProjection(float nearPlane, float farPlane, float hFov, float vFov) {
     const float halfWidth = std::tan(hFov * 0.5f);
@@ -84,10 +84,10 @@ vec2f sphericalCoordinates(vec3f cartesian) {
     const float phi = std::acos(cartesian.y);
     // TODO: make sure camera is using an rhs csys
     float theta = std::atan2(-cartesian.z, cartesian.x);
-    theta = (theta < 0.f) ? theta + cblt::kPI : theta;
-    const float u = ((theta) / (2.f * cblt::kPI));
-    const float v = phi / cblt::kPI;
+    theta = (theta < 0.f) ? theta + cobalt::kPI : theta;
+    const float u = ((theta) / (2.f * cobalt::kPI));
+    const float v = phi / cobalt::kPI;
     return {u, v};
 }
 
-} // namespace cblt::utils
+} // namespace cobalt::utils

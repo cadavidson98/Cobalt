@@ -1,15 +1,15 @@
-#ifndef CBLT_GEOM_QUAD_H
-#define CBLT_GEOM_QUAD_H
+#ifndef COBALT_GEOM_QUAD_H
+#define COBALT_GEOM_QUAD_H
 
 #include "math/math_types.h"
 
-namespace cblt::geom {
+namespace cobalt::geom {
 struct Quad {
     simd::vec3f position1;
     simd::vec3f position2;
     simd::vec3f position3;
     simd::vec3f position4;
 };
-}; // namespace cblt::geom
+}; // namespace cobalt::geom
 
-#endif // CBLT_GEOM_QUAD_H
+#endif // COBALT_GEOM_QUAD_H

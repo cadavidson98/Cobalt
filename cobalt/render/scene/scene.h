@@ -1,5 +1,5 @@
-#ifndef CBLT_RENDER_SCENE_H
-#define CBLT_RENDER_SCENE_H
+#ifndef COBALT_RENDER_SCENE_H
+#define COBALT_RENDER_SCENE_H
 
 #include "geometry/bounding_volume_scene_storage.h"
 #include "render/component_storage.h"
@@ -7,7 +7,7 @@
 
 #include <memory>
 
-namespace cblt::render {
+namespace cobalt::render {
 
 class Scene {
 public:
@@ -39,6 +39,6 @@ private:
     std::shared_ptr<ComponentStorage> _components;
 };
 
-} // namespace cblt::render
+} // namespace cobalt::render
 
-#endif // CBLT_RENDER_SCENE_H
+#endif // COBALT_RENDER_SCENE_H

@@ -1,10 +1,10 @@
-#ifndef CBLT_GEOM_INTERSECTION_H
-#define CBLT_GEOM_INTERSECTION_H
+#ifndef COBALT_GEOM_INTERSECTION_H
+#define COBALT_GEOM_INTERSECTION_H
 
 #include "core/size_types.h"
 #include "math/math_types.h"
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 struct AxisAlignedBoundingBox;
 struct Ray;
@@ -47,6 +47,6 @@ bool rayAxisAlignedBoundingBoxIntersection(
     float &minTime,
     float &maxTime
 );
-} // namespace cblt::geom
+} // namespace cobalt::geom
 
-#endif // CBLT_GEOM_INTERSECTION_H
+#endif // COBALT_GEOM_INTERSECTION_H

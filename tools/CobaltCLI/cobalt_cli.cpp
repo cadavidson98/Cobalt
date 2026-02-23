@@ -12,9 +12,9 @@ int main(int argc, char **argv) {
     const std::string_view commandName = args[1];
 
     if (commandName == "render") {
-        return cblt::cli::renderCommand(args.subspan(2));
+        return cobalt::cli::renderCommand(args.subspan(2));
     } else if (commandName == "preprocess") {
-        return cblt::cli::preprocessCommand(args.subspan(2));
+        return cobalt::cli::preprocessCommand(args.subspan(2));
     }
 
     return EXIT_SUCCESS;

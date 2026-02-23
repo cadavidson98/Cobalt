@@ -7,7 +7,7 @@
 
 #include <unistd.h>
 
-namespace cblt::cli {
+namespace cobalt::cli {
 
 void printProgress(int percent, const char *status) {
     winsize terminalSize;
@@ -51,4 +51,4 @@ void printProgress(int percent, const char *status) {
     std::fflush(stdout);
 }
 
-} // namespace cblt::cli
+} // namespace cobalt::cli

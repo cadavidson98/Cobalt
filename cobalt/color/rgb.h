@@ -5,7 +5,7 @@
 
 #include "math/math_types.h"
 
-namespace cblt::color::rgb {
+namespace cobalt::color::rgb {
 
 enum class Colorspace {
     kSRGB,
@@ -125,6 +125,6 @@ constexpr mat3f convertFromXYZ(Colorspace colorspace) {
     };
 }
 
-} // namespace cblt::color::rgb
+} // namespace cobalt::color::rgb
 
 #endif // COBALT_COLOR_RGB

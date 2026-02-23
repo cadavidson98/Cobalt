@@ -1,5 +1,5 @@
-#ifndef CBLT_MATH_TYPES_H
-#define CBLT_MATH_TYPES_H
+#ifndef COBALT_MATH_TYPES_H
+#define COBALT_MATH_TYPES_H
 
 #include "mat3.h"
 #include "mat4.h"
@@ -13,4 +13,4 @@
 #include "simd/simd_vec3.h"
 #include "simd/simd_vec4.h"
 
-#endif // CBLT_MATH_TYPES_H
+#endif // COBALT_MATH_TYPES_H

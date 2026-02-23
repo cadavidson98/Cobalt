@@ -1,10 +1,10 @@
-#ifndef CBLT_VEC4_H
-#define CBLT_VEC4_H
+#ifndef COBALT_VEC4_H
+#define COBALT_VEC4_H
 
 #include <algorithm>
 #include <cstdint>
 
-namespace cblt {
+namespace cobalt {
 
 template<typename T>
 struct vec4;
@@ -184,6 +184,6 @@ using vec4u = vec4<unsigned int>;
 using vec4u8 = vec4<uint8_t>;
 using vec4f = vec4<float>;
 
-} // namespace cblt
+} // namespace cobalt
 
-#endif // CBLT_VEC4_H
+#endif // COBALT_VEC4_H

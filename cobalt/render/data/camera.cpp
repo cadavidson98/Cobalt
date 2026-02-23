@@ -5,7 +5,7 @@
 
 #include <cmath>
 
-namespace cblt::render {
+namespace cobalt::render {
 
 namespace {
 
@@ -86,4 +86,4 @@ geom::Ray Camera::createRay(vec2f ndcPos) const {
         100.f
     );
 }
-} // namespace cblt::render
+} // namespace cobalt::render

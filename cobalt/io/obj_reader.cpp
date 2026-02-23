@@ -12,7 +12,7 @@
 #include <memory>
 #include <string>
 
-namespace cblt::io::obj {
+namespace cobalt::io::obj {
 
 namespace {
 
@@ -292,4 +292,4 @@ std::optional<Mesh> read(const std::string_view fileName) {
     };
 }
 
-} // namespace cblt::io::obj
+} // namespace cobalt::io::obj

@@ -3,7 +3,7 @@
 #include "color/sampled_spectrum.h"
 #include "math/math_types.h"
 
-namespace cblt::color::xyz {
+namespace cobalt::color::xyz {
 
 namespace {
 
@@ -177,4 +177,4 @@ static constexpr float kYIntegral = 106.856895f;
     };
 }
 
-} // namespace cblt::color::xyz
+} // namespace cobalt::color::xyz

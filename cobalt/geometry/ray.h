@@ -1,14 +1,14 @@
-#ifndef CBLT_GEOM_RAY_H
-#define CBLT_GEOM_RAY_H
+#ifndef COBALT_GEOM_RAY_H
+#define COBALT_GEOM_RAY_H
 
 #include "math/math_types.h"
 
 namespace {
-const cblt::simd::vec3f kOne(1.f, 1.f, 1.f);
-const cblt::simd::vec3f kZero(1e-6f, 1e-6f, 1e-6f);
+const cobalt::simd::vec3f kOne(1.f, 1.f, 1.f);
+const cobalt::simd::vec3f kZero(1e-6f, 1e-6f, 1e-6f);
 } // namespace
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 struct Ray {
 
@@ -25,6 +25,6 @@ struct Ray {
     float maxDist;
 };
 
-} // namespace cblt::geom
+} // namespace cobalt::geom
 
-#endif // CBLT_GEOM_RAY_H
+#endif // COBALT_GEOM_RAY_H

@@ -4,7 +4,7 @@
 
 #include <time.h>
 
-namespace cblt::core {
+namespace cobalt::core {
 
 uint64_t time() {
     static constexpr uint64_t kSecondsToNanoSeconds = 1e9;
@@ -29,4 +29,4 @@ DateTime dateAndTime() {
     };
 }
 
-} // namespace cblt::core
+} // namespace cobalt::core

@@ -1,5 +1,5 @@
-#ifndef CBLT_CORE_SIZE_TYPES_H
-#define CBLT_CORE_SIZE_TYPES_H
+#ifndef COBALT_CORE_SIZE_TYPES_H
+#define COBALT_CORE_SIZE_TYPES_H
 
 #if __has_include(<cstdint>)
 #include <cstdint>
@@ -25,4 +25,4 @@ using size_t = unsigned long long;
 using float16_t = _Float16;
 using float32_t = float;
 using float64_t = double;
-#endif // CBLT_CORE_SIZE_TYPES_H
+#endif // COBALT_CORE_SIZE_TYPES_H

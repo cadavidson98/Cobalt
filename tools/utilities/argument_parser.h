@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
-namespace cblt::cli {
+namespace cobalt::cli {
 
 std::optional<CoCLIParams> parseArguments(int numArgs, char **argv);
-} // namespace cblt::cli
+} // namespace cobalt::cli
 
 #endif // COBALT_CLI_PARSER_H

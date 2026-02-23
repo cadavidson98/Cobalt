@@ -1,9 +1,9 @@
-#ifndef CBLT_MATH_MAT3_H
-#define CBLT_MATH_MAT3_H
+#ifndef COBALT_MATH_MAT3_H
+#define COBALT_MATH_MAT3_H
 
 #include "vec3.h"
 
-namespace cblt {
+namespace cobalt {
 
 struct mat3f;
 
@@ -147,6 +147,6 @@ constexpr Result invert(const mat3f &matrix) {
     return result;
 }
 
-} // namespace cblt
+} // namespace cobalt
 
-#endif // CBLT_MATH_MAT3_H
+#endif // COBALT_MATH_MAT3_H

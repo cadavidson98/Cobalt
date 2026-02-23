@@ -1,9 +1,9 @@
 #include <span>
 
-namespace cblt::cli {
+namespace cobalt::cli {
 
 bool preprocessCommand([[maybe_unused]] std::span<char *> args) {
     return true;
 }
 
-} // namespace cblt::cli
+} // namespace cobalt::cli

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <memory>
 
-namespace cblt::cli {
+namespace cobalt::cli {
 void printUsage();
 
 bool loadConfiguration(const std::string &file_path, RenderConfiguration &settings, RenderTarget &outputImageTarget);
@@ -77,4 +77,4 @@ bool loadConfiguration(const std::string &file_path, RenderConfiguration &settin
     return true;
 }
 
-} // namespace cblt::cli
+} // namespace cobalt::cli

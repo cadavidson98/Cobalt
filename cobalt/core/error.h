@@ -1,9 +1,9 @@
-#ifndef CBLT_CORE_ERROR_H
-#define CBLT_CORE_ERROR_H
+#ifndef COBALT_CORE_ERROR_H
+#define COBALT_CORE_ERROR_H
 
-namespace cblt::core {
+namespace cobalt::core {
 template<typename T>
 struct Error {};
-} // namespace cblt::core
+} // namespace cobalt::core
 
-#endif // CBLT_CORE_ERROR_H
+#endif // COBALT_CORE_ERROR_H

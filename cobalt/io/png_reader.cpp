@@ -15,7 +15,7 @@ extern "C" {
 
 #include <limits>
 
-namespace cblt::io::png {
+namespace cobalt::io::png {
 
 namespace {
 
@@ -166,4 +166,4 @@ std::optional<ByteImage> read(const std::filesystem::path filePath) {
     return std::make_optional<ByteImage>(textureData, channelCount, textureSize);
 }
 
-} // namespace cblt::io::png
+} // namespace cobalt::io::png

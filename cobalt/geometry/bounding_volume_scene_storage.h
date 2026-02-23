@@ -1,5 +1,5 @@
-#ifndef CBLT_GEOM_BOUNDING_VOLUME_SCENE_STORAGE_H
-#define CBLT_GEOM_BOUNDING_VOLUME_SCENE_STORAGE_H
+#ifndef COBALT_GEOM_BOUNDING_VOLUME_SCENE_STORAGE_H
+#define COBALT_GEOM_BOUNDING_VOLUME_SCENE_STORAGE_H
 
 #include "bounding_box.h"
 #include "bounding_volume_types.h"
@@ -14,7 +14,7 @@
 #include <limits>
 #include <memory>
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 class SceneStorage {
 public:
@@ -225,6 +225,6 @@ struct storageExtent<SceneStorage> {
     using value = SceneStorage::Extents;
 };
 
-} // namespace cblt::geom
+} // namespace cobalt::geom
 
-#endif // CBLT_GEOM_BOUNDING_VOLUME_SCENE_STORAGE_H
+#endif // COBALT_GEOM_BOUNDING_VOLUME_SCENE_STORAGE_H

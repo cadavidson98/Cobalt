@@ -1,9 +1,9 @@
-#ifndef CBLT_VEC2_H
-#define CBLT_VEC2_H
+#ifndef COBALT_VEC2_H
+#define COBALT_VEC2_H
 
 #include <algorithm>
 
-namespace cblt {
+namespace cobalt {
 
 template<typename T>
 struct vec2;
@@ -116,6 +116,6 @@ using vec2i = vec2<int>;
 using vec2u = vec2<unsigned int>;
 using vec2f = vec2<float>;
 
-} // namespace cblt
+} // namespace cobalt
 
-#endif // CBLT_VEC2_H
+#endif // COBALT_VEC2_H

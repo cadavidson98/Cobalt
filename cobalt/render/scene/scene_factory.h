@@ -1,12 +1,12 @@
-#ifndef CBLT_RENDER_SCENE_BUILDER_H
-#define CBLT_RENDER_SCENE_BUILDER_H
+#ifndef COBALT_RENDER_SCENE_BUILDER_H
+#define COBALT_RENDER_SCENE_BUILDER_H
 
 #include "math/math_types.h"
 
 #include <filesystem>
 #include <memory>
 
-namespace cblt::render {
+namespace cobalt::render {
 
 class Scene;
 class Material;
@@ -31,6 +31,6 @@ public:
     static std::shared_ptr<Scene> buildScene(const CreateInfo &createInfo);
 };
 
-} // namespace cblt::render
+} // namespace cobalt::render
 
-#endif // CBLT_RENDER_SCENE_BUILDER_H
+#endif // COBALT_RENDER_SCENE_BUILDER_H

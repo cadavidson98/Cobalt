@@ -1,5 +1,5 @@
-#ifndef CBLT_CORE_ALGORITHMS_H
-#define CBLT_CORE_ALGORITHMS_H
+#ifndef COBALT_CORE_ALGORITHMS_H
+#define COBALT_CORE_ALGORITHMS_H
 
 #include "size_types.h"
 
@@ -7,7 +7,7 @@
 #include <span>
 #include <vector>
 
-namespace cblt::core {
+namespace cobalt::core {
 
 template<size_t numPasses = 32, class Iterator, typename KeyFetcher>
     requires std::random_access_iterator<Iterator>
@@ -48,6 +48,6 @@ void radix_sort(Iterator begin, Iterator end, KeyFetcher keyFetcher) {
     }
 }
 
-} // namespace cblt::core
+} // namespace cobalt::core
 
-#endif // CBLT_CORE_ALGORITHMS_H
+#endif // COBALT_CORE_ALGORITHMS_H

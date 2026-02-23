@@ -1,9 +1,9 @@
-#ifndef CBLT_COLOR_XYZ_H
-#define CBLT_COLOR_XYZ_H
+#ifndef COBALT_COLOR_XYZ_H
+#define COBALT_COLOR_XYZ_H
 
 #include "math/math_types.h"
 
-namespace cblt::color::xyz {
+namespace cobalt::color::xyz {
 
 struct Tristimulus {
     float x;
@@ -13,6 +13,6 @@ struct Tristimulus {
 
 [[nodiscard]] Tristimulus convert(vec4f samples, vec4f wavelengths, vec4f pdfs);
 
-} // namespace cblt::color::xyz
+} // namespace cobalt::color::xyz
 
-#endif // CBLT_COLOR_XYZ_H
+#endif // COBALT_COLOR_XYZ_H

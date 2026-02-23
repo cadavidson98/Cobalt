@@ -1,12 +1,12 @@
-#ifndef CBLT_SIMD_VEC4_H
-#define CBLT_SIMD_VEC4_H
+#ifndef COBALT_SIMD_VEC4_H
+#define COBALT_SIMD_VEC4_H
 
 #include <array>
 #include <cassert>
 
 #include <immintrin.h>
 
-namespace cblt::simd {
+namespace cobalt::simd {
 
 enum : unsigned int {
     x = 3 << 6,
@@ -149,6 +149,6 @@ inline float reduceMax(const vec4f &lhs) {
     return _mm_cvtss_f32(shuffleMax2);
 }
 
-} // namespace cblt::simd
+} // namespace cobalt::simd
 
-#endif // CBLT_SIMD_VEC4_H
+#endif // COBALT_SIMD_VEC4_H

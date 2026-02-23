@@ -1,5 +1,5 @@
-#ifndef CBLT_IO_OBJ_READER_H
-#define CBLT_IO_OBJ_READER_H
+#ifndef COBALT_IO_OBJ_READER_H
+#define COBALT_IO_OBJ_READER_H
 
 #include "core/vertex_buffer.h"
 #include "math/math_types.h"
@@ -8,7 +8,7 @@
 #include <optional>
 #include <string_view>
 
-namespace cblt::io::obj {
+namespace cobalt::io::obj {
 
 struct Mesh {
     core::VertexAttributeBuffer<simd::vec3f> positions;
@@ -18,6 +18,6 @@ struct Mesh {
 
 std::optional<Mesh> read(const std::string_view fileName);
 
-} // namespace cblt::io::obj
+} // namespace cobalt::io::obj
 
-#endif // CBLT_IO_OBJ_READER_H
+#endif // COBALT_IO_OBJ_READER_H

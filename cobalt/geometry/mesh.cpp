@@ -12,7 +12,7 @@
 #include <limits>
 #include <numeric>
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 namespace {
 
@@ -148,4 +148,4 @@ geom::IntersectionResult Mesh::intersects(const Ray &ray) const {
     return _accelerator.intersects(ray);
 }
 
-} // namespace cblt::geom
+} // namespace cobalt::geom

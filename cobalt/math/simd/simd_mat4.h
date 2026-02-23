@@ -1,9 +1,9 @@
-#ifndef CBLT_SIMD_MATH_MAT4_H
-#define CBLT_SIMD_MATH_MAT4_H
+#ifndef COBALT_SIMD_MATH_MAT4_H
+#define COBALT_SIMD_MATH_MAT4_H
 
 #include "simd_vec4.h"
 
-namespace cblt::simd {
+namespace cobalt::simd {
 
 struct mat4f {
     vec4f columns[4];
@@ -91,6 +91,6 @@ struct mat4f {
     }
 };
 
-} // namespace cblt::simd
+} // namespace cobalt::simd
 
-#endif // CBLT_SIMD_MATH_MAT4_H
+#endif // COBALT_SIMD_MATH_MAT4_H

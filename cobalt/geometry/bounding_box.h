@@ -1,5 +1,5 @@
-#ifndef CBLT_GEOM_BOUNDING_BOX_H
-#define CBLT_GEOM_BOUNDING_BOX_H
+#ifndef COBALT_GEOM_BOUNDING_BOX_H
+#define COBALT_GEOM_BOUNDING_BOX_H
 
 #include "ray.h"
 
@@ -7,7 +7,7 @@
 
 #include <limits>
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 struct AxisAlignedBoundingBox {
     simd::vec3f min;
@@ -28,6 +28,6 @@ struct AxisAlignedBoundingBox {
         };
     }
 };
-} // namespace cblt::geom
+} // namespace cobalt::geom
 
-#endif // CBLT_GEOM_BOUNDING_BOX_H
+#endif // COBALT_GEOM_BOUNDING_BOX_H

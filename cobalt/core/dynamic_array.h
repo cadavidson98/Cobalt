@@ -1,12 +1,12 @@
-#ifndef CBLT_CORE_DYNAMIC_ARRAY_H
-#define CBLT_CORE_DYNAMIC_ARRAY_H
+#ifndef COBALT_CORE_DYNAMIC_ARRAY_H
+#define COBALT_CORE_DYNAMIC_ARRAY_H
 
 #include "size_types.h"
 
 #include <utility>
 #include <variant>
 
-namespace cblt {
+namespace cobalt {
 
 template<typename T>
 class DynamicArray final {
@@ -77,6 +77,6 @@ private:
     DynamicArray &operator=(DynamicArray &) = delete;
 };
 
-} // namespace cblt
+} // namespace cobalt
 
-#endif // CBLT_CORE_DYNAMIC_ARRAY_H
+#endif // COBALT_CORE_DYNAMIC_ARRAY_H

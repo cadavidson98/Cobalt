@@ -9,7 +9,7 @@
 
 #include <syslog.h>
 
-namespace cblt::core {
+namespace cobalt::core {
 
 namespace {
 
@@ -37,25 +37,25 @@ std::unique_ptr<Logger> gLog = nullptr;
 void LogWrite(Log level, const char *trace, const char *message, ...) {
     int osLogLevel = LOG_DEBUG;
     switch (level) {
-#ifdef CBLT_LOG_DEBUG
+#ifdef COBALT_LOG_DEBUG
     case Log::kDebug : {
         osLogLevel = LOG_DEBUG;
         break;
     }
 #endif
-#ifdef CBLT_LOG_INFO
+#ifdef COBALT_LOG_INFO
     case Log::kInfo : {
         osLogLevel = LOG_INFO;
         break;
     }
 #endif
-#ifdef CBLT_LOG_WARN
+#ifdef COBALT_LOG_WARN
     case Log::kWarn : {
         osLogLevel = LOG_WARNING;
         break;
     }
 #endif
-#ifdef CBLT_LOG_ERROR
+#ifdef COBALT_LOG_ERROR
     case Log::kError : {
         osLogLevel = LOG_ERR;
         break;
@@ -76,4 +76,4 @@ void LogWrite(Log level, const char *trace, const char *message, ...) {
     gLog->writeMessage(osLogLevel, trace, logMessage);
 }
 
-} // namespace cblt::core
+} // namespace cobalt::core

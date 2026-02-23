@@ -1,5 +1,5 @@
-#ifndef CBLT_GEOM_BOUNDING_VOLUME_H
-#define CBLT_GEOM_BOUNDING_VOLUME_H
+#ifndef COBALT_GEOM_BOUNDING_VOLUME_H
+#define COBALT_GEOM_BOUNDING_VOLUME_H
 
 #include "bounding_box.h"
 #include "bounding_volume_types.h"
@@ -12,7 +12,7 @@
 #include <span>
 #include <vector>
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 // Linear Bounding Volume Heirarchy based on Karras:
 // 'Maximizing Parallelism in the nstruction of BVHs, Octrees, and k-d Trees'
@@ -77,8 +77,8 @@ private:
     );
 };
 
-} // namespace cblt::geom
+} // namespace cobalt::geom
 
 #include "bounding_volume.inl"
 
-#endif // CBLT_GEOM_BOUNDING_VOLUME_H
+#endif // COBALT_GEOM_BOUNDING_VOLUME_H

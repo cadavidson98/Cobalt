@@ -1,5 +1,5 @@
-#ifndef CBLT_CORE_VERTEX_BUFFER_H
-#define CBLT_CORE_VERTEX_BUFFER_H
+#ifndef COBALT_CORE_VERTEX_BUFFER_H
+#define COBALT_CORE_VERTEX_BUFFER_H
 
 #include "size_types.h"
 
@@ -7,7 +7,7 @@
 
 #include <memory>
 
-namespace cblt::core {
+namespace cobalt::core {
 
 template<typename T>
 struct VertexAttributeBuffer {
@@ -19,6 +19,6 @@ struct VertexAttributeBuffer {
     size_t patchCount;
 };
 
-} // namespace cblt::core
+} // namespace cobalt::core
 
-#endif // CBLT_CORE_VERTEX_BUFFER_H
+#endif // COBALT_CORE_VERTEX_BUFFER_H

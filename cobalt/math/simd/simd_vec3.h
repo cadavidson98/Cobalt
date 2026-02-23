@@ -1,5 +1,5 @@
-#ifndef CBLT_SIMD_VEC3_H
-#define CBLT_SIMD_VEC3_H
+#ifndef COBALT_SIMD_VEC3_H
+#define COBALT_SIMD_VEC3_H
 
 #include <array>
 #include <cassert>
@@ -7,7 +7,7 @@
 
 #include <immintrin.h>
 
-namespace cblt::simd {
+namespace cobalt::simd {
 
 struct vec3f {
     __m128 xyz;
@@ -182,6 +182,6 @@ inline vec3f shuffle(const vec3f lhs, size_t idx1, size_t idx2, size_t idx3) {
     return {_mm_load_ps(array2)};
 }
 
-} // namespace cblt::simd
+} // namespace cobalt::simd
 
-#endif // CBLT_SIMD_VEC3_H
+#endif // COBALT_SIMD_VEC3_H

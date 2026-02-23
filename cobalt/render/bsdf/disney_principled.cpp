@@ -1,6 +1,6 @@
 #include "disney_principled.h"
 
-namespace cblt::render {
+namespace cobalt::render {
 
 Color evaluatePrincipledBSDF(vec3f incoming, vec3f normal, vec3f outgoing, const PrincipledParameters &parameters) {
     const vec3f halfway = normalize(incoming + outgoing);
@@ -11,4 +11,4 @@ Color evaluatePrincipledBSDF(vec3f incoming, vec3f normal, vec3f outgoing, const
     return parameters.baseColor;
 }
 
-} // namespace cblt::render
+} // namespace cobalt::render

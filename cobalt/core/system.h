@@ -1,9 +1,9 @@
-#ifndef CBLT_SYSTEM_H
-#define CBLT_SYSTEM_H
+#ifndef COBALT_SYSTEM_H
+#define COBALT_SYSTEM_H
 
 #include "size_types.h"
 
-namespace cblt::core {
+namespace cobalt::core {
 
 uint64_t time();
 
@@ -18,6 +18,6 @@ struct DateTime {
 
 DateTime dateAndTime();
 
-} // namespace cblt::core
+} // namespace cobalt::core
 
-#endif // CBLT_SYSTEM_H
+#endif // COBALT_SYSTEM_H

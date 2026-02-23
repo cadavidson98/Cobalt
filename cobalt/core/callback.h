@@ -1,12 +1,12 @@
-#ifndef CBLT_CORE_CALLBACK_h
-#define CBLT_CORE_CALLBACK_h
+#ifndef COBALT_CORE_CALLBACK_h
+#define COBALT_CORE_CALLBACK_h
 
 #include "size_types.h"
 
 #include <functional>
 #include <mutex>
 
-namespace cblt::core {
+namespace cobalt::core {
 
 struct Callback {
     mutable std::mutex mutex;
@@ -19,6 +19,6 @@ struct Callback {
     }
 };
 
-} // namespace cblt::core
+} // namespace cobalt::core
 
-#endif // CBLT_CORE_CALLBACK_H
+#endif // COBALT_CORE_CALLBACK_H

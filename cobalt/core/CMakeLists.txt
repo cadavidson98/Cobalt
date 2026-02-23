@@ -16,7 +16,7 @@ set(COBALT_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/logging.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/system.cpp)
 
-target_compile_definitions(CobaltCore PUBLIC CBLT_LOG_DEBUG CBLT_LOG_INFO CBLT_LOG_WARN CBLT_LOG_ERROR)
+target_compile_definitions(CobaltCore PUBLIC COBALT_LOG_DEBUG COBALT_LOG_INFO COBALT_LOG_WARN COBALT_LOG_ERROR)
 target_sources(CobaltCore PUBLIC ${COBALT_CORE_HEADERS} PRIVATE ${COBALT_CORE_SOURCES})
 target_include_directories(CobaltCore BEFORE PUBLIC ${COBALT_ROOT_DIR} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(CobaltCore PUBLIC CobaltMath)

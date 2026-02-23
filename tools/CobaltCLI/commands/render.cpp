@@ -13,7 +13,7 @@
 #include <optional>
 #include <string>
 
-namespace cblt::cli {
+namespace cobalt::cli {
 
 namespace {
 
@@ -78,7 +78,7 @@ bool renderCommand(std::span<char *> args) {
     static constexpr uint32_t kWidth = 800;
     static constexpr uint32_t kHeight = 800;
     std::shared_ptr<color::PixelBuffer> pixelBuffer = color::PixelBuffer::create({
-        .colorspace = color::PixelBuffer::Colorspace::kSRGB,
+        .colorspace = color::rgb::Colorspace::kSRGB,
         .size = {kWidth, kHeight},
     });
 
@@ -113,4 +113,4 @@ bool renderCommand(std::span<char *> args) {
     return true;
 }
 
-} // namespace cblt::cli
+} // namespace cobalt::cli

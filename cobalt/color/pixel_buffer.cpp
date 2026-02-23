@@ -5,7 +5,7 @@
 
 #include <memory>
 
-namespace cblt::color {
+namespace cobalt::color {
 
 namespace {
 
@@ -52,4 +52,4 @@ std::span<const rgb::Value> PixelBuffer::scanline(size_t row) const {
     return std::span<const rgb::Value>(_data.get() + (row * _size.x), _size.x);
 }
 
-} // namespace cblt::color
+} // namespace cobalt::color

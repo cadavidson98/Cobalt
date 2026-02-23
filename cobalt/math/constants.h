@@ -1,12 +1,12 @@
-#ifndef CBLT_MATH_CONSTANTS_H
-#define CBLT_MATH_CONSTANTS_H
+#ifndef COBALT_MATH_CONSTANTS_H
+#define COBALT_MATH_CONSTANTS_H
 
 #include <cmath>
 
-namespace cblt {
+namespace cobalt {
 
 constexpr float kPI = float(M_PI);
 
-} // namespace cblt
+} // namespace cobalt
 
-#endif // CBLT_MATH_CONSTANTS_H
+#endif // COBALT_MATH_CONSTANTS_H

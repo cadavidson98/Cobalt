@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-namespace cblt::color {
+namespace cobalt::color {
 
 namespace {
 
@@ -201,4 +201,4 @@ TEST(CobaltColor, TestConvertXYZToRGB) {
     }
 }
 
-} // namespace cblt::color
+} // namespace cobalt::color

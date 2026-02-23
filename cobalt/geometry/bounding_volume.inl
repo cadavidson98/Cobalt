@@ -1,5 +1,5 @@
-#ifndef CBLT_GEOM_BOUNDING_VOLUME_INL
-#define CBLT_GEOM_BOUNDING_VOLUME_INL
+#ifndef COBALT_GEOM_BOUNDING_VOLUME_INL
+#define COBALT_GEOM_BOUNDING_VOLUME_INL
 
 #include "bounding_volume.h"
 #include "bounding_volume_types.h"
@@ -15,7 +15,7 @@
 #include <limits>
 #include <numeric>
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 namespace {
 
@@ -350,6 +350,6 @@ BoundingVolume<StorageType>::TypedNode BoundingVolume<StorageType>::buildTree(
     return interior;
 }
 
-}  // namespace cblt::geom
+}  // namespace cobalt::geom
 
-#endif  // CBLT_GEOM_BOUNDING_VOLUME_INL
+#endif  // COBALT_GEOM_BOUNDING_VOLUME_INL

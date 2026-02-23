@@ -1,13 +1,13 @@
-#ifndef CBLT_QUATERNION_H
-#define CBLT_QUATERNION_H
+#ifndef COBALT_QUATERNION_H
+#define COBALT_QUATERNION_H
 
-namespace cblt {
+namespace cobalt {
 struct quatf {
     float x;
     float y;
     float z;
     float w;
 };
-} // namespace cblt
+} // namespace cobalt
 
-#endif // CBLT_QUATERNION_H
+#endif // COBALT_QUATERNION_H

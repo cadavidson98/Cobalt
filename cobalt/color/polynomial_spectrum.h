@@ -1,11 +1,11 @@
-#ifndef CBLT_RENDER_POLYNOMIAL_SPECTRUM_H
-#define CBLT_RENDER_POLYNOMIAL_SPECTRUM_H
+#ifndef COBALT_RENDER_POLYNOMIAL_SPECTRUM_H
+#define COBALT_RENDER_POLYNOMIAL_SPECTRUM_H
 
 #include "core/size_types.h"
 #include "math/math_types.h"
 #include "math/vec4.h"
 
-namespace cblt::color {
+namespace cobalt::color {
 
 struct PolynomialSpectrum {
     static constexpr size_t kCoefficientsCount = 3;
@@ -21,6 +21,6 @@ struct PolynomialSpectrum {
     }
 };
 
-} // namespace cblt::color
+} // namespace cobalt::color
 
-#endif // CBLT_RENDER_POLYNOMIAL_SPECTRUM_H
+#endif // COBALT_RENDER_POLYNOMIAL_SPECTRUM_H

@@ -13,7 +13,7 @@
 #include <cmath>
 #include <limits>
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 bool raySphereIntersection(const Ray &ray, const Sphere &sphere, float &timeMin, float &timeMax) {
     simd::vec3f centerToPoint = ray.pos - sphere.center;
@@ -206,4 +206,4 @@ bool rayAxisAlignedBoundingBoxIntersection(
     return maxTime >= 0.f && minTime <= ray.maxDist;
 }
 
-} // namespace cblt::geom
+} // namespace cobalt::geom

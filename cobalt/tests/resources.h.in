@@ -1,10 +1,10 @@
-#ifndef CBLT_TESTS_RESOURCES_H
-#define CBLT_TESTS_RESOURCES_H
+#ifndef COBALT_TESTS_RESOURCES_H
+#define COBALT_TESTS_RESOURCES_H
 
-namespace cblt::test {
+namespace cobalt::test {
 
 static const char *kTestDataDir = "${CobaltTestsDataDir}";
 
-}  // namespace cblt::test
+}  // namespace cobalt::test
 
-#endif  // CBLT_RENDER_TESTS_RESOURCES_H
+#endif  // COBALT_RENDER_TESTS_RESOURCES_H

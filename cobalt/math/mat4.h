@@ -1,9 +1,9 @@
-#ifndef CBLT_MATH_MAT4_H
-#define CBLT_MATH_MAT4_H
+#ifndef COBALT_MATH_MAT4_H
+#define COBALT_MATH_MAT4_H
 
 #include "vec4.h"
 
-namespace cblt {
+namespace cobalt {
 
 struct mat4f {
     vec4f columns[4];
@@ -86,6 +86,6 @@ struct mat4f {
     }
 };
 
-} // namespace cblt
+} // namespace cobalt
 
-#endif // CBLT_MATH_MAT4_H
+#endif // COBALT_MATH_MAT4_H

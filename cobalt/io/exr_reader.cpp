@@ -9,7 +9,7 @@
 #include <OpenEXR/ImfInputFile.h>
 #include <OpenEXR/ImfPixelType.h>
 
-namespace cblt::io::exr {
+namespace cobalt::io::exr {
 
 std::optional<Image> read(const std::filesystem::path filePath) {
     std::shared_ptr<void> textureData = nullptr;
@@ -95,4 +95,4 @@ std::optional<Image> read(const std::filesystem::path filePath) {
     };
 }
 
-} // namespace cblt::io::exr
+} // namespace cobalt::io::exr

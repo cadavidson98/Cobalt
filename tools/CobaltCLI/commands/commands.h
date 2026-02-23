@@ -1,14 +1,14 @@
-#ifndef CBLT_CLI_COMMANDS_H
-#define CBLT_CLI_COMMANDS_H
+#ifndef COBALT_CLI_COMMANDS_H
+#define COBALT_CLI_COMMANDS_H
 
 #include <span>
 
-namespace cblt::cli {
+namespace cobalt::cli {
 
 bool renderCommand(std::span<char *> args);
 
 bool preprocessCommand(std::span<char *> args);
 
-} // namespace cblt::cli
+} // namespace cobalt::cli
 
-#endif // CBLT_CLI_COMMANDS_H
+#endif // COBALT_CLI_COMMANDS_H

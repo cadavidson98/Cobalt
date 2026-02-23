@@ -1,5 +1,5 @@
-#ifndef CBLT_COLOR_SAMPLED_SPECTRUM_H
-#define CBLT_COLOR_SAMPLED_SPECTRUM_H
+#ifndef COBALT_COLOR_SAMPLED_SPECTRUM_H
+#define COBALT_COLOR_SAMPLED_SPECTRUM_H
 
 #include "core/size_types.h"
 
@@ -8,7 +8,7 @@
 #include <cmath>
 #include <span>
 
-namespace cblt::color {
+namespace cobalt::color {
 
 static constexpr size_t kSpectrumMinWavelength = 360;
 static constexpr size_t kSpectrumMaxWavelength = 830;
@@ -49,6 +49,6 @@ private:
     float samples[kSpectrumWavelengthCount] = {};
 };
 
-} // namespace cblt::color
+} // namespace cobalt::color
 
-#endif // CBLT_COLOR_SAMPLED_SPECTRUM_H
+#endif // COBALT_COLOR_SAMPLED_SPECTRUM_H

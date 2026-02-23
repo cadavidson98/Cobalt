@@ -20,7 +20,7 @@
 #include <memory>
 #include <random>
 
-namespace cblt::render {
+namespace cobalt::render {
 
 namespace {
 
@@ -242,4 +242,4 @@ bool render(std::shared_ptr<const Scene> scene, std::shared_ptr<color::PixelBuff
     return true;
 }
 
-} // namespace cblt::render
+} // namespace cobalt::render

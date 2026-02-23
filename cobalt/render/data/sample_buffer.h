@@ -6,7 +6,7 @@
 
 #include <memory>
 
-namespace cblt::render {
+namespace cobalt::render {
 
 class SampleBuffer {
 public:
@@ -30,6 +30,6 @@ private:
 
     vec2u _size;
 };
-} // namespace cblt::render
+} // namespace cobalt::render
 
 #endif // COBALT_RENDER_RENDERTARGET_H

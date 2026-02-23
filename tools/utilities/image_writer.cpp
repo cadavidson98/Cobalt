@@ -19,7 +19,7 @@ extern "C" {
 #include <cstring>
 #include <vector>
 
-namespace cblt::cli {
+namespace cobalt::cli {
 
 namespace {
 
@@ -213,4 +213,4 @@ bool writeImage(const WriteInfo &writeInfo) {
     return false;
 }
 
-} // namespace cblt::cli
+} // namespace cobalt::cli

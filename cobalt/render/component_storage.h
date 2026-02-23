@@ -1,5 +1,5 @@
-#ifndef CBLT_RENDER_COMPONENT_H
-#define CBLT_RENDER_COMPONENT_H
+#ifndef COBALT_RENDER_COMPONENT_H
+#define COBALT_RENDER_COMPONENT_H
 
 #include "color/polynomial_spectrum.h"
 #include "core/size_types.h"
@@ -7,7 +7,7 @@
 
 #include <cassert>
 
-namespace cblt::render {
+namespace cobalt::render {
 
 struct Component {
     uint32_t materialIdx;
@@ -85,6 +85,6 @@ struct ComponentStorage {
     }
 };
 
-} // namespace cblt::render
+} // namespace cobalt::render
 
-#endif // CBLT_RENDER_COMPONENT_H
+#endif // COBALT_RENDER_COMPONENT_H

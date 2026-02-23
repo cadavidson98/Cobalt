@@ -1,12 +1,12 @@
-#ifndef CBLT_CORE_MATH_UTILITIES
-#define CBLT_CORE_MATH_UTILITIES
+#ifndef COBALT_CORE_MATH_UTILITIES
+#define COBALT_CORE_MATH_UTILITIES
 
 #include "constants.h"
 #include "mat4.h"
 #include "vec2.h"
 #include "vec3.h"
 
-namespace cblt::utils {
+namespace cobalt::utils {
 
 template<typename T>
 constexpr T sqr(const T value) {
@@ -37,6 +37,6 @@ mat4f rotationMatrix(vec3f axis, float angle);
 
 vec2f sphericalCoordinates(vec3f cartesian);
 
-} // namespace cblt::utils
+} // namespace cobalt::utils
 
-#endif // CBLT_CORE_MATH_UTILITIES
+#endif // COBALT_CORE_MATH_UTILITIES

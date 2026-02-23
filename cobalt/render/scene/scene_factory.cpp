@@ -19,7 +19,7 @@
 #include <filesystem>
 #include <memory>
 
-namespace cblt::render {
+namespace cobalt::render {
 
 namespace {
 class SceneDelegate final : public io::mitsuba::FileReaderDelegate {
@@ -153,4 +153,4 @@ std::shared_ptr<Scene> SceneFactory::buildScene(const SceneFactory::CreateInfo &
     return nullptr;
 }
 
-} // namespace cblt::render
+} // namespace cobalt::render

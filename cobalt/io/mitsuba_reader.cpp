@@ -14,7 +14,7 @@
 #include <cassert>
 #include <optional>
 
-namespace cblt::io::mitsuba {
+namespace cobalt::io::mitsuba {
 
 namespace {
 
@@ -105,7 +105,7 @@ mat4f loadTransform(xmlNodePtr transformNode, const Schema &schema) {
         if (transformType == schema.translateExpression) {
             const std::vector<float> translationValues = core::split<float>(value, ' ');
             const vec3f translation(translationValues[0], translationValues[1], translationValues[2]);
-            const mat4f translationMatrix = cblt::utils::translationMatrix(translation);
+            const mat4f translationMatrix = cobalt::utils::translationMatrix(translation);
             transform = translationMatrix * transform;
         } else if (transformType == schema.rotateExpression) {
             // rotations can be expressed using an arbitrary vector ("value")
@@ -130,15 +130,15 @@ mat4f loadTransform(xmlNodePtr transformNode, const Schema &schema) {
                     axis = vec3f(rotationValues[0], rotationValues[1], rotationValues[2]);
                 } else if (rotationAxis == schema.angleName) {
                     xmlChar *angleString = rotateIterator->children->content;
-                    angle = cblt::utils::toRadians(std::stof(reinterpret_cast<char *>(angleString)));
+                    angle = cobalt::utils::toRadians(std::stof(reinterpret_cast<char *>(angleString)));
                 }
             }
-            const mat4f rotationMatrix = cblt::utils::rotationMatrix(axis, angle);
+            const mat4f rotationMatrix = cobalt::utils::rotationMatrix(axis, angle);
             transform = rotationMatrix * transform;
         } else if (transformType == schema.scaleExpression) {
             const std::vector<float> scaleValues = core::split<float>(value, ' ');
             const vec3f scale(scaleValues[0], scaleValues[1], scaleValues[1]);
-            const mat4f scaleMatrix = cblt::utils::scaleMatrix(scale);
+            const mat4f scaleMatrix = cobalt::utils::scaleMatrix(scale);
             transform = scaleMatrix * transform;
         } else if (transformType == schema.matrixName) {
             const std::vector<float> matrixValues = core::split<float>(value, ' ');
@@ -218,7 +218,7 @@ std::optional<Camera> loadCamera(xmlNodePtr cameraNode, xmlXPathContextPtr conte
         return std::nullopt;
     }
 
-    const float cameraFov = cblt::utils::toRadians(*fovValue);
+    const float cameraFov = cobalt::utils::toRadians(*fovValue);
     return Camera{
         .fov = cameraFov,
         .transform = cameraTransform,
@@ -366,7 +366,7 @@ bool read(const std::string_view fileName, std::shared_ptr<FileReaderDelegate> d
                     const Emitter emitter = {
                         .emissionMap = {
                                         .fileName = fileName.c_str(),
-                                        .fileExtension = cblt::core::fileExtension(fileName.c_str()),
+                                        .fileExtension = cobalt::core::fileExtension(fileName.c_str()),
                                         },
                     };
 
@@ -401,4 +401,4 @@ bool read(const std::string_view fileName, std::shared_ptr<FileReaderDelegate> d
     return true;
 }
 
-} // namespace cblt::io::mitsuba
+} // namespace cobalt::io::mitsuba

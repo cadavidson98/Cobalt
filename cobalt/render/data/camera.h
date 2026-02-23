@@ -1,20 +1,20 @@
-#ifndef CBLT_RENDER_CAMERA_H
-#define CBLT_RENDER_CAMERA_H
+#ifndef COBALT_RENDER_CAMERA_H
+#define COBALT_RENDER_CAMERA_H
 
 #include "core/size_types.h"
 #include "geometry/ray.h"
 #include "math/math_types.h"
 #include "math/math_utilities.h"
 
-namespace cblt::render {
+namespace cobalt::render {
 
 class Camera {
 public:
     struct CreateFromProjectionInfo {
-        float hFov = cblt::utils::toRadians(35.f);
-        float vFov = cblt::utils::toRadians(35.f);
+        float hFov = cobalt::utils::toRadians(35.f);
+        float vFov = cobalt::utils::toRadians(35.f);
         vec2f filmSize = {2.f, 2.f};
-        mat4f cameraToWorld = cblt::utils::translationMatrix({0.f, 0.f, -5.f});
+        mat4f cameraToWorld = cobalt::utils::translationMatrix({0.f, 0.f, -5.f});
     };
 
     Camera(const CreateFromProjectionInfo &createInfo);
@@ -33,6 +33,6 @@ private:
     vec2f _filmSize;
 };
 
-} // namespace cblt::render
+} // namespace cobalt::render
 
-#endif // CBLT_RENDER_CAMERA_H
+#endif // COBALT_RENDER_CAMERA_H

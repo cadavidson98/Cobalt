@@ -10,7 +10,7 @@
 
 #include <gtest/gtest.h>
 
-namespace cblt {
+namespace cobalt {
 
 namespace {
 
@@ -509,4 +509,4 @@ TEST(CobaltCoreMathTests, TestInverse) {
     }
 }
 
-} // namespace cblt
+} // namespace cobalt

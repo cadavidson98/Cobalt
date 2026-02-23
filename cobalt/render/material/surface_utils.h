@@ -1,11 +1,11 @@
-#ifndef CBLT_RENDER_SURFACE_HELPERS_H
-#define CBLT_RENDER_SURFACE_HELPERS_H
+#ifndef COBALT_RENDER_SURFACE_HELPERS_H
+#define COBALT_RENDER_SURFACE_HELPERS_H
 
 #include "math/constants.h"
 #include "math/math_types.h"
 #include "math/math_utils.h"
 
-namespace cblt::render {
+namespace cobalt::render {
 
 void calculateAnisotropyWeights(float alpha, float anisotropyStrength, float &anisoX, float &anisoY) {
     const float aspect = std::sqrt(1.f - 0.9f * anisotropyStrength);
@@ -13,6 +13,6 @@ void calculateAnisotropyWeights(float alpha, float anisotropyStrength, float &an
     anisoY = std::max(.0001f, alpha * aspect);
 }
 
-} // namespace cblt::render
+} // namespace cobalt::render
 
-#endif // CBLT_RENDER_SURFACE_HELPERS_H
+#endif // COBALT_RENDER_SURFACE_HELPERS_H

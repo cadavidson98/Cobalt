@@ -1,5 +1,5 @@
-#ifndef CBLT_IO_MITSUBA_READER_H
-#define CBLT_IO_MITSUBA_READER_H
+#ifndef COBALT_IO_MITSUBA_READER_H
+#define COBALT_IO_MITSUBA_READER_H
 
 #include "math/math_types.h"
 
@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace cblt::io::mitsuba {
+namespace cobalt::io::mitsuba {
 
 struct Spectrum {
     static constexpr size_t kNumCoeffs = 3;
@@ -60,6 +60,6 @@ public:
 
 [[nodiscard]] bool read(const std::string_view fileName, std::shared_ptr<FileReaderDelegate> delegate);
 
-} // namespace cblt::io::mitsuba
+} // namespace cobalt::io::mitsuba
 
-#endif // CBLT_IO_MITSUBA_READER_H
+#endif // COBALT_IO_MITSUBA_READER_H

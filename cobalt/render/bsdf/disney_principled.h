@@ -1,11 +1,11 @@
-#ifndef CBLT_RENDER_DISNEY_PRINCIPLED
-#define CBLT_RENDER_DISNEY_PRINCIPLED
+#ifndef COBALT_RENDER_DISNEY_PRINCIPLED
+#define COBALT_RENDER_DISNEY_PRINCIPLED
 
 #include "color.h"
 
 #include "math/math_types.h"
 
-namespace cblt::render {
+namespace cobalt::render {
 
 struct PrincipledParameters {
     Color baseColor;
@@ -25,6 +25,6 @@ struct PrincipledParameters {
 
 Color evaluatePrincipledBSDF(vec3f incoming, vec3f normal, vec3f outgoing, const PrincipledParameters &parameters);
 
-} // namespace cblt::render
+} // namespace cobalt::render
 
-#endif // CBLT_RENDER_DISNEY_PRINCIPLED
+#endif // COBALT_RENDER_DISNEY_PRINCIPLED

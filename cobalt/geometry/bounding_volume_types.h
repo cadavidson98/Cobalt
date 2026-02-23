@@ -1,5 +1,5 @@
-#ifndef CBLT_GEOM_BOUNDING_VOLUME_TYPES_H
-#define CBLT_GEOM_BOUNDING_VOLUME_TYPES_H
+#ifndef COBALT_GEOM_BOUNDING_VOLUME_TYPES_H
+#define COBALT_GEOM_BOUNDING_VOLUME_TYPES_H
 
 #include "bounding_box.h"
 
@@ -9,7 +9,7 @@
 #include <span>
 #include <vector>
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 enum PrimitiveType : uint32_t {
     kNone = 0,
@@ -65,6 +65,6 @@ concept isStorage = requires(
     { storage.intersects(extent, ray) } -> std::same_as<IntersectionResult>;
 };
 
-} // namespace cblt::geom
+} // namespace cobalt::geom
 
-#endif // CBLT_GEOM_BOUNDING_VOLUME_TYPES_H
+#endif // COBALT_GEOM_BOUNDING_VOLUME_TYPES_H

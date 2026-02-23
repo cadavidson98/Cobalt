@@ -1,10 +1,10 @@
-#ifndef CBLT_CLI_PROGRESS_H
-#define CBLT_CLI_PROGRESS_H
+#ifndef COBALT_CLI_PROGRESS_H
+#define COBALT_CLI_PROGRESS_H
 
-namespace cblt::cli {
+namespace cobalt::cli {
 
 void printProgress(int percent, const char *status = nullptr);
 
-} // namespace cblt::cli
+} // namespace cobalt::cli
 
-#endif // CBLT_CLI_PROGRESS_H
+#endif // COBALT_CLI_PROGRESS_H

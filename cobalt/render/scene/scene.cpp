@@ -1,6 +1,6 @@
 #include "scene.h"
 
-namespace cblt::render {
+namespace cobalt::render {
 
 std::shared_ptr<Scene> Scene::create(const Scene::CreateInfo &createInfo) {
     std::shared_ptr<Scene> scene = std::shared_ptr<Scene>(new Scene(createInfo));
@@ -16,4 +16,4 @@ std::shared_ptr<Camera> Scene::camera() const {
     return _camera;
 }
 
-} // namespace cblt::render
+} // namespace cobalt::render

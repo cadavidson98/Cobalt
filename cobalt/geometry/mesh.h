@@ -1,5 +1,5 @@
-#ifndef CBLT_GEOM_MESH_H
-#define CBLT_GEOM_MESH_H
+#ifndef COBALT_GEOM_MESH_H
+#define COBALT_GEOM_MESH_H
 
 #include "bounding_box.h"
 #include "bounding_volume.h"
@@ -12,7 +12,7 @@
 
 #include <memory>
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 struct Ray;
 struct IntersectionEvent;
@@ -43,6 +43,6 @@ private:
     );
 };
 
-} // namespace cblt::geom
+} // namespace cobalt::geom
 
-#endif // CBLT_GEOM_MESH_H
+#endif // COBALT_GEOM_MESH_H

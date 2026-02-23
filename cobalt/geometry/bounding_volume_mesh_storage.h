@@ -1,5 +1,5 @@
-#ifndef CBLT_GEOM_BOUNDING_VOLUME_MESH_STORAGE_H
-#define CBLT_GEOM_BOUNDING_VOLUME_MESH_STORAGE_H
+#ifndef COBALT_GEOM_BOUNDING_VOLUME_MESH_STORAGE_H
+#define COBALT_GEOM_BOUNDING_VOLUME_MESH_STORAGE_H
 
 #include "bounding_box.h"
 #include "bounding_volume_types.h"
@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <limits>
 
-namespace cblt::geom {
+namespace cobalt::geom {
 
 class MeshStorage {
 public:
@@ -290,6 +290,6 @@ struct storageExtent<MeshStorage> {
     using value = MeshStorage::Extents;
 };
 
-} // namespace cblt::geom
+} // namespace cobalt::geom
 
-#endif // CBLT_GEOM_BOUNDING_VOLUME_MESH_STORAGE_H
+#endif // COBALT_GEOM_BOUNDING_VOLUME_MESH_STORAGE_H

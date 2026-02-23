@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace cblt {
+namespace cobalt {
 
 namespace color {
 class PixelBuffer;
@@ -28,6 +28,6 @@ bool writeImage(const WriteInfo &writeInfo);
 
 } // namespace cli
 
-} // namespace cblt
+} // namespace cobalt
 
 #endif // COBALT_CLI_IMAGE_WRITER_H
