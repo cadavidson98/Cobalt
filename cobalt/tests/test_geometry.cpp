@@ -156,7 +156,11 @@ TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
         // miss
         static const cobalt::simd::vec3f boxMin(-.5f, -.5f, -.5f);
         static const cobalt::simd::vec3f boxMax(.5f, .5f, .5f);
-        static const cobalt::geom::Ray zRay(cobalt::simd::vec3f(2.f, 0.f, 4.f), cobalt::simd::vec3f(0.f, 0.f, -1.f), 10.f);
+        static const cobalt::geom::Ray zRay(
+            cobalt::simd::vec3f(2.f, 0.f, 4.f),
+            cobalt::simd::vec3f(0.f, 0.f, -1.f),
+            10.f
+        );
         const cobalt::geom::AxisAlignedBoundingBox aabb(boxMin, boxMax);
 
         float timeMin, timeMax;
@@ -182,7 +186,11 @@ TEST(CobaltGeometryTests, TestSphereIntersect) {
             .radius = 1.f,
         };
 
-        static const cobalt::geom::Ray ray(cobalt::simd::vec3f(0.f, 0.f, -5.f), cobalt::simd::vec3f(0.f, 0.f, 1.f), 10.f);
+        static const cobalt::geom::Ray ray(
+            cobalt::simd::vec3f(0.f, 0.f, -5.f),
+            cobalt::simd::vec3f(0.f, 0.f, 1.f),
+            10.f
+        );
 
         float timeMin, timeMax;
         EXPECT_TRUE(cobalt::geom::raySphereIntersection(ray, sphere, timeMin, timeMax));
@@ -195,7 +203,11 @@ TEST(CobaltGeometryTests, TestSphereIntersect) {
             .radius = 4.f,
         };
 
-        static const cobalt::geom::Ray ray(cobalt::simd::vec3f(0.f, 0.f, 0.f), cobalt::simd::vec3f(1.f, 0.f, 0.f), 10.f);
+        static const cobalt::geom::Ray ray(
+            cobalt::simd::vec3f(0.f, 0.f, 0.f),
+            cobalt::simd::vec3f(1.f, 0.f, 0.f),
+            10.f
+        );
 
         float timeMin, timeMax;
         EXPECT_TRUE(cobalt::geom::raySphereIntersection(ray, sphere, timeMin, timeMax));
@@ -208,7 +220,11 @@ TEST(CobaltGeometryTests, TestSphereIntersect) {
             .radius = 5.f,
         };
 
-        static const cobalt::geom::Ray ray(cobalt::simd::vec3f(0.f, 10.f, 0.f), cobalt::simd::vec3f(0.f, -1.f, 0.f), 10.f);
+        static const cobalt::geom::Ray ray(
+            cobalt::simd::vec3f(0.f, 10.f, 0.f),
+            cobalt::simd::vec3f(0.f, -1.f, 0.f),
+            10.f
+        );
 
         float timeMin, timeMax;
         EXPECT_FALSE(cobalt::geom::raySphereIntersection(ray, sphere, timeMin, timeMax));
@@ -273,7 +289,6 @@ TEST_F(CobaltGeometryTest, TestBoundingBoxPerformance) {
         boxes.emplace_back(boxMin, boxMax);
     }
 
-    cobalt::geom::IntersectionEvent event;
     float timeMin, timeMax;
     for (const auto &box : boxes) {
         cobalt::geom::rayAxisAlignedBoundingBoxIntersection(xRay, box, timeMin, timeMax);
@@ -299,7 +314,6 @@ TEST_F(CobaltGeometryTest, TestCreateMeshStorage) {
     for (size_t y = 0; y < kCubeSize; ++y) {
         const size_t offset = (y & 1);
         for (size_t x = 0; x < kCubeSize; ++x) {
-            cobalt::geom::IntersectionEvent event;
             const cobalt::geom::Ray ray(
                 cobalt::simd::vec3f(x + .25f, y + .25f, 4.f),
                 cobalt::simd::vec3f(0.f, 0.f, -1.f),
@@ -337,7 +351,6 @@ TEST_F(CobaltGeometryTest, TestCreateSceneStorage) {
 
     for (size_t y = 0; y < kGridSizeY; ++y) {
         for (size_t x = 0; x < kGridSizeX; ++x) {
-            cobalt::geom::IntersectionEvent event;
             const cobalt::geom::Ray ray(cobalt::simd::vec3f(x, y, 4.f), cobalt::simd::vec3f(0.f, 0.f, -1.f), 10.f);
             const cobalt::geom::IntersectionResult result = boundingVolume.intersects(ray);
             ASSERT_NEAR(result.hitTime, 3.5f, kEpsilon);

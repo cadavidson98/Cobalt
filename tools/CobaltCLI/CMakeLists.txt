@@ -9,4 +9,4 @@ target_include_directories(CobaltCLI PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(commands)
 
-target_link_libraries(CobaltCLI PRIVATE CobaltCore CobaltRender CobaltToolsAssets CobaltToolsUtilities)
+target_link_libraries(CobaltCLI PRIVATE CobaltCore CobaltRender CobaltToolsAssets)

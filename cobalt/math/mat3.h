@@ -22,14 +22,14 @@ constexpr mat3f operator*(float a, const mat3f &b);
 struct mat3f {
     vec3f columns[3];
 
-    constexpr mat3f(float diagonal = 1.f)
+    explicit constexpr mat3f(float diagonal = 1.f)
         : columns{
               {.x = diagonal,      .y = 0.f,      .z = 0.f},
               {     .x = 0.f, .y = diagonal,      .z = 0.f},
               {     .x = 0.f,      .y = 0.f, .z = diagonal}
     } {};
 
-    constexpr mat3f(const vec3f &diagonal)
+    explicit constexpr mat3f(const vec3f &diagonal)
         : columns{
               {.x = diagonal.x,        .y = 0.f,        .z = 0.f},
               {       .x = 0.f, .y = diagonal.y,        .z = 0.f},

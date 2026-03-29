@@ -48,6 +48,10 @@ rgb::Value &PixelBuffer::at(vec2u idx) {
     return _data[f];
 }
 
+std::span<rgb::Value> PixelBuffer::scanline(size_t row) {
+    return std::span<rgb::Value>(_data.get() + (row * _size.x), _size.x);
+}
+
 std::span<const rgb::Value> PixelBuffer::scanline(size_t row) const {
     return std::span<const rgb::Value>(_data.get() + (row * _size.x), _size.x);
 }

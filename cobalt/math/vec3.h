@@ -57,6 +57,8 @@ struct vec3 {
     constexpr friend vec3<T> operator/ <>(const vec3<T> &lhs, T rhs);
     constexpr friend bool operator== <>(const vec3<T> lhs, const vec3<T> rhs);
 
+    static constexpr vec3<T> fill(T value);
+
     constexpr vec3<T> &operator+=(const vec3<T> &rhs) {
         x += rhs.x;
         y += rhs.y;
@@ -87,6 +89,15 @@ struct vec3 {
 };
 
 template<typename T>
+constexpr vec3<T> vec3<T>::fill(T value) {
+    return {
+        .x = value,
+        .y = value,
+        .z = value,
+    };
+}
+
+template<typename T>
 constexpr vec3<T> operator+(const vec3<T> &lhs, const vec3<T> &rhs) {
     return {
         .x = lhs.x + rhs.x,
@@ -101,6 +112,15 @@ constexpr vec3<T> operator-(const vec3<T> &lhs, const vec3<T> &rhs) {
         .x = lhs.x - rhs.x,
         .y = lhs.y - rhs.y,
         .z = lhs.z - rhs.z,
+    };
+}
+
+template<typename T>
+constexpr vec3<T> operator*(const vec3<T> &lhs, const vec3<T> &rhs) {
+    return {
+        .x = lhs.x * rhs.x,
+        .y = lhs.y * rhs.y,
+        .z = lhs.z * rhs.z,
     };
 }
 

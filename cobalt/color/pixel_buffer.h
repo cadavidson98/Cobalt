@@ -24,10 +24,15 @@ public:
     vec2u size() const;
 
     rgb::Value &at(vec2u idx);
+
+    std::span<rgb::Value> scanline(size_t row);
     std::span<const rgb::Value> scanline(size_t row) const;
 
 private:
     PixelBuffer() = delete;
+    PixelBuffer(const PixelBuffer &) = delete;
+    PixelBuffer &operator=(PixelBuffer &) = delete;
+
     PixelBuffer(rgb::Colorspace colorspace, vec2u size);
 
     rgb::Colorspace _colorspace;

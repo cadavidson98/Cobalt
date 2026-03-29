@@ -89,17 +89,17 @@ struct CollisionKernel {
         }
 
         const vec2f pixelPos = {
-            float(threadID.x),
-            float(threadID.y),
+            .x = float(threadID.x),
+            .y = float(threadID.y),
         };
 
         const vec2f viewSize = {
-            float(size.x),
-            float(size.y),
+            .x = float(size.x),
+            .y = float(size.y),
         };
 
         auto viewportToNDC = [viewSize](vec2f pixelPos) -> vec2f {
-            return ((pixelPos / viewSize) * vec2f{2.f, -2.f} + vec2f{-1.f, 1.f});
+            return ((pixelPos / viewSize) * vec2f{.x = 2.f, .y = -2.f} + vec2f{.x = -1.f, .y = 1.f});
         };
 
         const size_t threadIdx = threadID.y * size.y + threadID.x;
@@ -120,10 +120,14 @@ struct ResolveKernel {
     vec2u size;
     size_t samplesPerPixel;
     mat3f xyzToRGB;
-    std::shared_ptr<color::PixelBuffer> pixelBuffer;
+
+    std::shared_ptr<Camera> camera;
+    std::shared_ptr<Texture> environmentMap;
     std::shared_ptr<ComponentStorage> components;
+
     std::shared_ptr<const Camera::Sample[]> samples;
     std::shared_ptr<const geom::IntersectionResult[]> results;
+    std::shared_ptr<color::PixelBuffer> pixelBuffer;
 
     void operator()(vec2u threadID) {
         if (threadID.x >= size.x || threadID.y >= size.y) {
@@ -133,14 +137,43 @@ struct ResolveKernel {
         const size_t threadIdx = threadID.y * size.y + threadID.x;
 
         const geom::IntersectionResult &result = results[threadIdx];
-        if (!result) {
-            return;
-        }
 
         const float weight = 1.f / float(samplesPerPixel);
 
-        const uint32_t spectrumIdx = (*components)(result.primitive).materialIdx;
-        const color::PolynomialSpectrum &spectrum = components->spectrums[spectrumIdx];
+        color::PolynomialSpectrum spectrum;
+        if (result) {
+            const uint32_t spectrumIdx = (*components)(result.primitive).materialIdx;
+            spectrum = components->spectrums[spectrumIdx];
+        } else if (environmentMap) {
+            const vec2f viewSize = {
+                .x = float(size.x),
+                .y = float(size.y),
+            };
+
+            auto viewportToNDC = [viewSize](vec2f pixelPos) -> vec2f {
+                return ((pixelPos / viewSize) * vec2f{.x = 2.f, .y = -2.f} + vec2f{.x = -1.f, .y = 1.f});
+            };
+
+            const geom::Ray ray = camera->createRay(viewportToNDC({
+                .x = float(threadID.x),
+                .y = float(threadID.y),
+            }));
+
+            float theta = std::atan2(-ray.dir[2], ray.dir[0]);
+            theta = (theta < 0.f) ? theta + kPI : theta;
+            const float phi = std::acos(ray.dir[1]);
+            const float u = ((theta) / (2.f * kPI));
+            const float v = phi / kPI;
+
+            spectrum = environmentMap->sample(
+                vec2f{
+                    .x = u,
+                    .y = v,
+                }
+            );
+        } else {
+            return;
+        }
 
         const vec4f wavelengths = samples[threadIdx].wavelengths;
         const vec4f pdfs = samples[threadIdx].pdfs;
@@ -148,11 +181,13 @@ struct ResolveKernel {
         const vec4f samples = spectrum[wavelengths];
 
         const color::xyz::Tristimulus xyz = color::xyz::convert(samples, wavelengths, pdfs);
-        const vec3f rgbValue = xyzToRGB * vec3f{
-                                              .x = xyz.x,
-                                              .y = xyz.y,
-                                              .z = xyz.z,
-                                          };
+        const vec3f xyzValue = {
+            .x = xyz.x,
+            .y = xyz.y,
+            .z = xyz.z,
+        };
+
+        const vec3f rgbValue = xyzToRGB * xyzValue;
 
         const color::rgb::Value rgb = {
             .r = rgbValue.x,
@@ -177,7 +212,7 @@ bool render(std::shared_ptr<const Scene> scene, std::shared_ptr<color::PixelBuff
         return false;
     }
 
-    if (!sceneStorage) {
+    if (!sceneStorage || !componentStorage) {
         CoLogError("Missing Scene Storage");
         return false;
     }
@@ -211,7 +246,7 @@ bool render(std::shared_ptr<const Scene> scene, std::shared_ptr<color::PixelBuff
     sceneStorage->reorder(mortonEncodedPrimitives);
     componentStorage->reorder(mortonEncodedPrimitives);
 
-    static constexpr size_t kSamplesPerPixel = 32;
+    static constexpr size_t kSamplesPerPixel = 128;
 
     const mat3f xyzToRGB = color::rgb::convertFromXYZ(pixelBuffer->colorspace());
 
@@ -228,10 +263,12 @@ bool render(std::shared_ptr<const Scene> scene, std::shared_ptr<color::PixelBuff
         .size = viewSize,
         .samplesPerPixel = kSamplesPerPixel,
         .xyzToRGB = xyzToRGB,
-        .pixelBuffer = pixelBuffer,
+        .camera = camera,
+        .environmentMap = scene->environmentMap(),
         .components = componentStorage,
         .samples = samples,
         .results = results,
+        .pixelBuffer = pixelBuffer,
     };
 
     for (size_t idx = 0; idx < kSamplesPerPixel; ++idx) {

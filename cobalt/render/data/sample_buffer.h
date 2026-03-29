@@ -1,5 +1,5 @@
-#ifndef COBALT_RENDER_RENDERTARGET_H
-#define COBALT_RENDER_RENDERTARGET_H
+#ifndef COBALT_RENDER_SAMPLE_BUFFER_H
+#define COBALT_RENDER_SAMPLE_BUFFER_H
 
 #include "core/size_types.h"
 #include "math/math_types.h"
@@ -32,4 +32,4 @@ private:
 };
 } // namespace cobalt::render
 
-#endif // COBALT_RENDER_RENDERTARGET_H
+#endif // COBALT_RENDER_SAMPLE_BUFFER_H

@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     print("===== Reference =====")
     illuminant = np.array([0.3127, 0.3290])
-    sRGB = colour.models.RGB_COLOURSPACE_sRGB
+    sRGB = colour.models.RGB_COLOURSPACE_DCI_P3
     print(f"primaries: {sRGB.primaries}")
     print(f"whitepoint: {sRGB.whitepoint}")
     print(f"rgb_to_xyz: {sRGB.matrix_RGB_to_XYZ}")

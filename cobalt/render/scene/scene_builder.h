@@ -11,16 +11,10 @@ namespace cobalt::render {
 class Scene;
 class Material;
 
-class SceneFactory {
+class SceneBuilder {
 public:
     enum class SceneFormat {
         kMitsuba,
-    };
-
-    enum class BuildingError {
-        kMissingFile,     // Failed to open the scene file, or a dependency
-        kParsingError,    // Failed to read the contents of a file
-        kInvalidArgument, // Failed to convert data to the balt format
     };
 
     struct CreateInfo {

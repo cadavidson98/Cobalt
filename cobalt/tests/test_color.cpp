@@ -1,3 +1,4 @@
+#include "color/pixel_buffer.h"
 #include "color/rgb.h"
 #include "color/sampled_spectrum.h"
 #include "color/xyz.h"
@@ -7,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <memory>
 
 namespace cobalt::color {
 
@@ -198,6 +200,87 @@ TEST(CobaltColor, TestConvertXYZToRGB) {
         constexpr mat3f xyzToRGB = rgb::convertFromXYZ(color::rgb::Colorspace::kDCIP3);
 
         expectNear(xyzToRGB, kXYZToRGB);
+    }
+}
+
+TEST(CobaltColor, TestPixelBuffer) {
+    static constexpr vec2u kExpectedSize = {
+        .x = 4,
+        .y = 4,
+    };
+
+    static constexpr rgb::Colorspace kExpectedColorspace = rgb::Colorspace::kSRGB;
+
+    {
+        // 0 size dimension (x)
+        std::shared_ptr<PixelBuffer> pixelBuffer = PixelBuffer::create({
+            .colorspace = kExpectedColorspace,
+            .size = {
+                     .x = 0,
+                     .y = 5,
+                     },
+        });
+
+        EXPECT_FALSE(pixelBuffer);
+    }
+    {
+        // 0 size dimension (y)
+        std::shared_ptr<PixelBuffer> pixelBuffer = PixelBuffer::create({
+            .colorspace = kExpectedColorspace,
+            .size = {
+                     .x = 6,
+                     .y = 0,
+                     },
+        });
+
+        EXPECT_FALSE(pixelBuffer);
+    }
+
+    std::shared_ptr<PixelBuffer> pixelBuffer = PixelBuffer::create({
+        .colorspace = kExpectedColorspace,
+        .size = kExpectedSize,
+    });
+
+    ASSERT_TRUE(pixelBuffer);
+
+    ASSERT_TRUE(pixelBuffer->colorspace() == kExpectedColorspace);
+    ASSERT_TRUE(pixelBuffer->size().x == kExpectedSize.x);
+    ASSERT_TRUE(pixelBuffer->size().y == kExpectedSize.y);
+
+    for (size_t rowIdx = 0; rowIdx < kExpectedSize.y; ++rowIdx) {
+        const std::span<rgb::Value> row = pixelBuffer->scanline(rowIdx);
+        ASSERT_TRUE(row.size() == kExpectedSize.x);
+        for (size_t idx = 0; idx < kExpectedSize.x; ++idx) {
+            const float value = float((rowIdx * kExpectedSize.x + idx) & 0x01);
+            row[idx] = rgb::Value{
+                .r = value,
+                .g = value,
+                .b = value,
+            };
+        }
+    }
+
+    {
+        const PixelBuffer &constPixelBuffer = *pixelBuffer;
+        for (size_t rowIdx = 0; rowIdx < kExpectedSize.y; ++rowIdx) {
+            const std::span<const rgb::Value> row = constPixelBuffer.scanline(rowIdx);
+            ASSERT_TRUE(row.size() == kExpectedSize.x);
+            for (size_t idx = 0; idx < kExpectedSize.x; ++idx) {
+                const float expectedValue = float((rowIdx * kExpectedSize.x + idx) & 0x01);
+                EXPECT_EQ(row[idx].r, expectedValue);
+                EXPECT_EQ(row[idx].g, expectedValue);
+                EXPECT_EQ(row[idx].b, expectedValue);
+
+                const rgb::Value &pixel = pixelBuffer->at({
+                    .x = uint32_t(idx),
+                    .y = uint32_t(rowIdx),
+                });
+
+                EXPECT_EQ(pixel.r, expectedValue);
+                EXPECT_EQ(pixel.g, expectedValue);
+                EXPECT_EQ(pixel.b, expectedValue);
+            }
+        }
     }
 }
 
