@@ -10,19 +10,19 @@ namespace cobalt::render {
 
 class Camera {
 public:
-    struct CreateFromProjectionInfo {
+    struct CreateInfo {
         float hFov = cobalt::utils::toRadians(35.f);
         float vFov = cobalt::utils::toRadians(35.f);
         vec2f filmSize = {2.f, 2.f};
         mat4f cameraToWorld = cobalt::utils::translationMatrix({0.f, 0.f, -5.f});
     };
 
-    Camera(const CreateFromProjectionInfo &createInfo);
-
     struct Sample {
         vec4f wavelengths;
         vec4f pdfs;
     };
+
+    Camera(const CreateInfo &createInfo);
 
     Sample sampleWavelengths(float uniformValue) const;
     geom::Ray createRay(vec2f pixelPos) const;

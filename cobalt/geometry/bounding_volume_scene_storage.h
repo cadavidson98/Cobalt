@@ -83,6 +83,8 @@ public:
                 [[fallthrough]];
             case PrimitiveType::kTriangle :
                 [[fallthrough]];
+            case PrimitiveType::kNone :
+                [[fallthrough]];
             default :
                 assert(false);
             }
@@ -163,6 +165,12 @@ public:
             case PrimitiveType::kMesh :
                 extents.meshes = expandExtent(extents.meshes, primitive);
                 continue;
+            case PrimitiveType::kPatch :
+                [[fallthrough]];
+            case PrimitiveType::kTriangle :
+                [[fallthrough]];
+            case PrimitiveType::kNone :
+                [[fallthrough]];
             default :
                 assert(false);
             }

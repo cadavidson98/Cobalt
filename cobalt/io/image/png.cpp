@@ -26,12 +26,12 @@ namespace cobalt::io::image::png {
 
 namespace {
 
-void pngError([[maybe_unused]] png_structp pngPtr, png_const_charp errorMessage) {
+void pngError([[maybe_unused]] png_structp pngPtr, [[maybe_unused]] png_const_charp errorMessage) {
     CoLogError("Error reading PNG: %s", errorMessage);
     throw std::runtime_error(errorMessage);
 }
 
-void pngWarning([[maybe_unused]] png_structp pngPtr, png_const_charp errorMessage) {
+void pngWarning([[maybe_unused]] png_structp pngPtr, [[maybe_unused]] png_const_charp errorMessage) {
     CoLogWarning("Warning reading PNG: %s", errorMessage);
 }
 

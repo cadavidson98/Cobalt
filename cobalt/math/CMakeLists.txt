@@ -19,5 +19,6 @@ set(COBALT_MATH_HEADERS
 set(COBALT_MATH_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/math_utilities.cpp)
 
+target_compile_definitions(CobaltMath PUBLIC ${COBALT_LOG_LEVELS})
 target_sources(CobaltMath PUBLIC ${COBALT_MATH_HEADERS} PRIVATE ${COBALT_MATH_SOURCES})
 target_include_directories(CobaltMath PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -14,6 +14,7 @@ set(COBALT_TEST_SOURCES
     test_math.cpp
     test_material.cpp
     test_string.cpp
+    test_render.cpp
 )
 
 add_executable(CobaltTests ${COBALT_TEST_SOURCES})

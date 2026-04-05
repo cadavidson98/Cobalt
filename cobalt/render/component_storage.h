@@ -20,13 +20,15 @@ struct ComponentStorage {
 
     Component operator()(const geom::Primitive primitive) {
         switch (primitive.type) {
-        case geom::kMesh :
+        case geom::PrimitiveType::kMesh :
             return meshIndices[primitive.index];
-        case geom::kSphere :
+        case geom::PrimitiveType::kSphere :
             return sphereIndices[primitive.index];
-        case geom::kTriangle :
+        case geom::PrimitiveType::kTriangle :
             [[fallthrough]];
-        case geom::kPatch :
+        case geom::PrimitiveType::kPatch :
+            [[fallthrough]];
+        case geom::PrimitiveType::kNone :
             [[fallthrough]];
         default :
             assert(false);
@@ -54,6 +56,8 @@ struct ComponentStorage {
                 [[fallthrough]];
             case geom::PrimitiveType::kPatch :
                 [[fallthrough]];
+            case geom::PrimitiveType::kNone :
+                [[fallthrough]];
             default :
                 assert(false && "Unsupported type in scene storage");
                 break;
@@ -78,6 +82,8 @@ struct ComponentStorage {
         case geom::kTriangle :
             [[fallthrough]];
         case geom::kPatch :
+            [[fallthrough]];
+        case geom::kNone :
             [[fallthrough]];
         default :
             assert(false);

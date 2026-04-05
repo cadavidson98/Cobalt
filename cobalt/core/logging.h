@@ -28,18 +28,26 @@ void LogWrite(Log log, const char *trace, const char *message, ...);
 
 #ifdef COBALT_LOG_DEBUG
 #define CoLogDebug(...) cobalt::core::LogWrite(cobalt::core::Log::kDebug, __PRETTY_FUNCTION__, __VA_ARGS__)
+#else
+#define CoLogDebug(...) (void)0
 #endif // COBALT_LOG_DEBUG
 
 #ifdef COBALT_LOG_INFO
 #define CoLogInfo(...) cobalt::core::LogWrite(cobalt::core::Log::kInfo, __PRETTY_FUNCTION__, __VA_ARGS__)
+#else
+#define CoLogInfo(...) (void)0
 #endif // COBALT_LOG_INFO
 
 #ifdef COBALT_LOG_WARN
 #define CoLogWarning(...) cobalt::core::LogWrite(cobalt::core::Log::kWarn, __PRETTY_FUNCTION__, __VA_ARGS__)
+#else
+#define CoLogWarning(...) (void)0
 #endif // COBALT_LOG_WARN
 
 #ifdef COBALT_LOG_ERROR
 #define CoLogError(...) cobalt::core::LogWrite(cobalt::core::Log::kError, __PRETTY_FUNCTION__, __VA_ARGS__)
+#else
+#define CoLogError(...) (void)0
 #endif // COBALT_LOG_ERROR
 
 #endif // COBALT_LOGGING_H

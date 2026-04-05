@@ -181,6 +181,12 @@ public:
                 mortonPrimitive.primitive.index = newIdx;
                 continue;
             }
+            case PrimitiveType::kMesh :
+                [[fallthrough]];
+            case PrimitiveType::kSphere :
+                [[fallthrough]];
+            case PrimitiveType::kNone :
+                [[fallthrough]];
             default :
                 assert(false);
             }
@@ -208,7 +214,12 @@ public:
             case PrimitiveType::kPatch :
                 extents.patches = expandExtent(extents.patches, primitive);
                 continue;
-
+            case PrimitiveType::kMesh :
+                [[fallthrough]];
+            case PrimitiveType::kSphere :
+                [[fallthrough]];
+            case PrimitiveType::kNone :
+                [[fallthrough]];
             default :
                 assert(false);
             }

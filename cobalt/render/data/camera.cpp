@@ -41,7 +41,7 @@ vec4f visibleWavelengths(vec4f wavelengths) {
 
 } // anonymous namespace
 
-Camera::Camera(const CreateFromProjectionInfo &createInfo) {
+Camera::Camera(const CreateInfo &createInfo) {
     const vec4f cameraTranslation = createInfo.cameraToWorld[3];
     _cameraPos = vec3f(cameraTranslation.x, cameraTranslation.y, cameraTranslation.z);
     _filmSize = createInfo.filmSize;

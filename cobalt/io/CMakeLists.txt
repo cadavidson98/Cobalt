@@ -26,6 +26,7 @@ find_package(OpenEXR REQUIRED)
 find_package(PNG REQUIRED)
 find_package(TIFF REQUIRED)
 
+target_compile_definitions(CobaltIO PUBLIC ${COBALT_LOG_LEVELS})
 target_sources(CobaltIO PUBLIC ${COBALT_IO_HEADERS} PRIVATE ${COBALT_IO_PRIVATE_HEADERS} ${COBALT_IO_SOURCES})
 target_include_directories(CobaltIO PUBLIC ${COBALT_ROOT_DIR} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

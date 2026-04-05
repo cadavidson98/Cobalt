@@ -26,8 +26,7 @@ template<typename T>
         return false;
     }
 
-    if (!(vertexBuffer.triangleIndices || vertexBuffer.patchIndices) ||
-        !(vertexBuffer.triangleCount + vertexBuffer.patchCount)) {
+    if (!(vertexBuffer.triangleIndices || vertexBuffer.patchIndices)) {
         CoLogError("Vertex Buffer must contain face indices");
         return false;
     }

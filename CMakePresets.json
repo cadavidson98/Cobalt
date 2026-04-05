@@ -24,7 +24,8 @@
                 "CMAKE_CXX_COMPILER": "g++",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
                 "CMAKE_CXX_FLAGS": "-march=native -Werror -Wall -Wextra -Wpedantic -Wunused -Wreorder -Wformat -Wimplicit-fallthrough -Wuninitialized -Winit-self -Wswitch-enum",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "COBALT_LOG_LEVELS": "COBALT_LOG_DEBUG; COBALT_LOG_INFO; COBALT_LOG_WARN; COBALT_LOG_ERROR"
             }
         },
         {
@@ -36,7 +37,20 @@
                 "verbose-debug"
             ],
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE":"Debug"
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "gcc-unit-testing",
+            "displayName": "GCC Unit Testing",
+            "description": "Unit testing with Code Coverage G++ compiler",
+            "inherits": [
+                "gcc-g++",
+                "verbose-debug"
+            ],
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-march=native -Werror -Wall -Wextra -Wpedantic -Wunused -Wreorder -Wformat -Wimplicit-fallthrough -Wuninitialized -Winit-self -Wswitch-enum --coverage -O0",
+                "COBALT_LOG_LEVELS": ""
             }
         },
         {

@@ -1,3 +1,4 @@
+#include "core/vertex_buffer.h"
 #include "geometry/bounding_box.h"
 #include "geometry/bounding_volume.h"
 #include "geometry/bounding_volume_mesh_storage.h"
@@ -9,6 +10,7 @@
 #include "geometry/sphere.h"
 #include "geometry/triangle.h"
 #include "math/simd/simd_vec3.h"
+#include "math/vec3.h"
 
 #include <gtest/gtest.h>
 
@@ -23,7 +25,7 @@ static constexpr float kEpsilon = 1e-4f;
 
 namespace cobalt::geom::test {
 
-std::shared_ptr<MeshStorage> makeCubeMesh(size_t width) {
+core::VertexAttributeBuffer<simd::vec3f> makeCubeMesh(size_t width) {
     assert((width & 1) == 0);
 
     const size_t verticesPerRow = width + 1;
@@ -68,7 +70,7 @@ std::shared_ptr<MeshStorage> makeCubeMesh(size_t width) {
         }
     }
 
-    return std::make_shared<MeshStorage>(std::move(buffer));
+    return buffer;
 }
 
 std::shared_ptr<SceneStorage> makeScene(size_t gridSizeX, size_t gridSizeY) {
@@ -92,7 +94,7 @@ class CobaltGeometryTest : public ::testing::Test {
 protected:
     CobaltGeometryTest() {
         storage = cobalt::geom::test::makeScene(kGridSizeX, kGridSizeY);
-        meshStorage = cobalt::geom::test::makeCubeMesh(kCubeSize);
+        meshStorage = std::make_shared<cobalt::geom::MeshStorage>(cobalt::geom::test::makeCubeMesh(kCubeSize));
     }
 
     std::shared_ptr<cobalt::geom::SceneStorage> storage;
@@ -104,7 +106,7 @@ protected:
     static constexpr size_t kCubeSize = 8;
 };
 
-TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
+TEST_F(CobaltGeometryTest, TestBoundingBoxIntersect) {
     static const cobalt::simd::vec3f origin(0.f, 0.f, 0.f);
     static const cobalt::simd::vec3f xDir(1.f, 0.f, 0.f);
     static const cobalt::geom::Ray xRay(origin, xDir, 10.f);
@@ -179,7 +181,7 @@ TEST(CobaltGeometryTests, TestBoundingBoxIntersect) {
     }
 }
 
-TEST(CobaltGeometryTests, TestSphereIntersect) {
+TEST_F(CobaltGeometryTest, TestSphereIntersect) {
     {
         static const cobalt::geom::Sphere sphere{
             .center = cobalt::simd::vec3f(0.f, 0.f, 0.f),
@@ -248,7 +250,7 @@ TEST(CobaltGeometryTests, TestSphereIntersect) {
     }
 }
 
-TEST(CobaltGeometryTests, TestTriangleIntersect) {
+TEST_F(CobaltGeometryTest, TestTriangleIntersect) {
     {
         static const cobalt::geom::Triangle triangle{
             .position1 = cobalt::simd::vec3f{ 0.f, 1.f, 1.f},
@@ -271,6 +273,98 @@ TEST(CobaltGeometryTests, TestTriangleIntersect) {
         );
         EXPECT_TRUE(hit);
         EXPECT_NEAR(hitTime, 1.f, 1e-4f);
+    }
+}
+
+TEST_F(CobaltGeometryTest, TestMesh) {
+    {
+        // no vertices
+        std::shared_ptr<cobalt::geom::Mesh> mesh = cobalt::geom::Mesh::create({
+            .positions = {
+                          .vertices = nullptr,
+                          .vertexCount = 0,
+                          .triangleIndices = std::make_shared<cobalt::vec3u[]>(1),
+                          .triangleCount = 1,
+                          .patchIndices = std::make_shared<cobalt::vec4u[]>(1),
+                          .patchCount = 1,
+                          },
+        });
+
+        EXPECT_FALSE(mesh);
+    }
+    {
+        // no geometry (indices)
+        std::shared_ptr<cobalt::geom::Mesh> mesh = cobalt::geom::Mesh::create({
+            .positions = {
+                          .vertices = std::make_shared<cobalt::simd::vec3f[]>(4),
+                          .vertexCount = 4,
+                          .triangleIndices = nullptr,
+                          .triangleCount = 0,
+                          .patchIndices = nullptr,
+                          .patchCount = 0,
+                          },
+        });
+
+        EXPECT_FALSE(mesh);
+    }
+    {
+        // triangle mismatch
+        std::shared_ptr<cobalt::geom::Mesh> mesh = cobalt::geom::Mesh::create({
+            .positions = {
+                          .vertices = std::make_shared<cobalt::simd::vec3f[]>(3),
+                          .vertexCount = 3,
+                          .triangleIndices = std::make_shared<cobalt::vec3u[]>(1),
+                          .triangleCount = 0,
+                          .patchIndices = nullptr,
+                          .patchCount = 0,
+                          },
+        });
+
+        EXPECT_FALSE(mesh);
+    }
+    {
+        // patch mismatch
+        std::shared_ptr<cobalt::geom::Mesh> mesh = cobalt::geom::Mesh::create({
+            .positions = {
+                          .vertices = std::make_shared<cobalt::simd::vec3f[]>(4),
+                          .vertexCount = 4,
+                          .triangleIndices = nullptr,
+                          .triangleCount = 0,
+                          .patchIndices = std::make_shared<cobalt::vec4u[]>(1),
+                          .patchCount = 0,
+                          },
+        });
+
+        EXPECT_FALSE(mesh);
+    }
+
+    // valid
+    std::shared_ptr<cobalt::geom::Mesh> mesh = cobalt::geom::Mesh::create({
+        .positions = cobalt::geom::test::makeCubeMesh(2),
+    });
+
+    ASSERT_TRUE(mesh != nullptr);
+    {
+        // hit
+        const cobalt::geom::Ray ray(cobalt::simd::vec3f(.5f, .5f, -5.f), cobalt::simd::vec3f(0.f, 0.f, 1.f), 10.f);
+
+        const cobalt::geom::IntersectionResult result = mesh->intersects(ray);
+        EXPECT_EQ(result.primitive.type, cobalt::geom::PrimitiveType::kTriangle);
+        EXPECT_EQ(result.hitTime, 5.f);
+    }
+    {
+        // facing away
+        const cobalt::geom::Ray ray(cobalt::simd::vec3f(1.f, 1.f, -5.f), cobalt::simd::vec3f(0.f, 0.f, -1.f), 10.f);
+
+        const cobalt::geom::IntersectionResult result = mesh->intersects(ray);
+        EXPECT_EQ(result.primitive.type, cobalt::geom::PrimitiveType::kNone);
+    }
+    {
+        // out of ray distance
+        const cobalt::geom::Ray ray(cobalt::simd::vec3f(-4.f, 0.f, 0.f), cobalt::simd::vec3f(1.f, 0.f, 0.f), 2.f);
+
+        const cobalt::geom::IntersectionResult result = mesh->intersects(ray);
+        EXPECT_EQ(result.primitive.type, cobalt::geom::PrimitiveType::kNone);
     }
 }
 

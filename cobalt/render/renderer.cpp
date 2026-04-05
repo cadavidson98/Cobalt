@@ -9,7 +9,6 @@
 #include "core/logging.h"
 #include "core/size_types.h"
 #include "data/camera.h"
-#include "data/sample_buffer.h"
 #include "geometry/bounding_volume_scene_storage.h"
 #include "geometry/bounding_volume_types.h"
 #include "geometry/ray.h"
@@ -218,10 +217,6 @@ bool render(std::shared_ptr<const Scene> scene, std::shared_ptr<color::PixelBuff
     }
 
     const vec2u viewSize = pixelBuffer->size();
-
-    std::shared_ptr<SampleBuffer> sampleBuffer = SampleBuffer::create({
-        .size = pixelBuffer->size(),
-    });
 
     const TileDispatchSize<kTileSize> dispatchSize{
         .tilesPerGrid = {

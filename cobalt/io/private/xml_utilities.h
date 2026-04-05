@@ -149,9 +149,15 @@ bool xmlHoldsAlternative(xmlXPathObjectPtr xPathObject) {
     case XPATH_STRING :
         return xPathObject->stringval;
     case XPATH_BOOLEAN :
-        [[fallthrough]];
+        return true;
     case XPATH_NUMBER :
         return true;
+    case XPATH_USERS :
+        [[fallthrough]];
+    case XPATH_XSLT_TREE :
+        [[fallthrough]];
+    case XPATH_UNDEFINED :
+        [[fallthrough]];
     default :
         break;
     }

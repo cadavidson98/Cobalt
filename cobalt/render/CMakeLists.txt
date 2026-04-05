@@ -18,5 +18,6 @@ set(COBALT_RENDER_HEADERS
 set(COBALT_RENDER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/renderer.cpp)
 
+target_compile_definitions(CobaltRender PUBLIC ${COBALT_LOG_LEVELS})
 target_include_directories(CobaltRender PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_sources(CobaltRender PUBLIC ${COBALT_RENDER_HEADERS} PRIVATE ${COBALT_RENDER_SOURCES})

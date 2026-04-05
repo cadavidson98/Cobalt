@@ -13,7 +13,7 @@ namespace cobalt::io::image::tiff {
 
 namespace {
 
-void tiffError(const char *module, const char *format, va_list args) {
+void tiffError([[maybe_unused]] const char *module, const char *format, va_list args) {
     static constexpr size_t kMaxMessageLength = 512;
     std::array<char, kMaxMessageLength> error;
     snprintf(error.data(), kMaxMessageLength, format, args);

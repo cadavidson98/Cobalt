@@ -217,7 +217,7 @@ public:
             return true;
         }
 
-        const Camera::CreateFromProjectionInfo cameraInfo{
+        const Camera::CreateInfo cameraInfo{
             .hFov = sensor.fov,
             .vFov = sensor.fov,
             .cameraToWorld = sensor.transform,
