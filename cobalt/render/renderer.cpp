@@ -2,9 +2,11 @@
 
 #include "component_storage.h"
 
+#include "color/blackbody_spectrum.h"
 #include "color/pixel_buffer.h"
 #include "color/polynomial_spectrum.h"
 #include "color/rgb.h"
+#include "color/spectrum.h"
 #include "color/xyz.h"
 #include "core/logging.h"
 #include "core/size_types.h"
@@ -122,7 +124,11 @@ struct ResolveKernel {
 
     std::shared_ptr<Camera> camera;
     std::shared_ptr<Texture> environmentMap;
-    std::shared_ptr<ComponentStorage> components;
+
+    std::shared_ptr<const color::BlackBodySpectrum[]> blackbodies;
+    std::shared_ptr<const color::PolynomialSpectrum[]> polynomials;
+
+    // std::shared_ptr<ComponentStorage> components;
 
     std::shared_ptr<const Camera::Sample[]> samples;
     std::shared_ptr<const geom::IntersectionResult[]> results;
@@ -139,16 +145,34 @@ struct ResolveKernel {
 
         const float weight = 1.f / float(samplesPerPixel);
 
-        color::PolynomialSpectrum spectrum;
+        const vec4f wavelengths = samples[threadIdx].wavelengths;
+        const vec4f pdfs = samples[threadIdx].pdfs;
+
+        vec4f samples;
+        // todo: this eventually won't be 'trivial' to evaluate here, because we will have rendering equations!
         if (result) {
-            const uint32_t spectrumIdx = (*components)(result.primitive).materialIdx;
-            spectrum = components->spectrums[spectrumIdx];
+
+            // Typed Index resolve here
+            switch(result.spectrum.type) {
+            case color::SpectrumType::kBlackbody:
+                samples = blackbodies[result.spectrum.index][wavelengths];
+                break;
+            case color::SpectrumType::kPolynomial:
+                samples = polynomials[result.spectrum.index][wavelengths];
+                break;
+            case color::SpectrumType::kSampled:
+                samples = sampled[result.spectrum.index][wavelengths];
+                break;
+            }
+
         } else if (environmentMap) {
+            // TODO: should env be implicit by nature of the bvh collision test and scene structure?
             const vec2f viewSize = {
                 .x = float(size.x),
                 .y = float(size.y),
             };
 
+            // TODO: This seems like a lot of work...
             auto viewportToNDC = [viewSize](vec2f pixelPos) -> vec2f {
                 return ((pixelPos / viewSize) * vec2f{.x = 2.f, .y = -2.f} + vec2f{.x = -1.f, .y = 1.f});
             };
@@ -164,20 +188,16 @@ struct ResolveKernel {
             const float u = ((theta) / (2.f * kPI));
             const float v = phi / kPI;
 
-            spectrum = environmentMap->sample(
-                vec2f{
-                    .x = u,
-                    .y = v,
-                }
-            );
+            const vec2f coordinates = {
+                .x = u,
+                .y = v,
+            };
+
+            const color::PolynomialSpectrum spectrum = environmentMap->sample(coordinates);
+            samples = spectrum[wavelengths];
         } else {
             return;
         }
-
-        const vec4f wavelengths = samples[threadIdx].wavelengths;
-        const vec4f pdfs = samples[threadIdx].pdfs;
-        // todo: this eventually won't be 'trivial' to evaluate here, because we will have rendering equations!
-        const vec4f samples = spectrum[wavelengths];
 
         const color::xyz::Tristimulus xyz = color::xyz::convert(samples, wavelengths, pdfs);
         const vec3f xyzValue = {
@@ -218,10 +238,10 @@ bool render(std::shared_ptr<const Scene> scene, std::shared_ptr<color::PixelBuff
 
     const vec2u viewSize = pixelBuffer->size();
 
-    const TileDispatchSize<kTileSize> dispatchSize{
+    const TileDispatchSize<kTileSize> dispatchSize = {
         .tilesPerGrid = {
-                         utils::divUp(viewSize.x, uint32_t(kTileSize)),
-                         utils::divUp(viewSize.y, uint32_t(kTileSize)),
+                         .x = utils::divUp(viewSize.x, uint32_t(kTileSize)),
+                         .y = utils::divUp(viewSize.y, uint32_t(kTileSize)),
                          },
     };
 
@@ -245,7 +265,7 @@ bool render(std::shared_ptr<const Scene> scene, std::shared_ptr<color::PixelBuff
 
     const mat3f xyzToRGB = color::rgb::convertFromXYZ(pixelBuffer->colorspace());
 
-    CollisionKernel collisionKernel{
+    CollisionKernel collisionKernel = {
         .size = viewSize,
         .camera = camera,
         .accelerator = geom::BoundingVolume<geom::SceneStorage>(sceneStorage, mortonEncodedPrimitives),

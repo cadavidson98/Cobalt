@@ -2,6 +2,7 @@ add_library(Cobalt STATIC)
 target_compile_features(Cobalt PUBLIC cxx_std_20)
 
 set(COBALT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 add_subdirectory(color)
 add_subdirectory(core)

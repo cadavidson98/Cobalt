@@ -349,7 +349,7 @@ TEST_F(CobaltGeometryTest, TestMesh) {
         const cobalt::geom::Ray ray(cobalt::simd::vec3f(.5f, .5f, -5.f), cobalt::simd::vec3f(0.f, 0.f, 1.f), 10.f);
 
         const cobalt::geom::IntersectionResult result = mesh->intersects(ray);
-        EXPECT_EQ(result.primitive.type, cobalt::geom::PrimitiveType::kTriangle);
+        EXPECT_EQ(result.shape.type, cobalt::geom::Shape::kTriangle);
         EXPECT_EQ(result.hitTime, 5.f);
     }
     {
@@ -357,14 +357,14 @@ TEST_F(CobaltGeometryTest, TestMesh) {
         const cobalt::geom::Ray ray(cobalt::simd::vec3f(1.f, 1.f, -5.f), cobalt::simd::vec3f(0.f, 0.f, -1.f), 10.f);
 
         const cobalt::geom::IntersectionResult result = mesh->intersects(ray);
-        EXPECT_EQ(result.primitive.type, cobalt::geom::PrimitiveType::kNone);
+        EXPECT_EQ(result.shape.type, cobalt::geom::Shape::kNone);
     }
     {
         // out of ray distance
         const cobalt::geom::Ray ray(cobalt::simd::vec3f(-4.f, 0.f, 0.f), cobalt::simd::vec3f(1.f, 0.f, 0.f), 2.f);
 
         const cobalt::geom::IntersectionResult result = mesh->intersects(ray);
-        EXPECT_EQ(result.primitive.type, cobalt::geom::PrimitiveType::kNone);
+        EXPECT_EQ(result.shape.type, cobalt::geom::Shape::kNone);
     }
 }
 
@@ -420,9 +420,9 @@ TEST_F(CobaltGeometryTest, TestCreateMeshStorage) {
             // FIXME: Need to "remap" the index from the original grid values to the reordered indices in order to check
             // what box / sphere we hit
             if (((x + offset) & 1) == 1) {
-                EXPECT_EQ(result.primitive.type, cobalt::geom::kPatch) << testDescription.view();
+                EXPECT_EQ(result.shape.type, cobalt::geom::kPatch) << testDescription.view();
             } else {
-                EXPECT_EQ(result.primitive.type, cobalt::geom::kTriangle) << testDescription.view();
+                EXPECT_EQ(result.shape.type, cobalt::geom::kTriangle) << testDescription.view();
             }
         }
     }
@@ -450,7 +450,7 @@ TEST_F(CobaltGeometryTest, TestCreateSceneStorage) {
             ASSERT_NEAR(result.hitTime, 3.5f, kEpsilon);
             // FIXME: Need to "remap" the index from the original grid values to the reordered indices in order to check
             // what box / sphere we hit
-            ASSERT_EQ(result.primitive.type, cobalt::geom::kSphere);
+            ASSERT_EQ(result.shape.type, cobalt::geom::kSphere);
         }
     }
 }

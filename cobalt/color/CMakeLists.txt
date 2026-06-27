@@ -2,6 +2,7 @@ add_library(CobaltColor STATIC)
 target_compile_features(CobaltColor PUBLIC cxx_std_20)
 
 set(COBALT_COLOR_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/blackbody_spectrum.h
     ${CMAKE_CURRENT_SOURCE_DIR}/polynomial_spectrum.h
     ${CMAKE_CURRENT_SOURCE_DIR}/pixel_buffer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/rgb.h

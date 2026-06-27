@@ -1,6 +1,7 @@
 #ifndef COBALT_RENDER_XML_UTILITIES_H
 #define COBALT_RENDER_XML_UTILITIES_H
 
+#include <libxml/xmlstring.h>
 #include <libxml2/libxml/parser.h>
 #include <libxml2/libxml/tree.h>
 #include <libxml2/libxml/xmlmemory.h>
@@ -8,12 +9,22 @@
 #include <libxml2/libxml/xpath.h>
 
 #include <cassert>
+#include <memory>
+#include <optional>
+#include <cstring>
+#include <type_traits>
 
 namespace xml2 {
 
 struct xmlDeleter {
     void operator()(void *ptr) {
         xmlFree(ptr);
+    }
+};
+
+struct xmlWeakDeleter {
+    void operator()([[maybe_unused]] void *ptr) {
+        // TODO: ref count? No Op?
     }
 };
 
@@ -26,6 +37,12 @@ struct xmlDocDeleter {
 struct xmlTextReaderDeleter {
     void operator()(xmlTextReader *ptr) {
         xmlFreeTextReader(ptr);
+    }
+};
+
+struct xmlNodeDeleter {
+    void operator()(xmlNodeSet *ptr) {
+        xmlXPathFreeNodeSet(ptr);
     }
 };
 
@@ -49,6 +66,10 @@ public:
         return _value;
     }
 
+    void reset(T *ptr) {
+        _value = ptr;
+    }
+
     T *get() const {
         return _value;
     }
@@ -68,6 +89,14 @@ private:
     T *_value = nullptr;
     Deleter _deleter;
 };
+
+
+template<typename T>
+using xmlWeak = xmlResource<T, xmlWeakDeleter>;
+
+using TextReader = xmlResource<xmlTextReader, xmlTextReaderDeleter>;
+
+// strings
 
 class xmlString {
 public:
@@ -117,6 +146,10 @@ public:
         return xmlStrstr(_stringView, substring._stringView);
     }
 
+    const xmlChar *data() const {
+        return _stringView;
+    };
+
 private:
     const xmlChar *_stringView;
 };
@@ -135,6 +168,102 @@ inline bool operator==(const xmlString_view &lhs, const xmlString_view &rhs) {
 
 inline bool operator!=(const xmlString_view &lhs, const xmlString_view &rhs) {
     return !(lhs == rhs);
+}
+
+// xpath
+namespace xpath {
+
+class Node {
+    public:
+    Node(xmlNodePtr node, xmlXPathContextPtr context);
+    Node(xmlNodeSetPtr node, xmlXPathContextPtr context);
+        
+    xmlWeak<xmlNode> children() const;
+    xmlString property(xmlString_view propertyName) const;
+        
+    template<typename T>
+    std::unique_ptr<T> eval(xmlString_view xpath) const;
+        
+    private:
+
+    xmlResource<xmlNodeSet, xmlNodeDeleter> _node;
+    xmlWeak<xmlXPathContext> _context;
+};
+
+template <typename T>
+struct xpath_traits {
+    static constexpr xmlXPathObjectType value = XPATH_UNDEFINED;
+};
+
+template <>
+struct xpath_traits<float> {
+    static constexpr xmlXPathObjectType value = XPATH_NUMBER;
+};
+
+template <>
+struct xpath_traits<bool> {
+    static constexpr xmlXPathObjectType value = XPATH_BOOLEAN;
+};
+
+template <>
+struct xpath_traits<xmlString> {
+    static constexpr xmlXPathObjectType value = XPATH_STRING;
+};
+
+template <>
+struct xpath_traits<Node> {
+    static constexpr xmlXPathObjectType value = XPATH_NODESET;
+};
+
+inline Node::Node(xmlNodePtr node, xmlXPathContextPtr context) : _node{nullptr}, _context{context} {
+    _node.reset(xmlXPathNodeSetCreate(node));
+}
+
+inline Node::Node(xmlNodeSetPtr node, xmlXPathContextPtr context)
+    : _node{node}, _context{context} {
+}
+
+inline xmlWeak<xmlNode> Node::children() const {
+    return xmlWeak<xmlNode>(_node.get()->nodeTab[0]->children);
+}
+
+inline xmlString Node::property(xmlString_view propertyName) const {
+    return xmlGetProp(_node.get()->nodeTab[0], propertyName.data());
+}
+
+template<typename T>
+std::unique_ptr<T> Node::eval(xmlString_view xpath) const {
+    // note: this WON'T free the nodeset (if present)
+    xmlResource<xmlXPathObject> object = xmlXPathNodeEval(_node.get()->nodeTab[0], xpath.data(), _context.get());
+    if (!object) {
+        return nullptr;
+    }
+
+    static constexpr const xmlXPathObjectType kRequiredValue = xpath_traits<T>::value;
+    const xmlXPathObjectType heldValue = object->type;
+    if (heldValue != kRequiredValue) {
+        return nullptr;
+    }
+
+    if constexpr (kRequiredValue == XPATH_NODESET) {
+        static_assert(std::is_same_v<T, Node>);
+        if (!object->nodesetval->nodeNr) {
+            return nullptr;
+        }
+
+        return std::make_unique<Node>(object->nodesetval, _context.get());
+    } else if constexpr (kRequiredValue == XPATH_STRING) {
+        static_assert(std::is_same_v<T, xmlString>);
+        return std::make_unique<xmlString>(object->stringval);
+    } else if constexpr (kRequiredValue == XPATH_NUMBER) {
+        static_assert(std::is_arithmetic_v<T>);
+        return std::make_unique<T>(object->floatval);
+    } else if constexpr (kRequiredValue == XPATH_BOOLEAN) {
+        static_assert(std::is_same_v<T, bool>);
+        return std::make_unique<T>(object->boolval);
+    } else {
+        return nullptr;
+    }
 }
 
 template<xmlXPathObjectType valueType>
@@ -165,7 +294,7 @@ bool xmlHoldsAlternative(xmlXPathObjectPtr xPathObject) {
     return false;
 }
 
-using TextReader = xmlResource<xmlTextReader, xmlTextReaderDeleter>;
+}  // namespace xpath
 
 } // namespace xml2
 

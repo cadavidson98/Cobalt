@@ -1,5 +1,5 @@
-#ifndef COBALT_IO_MITSUBA_READER_H
-#define COBALT_IO_MITSUBA_READER_H
+#ifndef COBALT_IO_MITSUBA_H
+#define COBALT_IO_MITSUBA_H
 
 #include "math/math_types.h"
 
@@ -9,9 +9,49 @@
 
 namespace cobalt::io::mitsuba {
 
-struct Spectrum {
-    static constexpr size_t kNumCoeffs = 3;
-    std::array<float, kNumCoeffs> coefficients = {};
+struct BlackBody {
+    float minWavelength;
+    float maxWavelength;
+    float temperature;
+};
+
+struct RGB {
+    float r;
+    float g;
+    float b;
+};
+
+class Spectrum {
+public:
+    enum class Type {
+        kNone,
+        kRGB,
+        kBlackBody,
+    };
+
+    Spectrum()
+      : _type{Type::kNone} {
+    }
+
+    Spectrum(BlackBody &&blackbody)
+      : blackbody{blackbody}, _type{Type::kBlackBody} {
+    }
+
+    Spectrum(RGB &&rgb)
+      : rgb{rgb}, _type{Type::kRGB} {
+    }
+
+    operator Type() const {
+        return _type;
+    };
+
+    union {
+        BlackBody blackbody;
+        RGB rgb;
+    };
+
+private:
+    Type _type;
 };
 
 struct Texture {
@@ -30,14 +70,16 @@ struct Camera {
 };
 
 struct Emitter {
+    Spectrum radiance;
     Texture emissionMap = {};
 };
 
 template<typename ShapeType>
 struct Shape {
     ShapeType shape;
+    // todo: this isn't correct: needs to be a 'formal' BSDF and 'formal' emitter
+    Spectrum spectrum;
     mat4f transform = {};
-    Spectrum spectrum = {};
 };
 
 struct Sphere {
@@ -62,4 +104,4 @@ public:
 
 } // namespace cobalt::io::mitsuba
 
-#endif // COBALT_IO_MITSUBA_READER_H
+#endif // COBALT_IO_MITSUBA_H

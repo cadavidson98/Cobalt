@@ -7,6 +7,7 @@
 
 namespace cobalt::color {
 
+// TODO: should be a 'class', not 'struct'?
 struct PolynomialSpectrum {
     static constexpr size_t kCoefficientsCount = 3;
 

@@ -4,9 +4,11 @@
 #include "scene.h"
 #include "texture.h"
 
+#include "color/blackbody_spectrum.h"
 #include "color/pixel_buffer.h"
 #include "color/polynomial_spectrum.h"
 #include "color/rgb.h"
+#include "color/spectrum.h"
 #include "color/xyz.h"
 #include "core/logging.h"
 #include "geometry/bounding_volume_scene_storage.h"
@@ -16,9 +18,10 @@
 #include "io/image/exr.h"
 #include "io/image/image.h"
 #include "io/image/png.h"
-#include "io/mitsuba_reader.h"
+#include "io/mitsuba.h"
 #include "io/obj_reader.h"
 #include "math/math_types.h"
+#include "rgb2spec/rgb2spec.h"
 
 #include <algorithm>
 #include <cstring>
@@ -150,54 +153,74 @@ public:
     SceneDelegate(std::filesystem::path rootDirectory)
         : _rootDirectory{rootDirectory}, _sceneGeometry{std::make_shared<geom::SceneStorage>()},
           _sceneComponents{std::make_shared<ComponentStorage>()} {
+
+        _rgbToSpec = rgb2spec_load(RGB2SPEC_COLOR_SRGB);
     }
 
-    virtual ~SceneDelegate() = default;
+    virtual ~SceneDelegate() {
+        rgb2spec_free(_rgbToSpec);
+    };
 
     bool readSphere(const io::mitsuba::Shape<io::mitsuba::Sphere> &sphere) override {
-        const geom::Primitive spherePrimitive = _sceneGeometry->addSphere(
-            geom::Sphere{
-                .center = simd::vec3f(sphere.shape.center.x, sphere.shape.center.y, sphere.shape.center.z),
-                .radius = sphere.shape.radius,
-            }
-        );
+        const std::optional<TypedIndex<color::SpectrumType>> spectrumIndex = readSpectrum(sphere.spectrum);
+        if (!spectrumIndex) {
+            return false;
+        }
 
-        const io::mitsuba::Spectrum &spectrum = sphere.spectrum;
-        _sceneComponents->addSpectrum(
-            spherePrimitive,
-            color::PolynomialSpectrum{
-                .coefficients = spectrum.coefficients,
-            }
-        );
+        geom::Sphere sphereGeometry = {
+            .center = simd::vec3f(sphere.shape.center.x, sphere.shape.center.y, sphere.shape.center.z),
+            .radius = sphere.shape.radius,
+        };
+
+        _spheres.push_back(sphereGeometry);
+
+        const ComponentStorage::Primitive spherePrimitive = {
+            .components = ComponentStorage::Tag::kGeometry | ComponentStorage::Tag::kSpectrum,            
+            .geometryIdx = TypedIndex<geom::Shape> {
+                .type = geom::Shape::kSphere,
+                .idx = uint32_t(_spheres.size() - 1),
+            },
+            .spectrumIdx = *spectrumIndex,
+        };
+
+        _primitives.push_back(spherePrimitive);
 
         return true;
     }
 
     bool readMesh(const io::mitsuba::Shape<io::mitsuba::Mesh> &mesh) override {
-        std::shared_ptr<geom::Mesh> cobaltMesh;
+        const std::optional<TypedIndex<color::SpectrumType>> spectrumIndex = readSpectrum(mesh.spectrum);
+        if (!spectrumIndex) {
+            return false;
+        }
+
+        std::shared_ptr<geom::Mesh> meshGeometry;
         if (mesh.shape.fileExtension == "obj") {
             const std::filesystem::path filePath = _rootDirectory / mesh.shape.fileName;
             const std::optional<io::obj::Mesh> objMesh = io::obj::read(filePath.c_str());
             if (objMesh) {
-                cobaltMesh = geom::Mesh::create({
+                meshGeometry = geom::Mesh::create({
                     .positions = objMesh->positions,
                 });
             }
         }
 
-        if (!cobaltMesh) {
+        if (!meshGeometry) {
             return false;
         }
 
-        const io::mitsuba::Spectrum &spectrum = mesh.spectrum;
+        _meshes.push_back(meshGeometry);
 
-        const geom::Primitive meshPrimitive = _sceneGeometry->addMesh(cobaltMesh);
-        _sceneComponents->addSpectrum(
-            meshPrimitive,
-            color::PolynomialSpectrum{
-                .coefficients = spectrum.coefficients,
-            }
-        );
+        const ComponentStorage::Primitive meshPrimitive = {
+            .components = ComponentStorage::Tag::kGeometry | ComponentStorage::Tag::kSpectrum,
+            .geometryIdx = TypedIndex<geom::Shape> {
+                .type = geom::Shape::kMesh,
+                .idx = uint32_t(_meshes.size() - 1),
+            },
+            .spectrumIdx = *spectrumIndex,
+        };
+
+        _primitives.push_back(meshPrimitive);
 
         return true;
     }
@@ -206,6 +229,11 @@ public:
         if (emitter.emissionMap) {
             const std::filesystem::path filePath = _rootDirectory / emitter.emissionMap.fileName;
             _environmentMap = readTexture(filePath);
+        }
+
+        const std::optional<TypedIndex<color::SpectrumType>> spectrumIndex = readSpectrum(emitter.radiance);
+        if (!spectrumIndex) {
+            return false;
         }
 
         return true;
@@ -269,10 +297,57 @@ private:
 
     std::shared_ptr<render::Texture> _environmentMap;
 
+    std::vector<geom::Sphere> _spheres = {};
+    // simple idea: 'create' method takes an allocator, so you can have arrays of pointers be initialized on contiguous memory
+    std::vector<std::shared_ptr<geom::Mesh>> _meshes = {};
+
+    std::vector<color::BlackBodySpectrum> _blackbodies = {};
+    std::vector<color::PolynomialSpectrum> _polynomials = {};
+
+    std::vector<ComponentStorage::Primitive> _primitives = {};
+
     std::shared_ptr<geom::SceneStorage> _sceneGeometry;
     std::shared_ptr<ComponentStorage> _sceneComponents;
 
     std::shared_ptr<Camera> _camera = {};
+
+    RGB2Spec *_rgbToSpec = {};
+
+    // I am allowed to do whatever I want; not defined on Mitsuba schema as supporting 'id' parameter
+    // Q: do I need to 'hash' or 'cache' a spectrum?
+    // A: Yes! This is 'kind of' a material system, until we get PROPER bsdf and emitter support?
+    std::optional<TypedIndex<color::SpectrumType>> readSpectrum(const io::mitsuba::Spectrum &spectrum) {
+        switch (spectrum) {
+            case io::mitsuba::Spectrum::Type::kRGB: {
+                std::array<float, color::PolynomialSpectrum::kCoefficientsCount> coefficients;
+                rgb2spec_fetch(
+                    _rgbToSpec, 
+                    const_cast<float *>(&spectrum.rgb.r), 
+                    coefficients.data()
+                );
+
+                _polynomials.emplace_back(coefficients);
+
+                return TypedIndex<color::SpectrumType> {
+                    .type = color::SpectrumType::kPolynomial,
+                    .idx = uint32_t(_polynomials.size() - 1),
+                };
+            }
+            case io::mitsuba::Spectrum::Type::kBlackBody: {
+                _blackbodies.emplace_back(spectrum.blackbody.temperature);
+                return TypedIndex<color::SpectrumType> {
+                    .type = color::SpectrumType::kBlackbody,
+                    .idx = uint32_t(_blackbodies.size() - 1),
+                };
+            }
+            case io::mitsuba::Spectrum::Type::kNone: {
+                return std::nullopt;
+            }
+        }
+
+        // should never hit, just needed by compiler
+        return std::nullopt;
+    }
 };
 
 inline std::shared_ptr<Scene> loadMitsubaScene(const SceneBuilder::CreateInfo &createInfo) {

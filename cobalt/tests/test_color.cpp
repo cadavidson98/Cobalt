@@ -1,3 +1,4 @@
+#include "color/blackbody_spectrum.h"
 #include "color/pixel_buffer.h"
 #include "color/rgb.h"
 #include "color/sampled_spectrum.h"
@@ -47,6 +48,27 @@ void expectNear(const mat3f &value, const mat3f &expected) {
 }
 
 } // anonymous namespace
+
+TEST(CobaltColor, TestBlackbodySpectrum) {
+    {
+        static constexpr float kTemperature = 2700;
+        // computed using Wien's law for temperature 2700
+        static constexpr size_t kSpectrumPeakWavelenth = 1073;
+        const BlackBodySpectrum blackbody(kTemperature);
+
+        static constexpr float kExpectedMin = 0.0124952f;
+        const float computedMin = blackbody[kSpectrumMinWavelength];
+        EXPECT_NEAR(computedMin, kExpectedMin, 1e-5f);
+        
+        static constexpr float kExpectedMax = 0.8391188f;
+        const float computedMax = blackbody[kSpectrumMaxWavelength];
+        EXPECT_NEAR(computedMax, kExpectedMax, 1e-5f);
+
+        static constexpr float kExpectedPeak = 1.f;
+        const float computedPeak = blackbody[kSpectrumPeakWavelenth];
+        EXPECT_NEAR(computedPeak, kExpectedPeak, 1e-5f);
+    }
+}
 
 TEST(CobaltColor, TestSampledSpectrum) {
     {

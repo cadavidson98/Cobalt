@@ -1,0 +1,6 @@
+surface
+matte (
+    color base = 1
+) {
+    Ci = diffuse(base);
+}

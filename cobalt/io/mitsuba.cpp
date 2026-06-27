@@ -1,10 +1,9 @@
-#include "mitsuba_reader.h"
+#include "mitsuba.h"
 
 #include "core/logging.h"
 #include "core/string_utilities.h"
 #include "math/math_utilities.h"
 #include "private/xml_utilities.h"
-#include "rgb2spec/rgb2spec.h"
 
 #include <libxml2/libxml/tree.h>
 #include <libxml2/libxml/xmlmemory.h>
@@ -12,6 +11,7 @@
 #include <libxml2/libxml/xpath.h>
 
 #include <cassert>
+#include <memory>
 #include <optional>
 
 namespace cobalt::io::mitsuba {
@@ -27,7 +27,7 @@ struct Schema {
 
     // common
     const xml2::xmlString typeName = "type";
-    const xml2::xmlString fileName = ".//string/@value";
+    const xml2::xmlString fileName = "string(.//string[@name=\"filename\"]/@value)";
     const xml2::xmlString valueName = "value";
     const xml2::xmlString floatName = "float";
     const xml2::xmlString stringName = "string";
@@ -45,10 +45,16 @@ struct Schema {
     const xml2::xmlString angleName = "angle";
 
     // camera
-    const xml2::xmlString fovName = ".//float[@name=\"fov\"]";
+    const xml2::xmlString fovName = "number(.//float[@name=\"fov\"]/@value)";
 
     // emitter
+    const xml2::xmlString areaTypeName = "area";
     const xml2::xmlString environmentMapName = "envmap";
+
+    // blackbody
+    const xml2::xmlString minWavelengthName = "number(.//float[@name=\"minwavelength\"]/@value)";
+    const xml2::xmlString maxWavelengthName = "number(.//float[@name=\"maxwavelength\"]/@value)";
+    const xml2::xmlString temperatureName = "number(.//float[@name=\"temperature\"]/@value)";
 
     // material
     const xml2::xmlString diffuseName = "diffuse";
@@ -56,9 +62,12 @@ struct Schema {
     const xml2::xmlString roughDielectricName = "roughdielectric";
     const xml2::xmlString thinDielectricName = "thindielectric";
 
+    // spectrum
     const xml2::xmlString spectrumName = "spectrum";
-    const xml2::xmlString textureName = "texture";
     const xml2::xmlString rgbName = "rgb";
+    const xml2::xmlString blackBodyName = "blackbody";    
+
+    const xml2::xmlString textureName = "texture";
 
     const xml2::xmlString reflectanceName = ".//reflectance";
     const xml2::xmlString specularTransmittanceName = ".//specular_transmittance";
@@ -71,30 +80,58 @@ struct Schema {
     const xml2::xmlString roughnessXName = ".//float[@name=\"alpha_u\"]";
     const xml2::xmlString roughnessYName = ".//float[@name=\"alpha_v\"]";
 
-    // sphape
+    // shape
     const xml2::xmlString sphereName = "sphere";
 
     // sphere
-    const xml2::xmlString radiusName = ".//float[@name=\"radius\"]";
+    const xml2::xmlString radiusName = "number(.//float[@name=\"radius\"]/@value)";
     const xml2::xmlString centerName = ".//point[@name=\"center\"]";
 
     // mesh
     const xml2::xmlString objTypeName = "obj";
 };
 
-std::optional<float> loadFloat(xmlNodePtr node, const Schema &schema) {
-    if (node->name != schema.floatName) {
-        return std::nullopt;
+std::optional<Spectrum> loadSpectrum(const xml2::xpath::Node &spectrumNode, const Schema &schema) {
+    const xml2::xmlString typeString = spectrumNode.property(schema.typeName);
+    if (typeString == schema.rgbName) {
+        const xml2::xmlString valueString = spectrumNode.property(schema.valueName);
+        const std::vector<float> rgb = core::split<float>(valueString.c_str(), ',');
+        if (rgb.size() != 3) {
+            CoLogError("spectrum count Mismatch in 'rgb': expected '3', got '%zu'", rgb.size());
+            return std::nullopt;
+        }
+
+        return RGB {
+            .r = rgb[0],
+            .g = rgb[1],
+            .b = rgb[2],
+        };
+    } else if (typeString == schema.blackBodyName) {
+        // todo: I think xpath supports querying specifically for an attribute, which we could then directly cast?
+        std::unique_ptr<float> minWavelength = spectrumNode.eval<float>(schema.minWavelengthName);
+        std::unique_ptr<float> maxWavelength = spectrumNode.eval<float>(schema.maxWavelengthName);
+        std::unique_ptr<float> temperature = spectrumNode.eval<float>(schema.temperatureName);
+
+        if (!minWavelength || !maxWavelength || !temperature) {
+            CoLogError("missing nodes for 'Blackbody'");
+            return std::nullopt;
+        }
+
+        return BlackBody {
+            .minWavelength = *minWavelength,
+            .maxWavelength = *maxWavelength,
+            .temperature = *temperature,
+        };
     }
 
-    const xml2::xmlString valueProperty = xmlGetProp(node, schema.valueName.xml_str());
-    return float(std::stof(valueProperty.c_str()));
-};
+    CoLogError("Unsupported spectrum type '%s'", typeString.c_str());
+    return std::nullopt;
+}
 
-mat4f loadTransform(xmlNodePtr transformNode, const Schema &schema) {
+std::optional<mat4f> loadTransform(const xml2::xpath::Node &transformNode, const Schema &schema) {
     // need to iterate IN ORDER to properly compose transforms
-    xmlNodePtr transformChildren = transformNode->children;
-    xmlNodePtr iterator = transformChildren;
+    xml2::xmlWeak<xmlNode> chidren = transformNode.children();
+    xmlNodePtr iterator = chidren.get();
 
     mat4f transform(1.f);
 
@@ -104,6 +141,11 @@ mat4f loadTransform(xmlNodePtr transformNode, const Schema &schema) {
         const char *value = valueProperty.c_str();
         if (transformType == schema.translateExpression) {
             const std::vector<float> translationValues = core::split<float>(value, ' ');
+            if (translationValues.size() != 3) {
+                CoLogError("Mismatch: expected \"3\" elements in \"translation\", only found \"%zu\"", translationValues.size());
+                return std::nullopt;
+            }
+
             const vec3f translation(translationValues[0], translationValues[1], translationValues[2]);
             const mat4f translationMatrix = cobalt::utils::translationMatrix(translation);
             transform = translationMatrix * transform;
@@ -137,6 +179,11 @@ mat4f loadTransform(xmlNodePtr transformNode, const Schema &schema) {
             transform = rotationMatrix * transform;
         } else if (transformType == schema.scaleExpression) {
             const std::vector<float> scaleValues = core::split<float>(value, ' ');
+            if (scaleValues.size() != 3) {
+                CoLogError("Mismatch: expected \"3\" elements in \"scale\", only found \"%zu\"", scaleValues.size());
+                return std::nullopt;
+            }
+
             const vec3f scale(scaleValues[0], scaleValues[1], scaleValues[1]);
             const mat4f scaleMatrix = cobalt::utils::scaleMatrix(scale);
             transform = scaleMatrix * transform;
@@ -163,6 +210,7 @@ mat4f loadTransform(xmlNodePtr transformNode, const Schema &schema) {
             } else {
                 // error
                 CoLogError("Invalid arguments for 'matrix' transform");
+                return std::nullopt;
             }
         }
         iterator = iterator->next;
@@ -170,77 +218,110 @@ mat4f loadTransform(xmlNodePtr transformNode, const Schema &schema) {
     return transform;
 }
 
-Spectrum loadBSDF(xmlNodePtr bsdfNode, xmlXPathContextPtr context, const Schema &schema) {
-    const xml2::xmlString type = xmlGetProp(bsdfNode, schema.typeName.xml_str());
+std::optional<Spectrum> loadBSDF(const xml2::xpath::Node &bsdfNode, const Schema &schema) {
+    const xml2::xmlString type = bsdfNode.property(schema.typeName);
     if (type == "diffuse") {
-        xml2::xmlResource<xmlXPathObject> spectrum = xmlXPathNodeEval(bsdfNode, schema.rgbName.xml_str(), context);
-
-        if (xml2::xmlHoldsAlternative<XPATH_NODESET>(spectrum.get())) {
-            xml2::xmlString valueString = xmlGetProp(*spectrum->nodesetval->nodeTab, schema.valueName.xml_str());
-            const std::vector<float> rgb = core::split<float>(valueString.c_str(), ' ');
-            assert(rgb.size() == 3);
-            static RGB2Spec *sRGBModel = nullptr;
-            if (!sRGBModel) {
-                sRGBModel = rgb2spec_load(RGB2SPEC_COLOR_SRGB);
-                assert(sRGBModel);
-            }
-
-            Spectrum spectrum;
-
-            rgb2spec_fetch(sRGBModel, const_cast<float *>(rgb.data()), spectrum.coefficients.data());
-
-            return spectrum;
+        std::unique_ptr<xml2::xpath::Node> spectrum = bsdfNode.eval<xml2::xpath::Node>(schema.rgbName);
+        if (!spectrum) {
+            return std::nullopt;
         }
+
+        xml2::xmlString valueString = spectrum->property(schema.valueName);
+        const std::vector<float> rgb = core::split<float>(valueString.c_str(), ' ');
+        if (rgb.size() != 3) {
+            CoLogError("Mismatch: expected \"3\" elements in \"rgb\", only found \"%zu\"", rgb.size());
+            return std::nullopt;
+        }
+
+        return RGB {
+            .r = rgb[0],
+            .g = rgb[1],
+            .b = rgb[2],
+        };
     }
 
-    return Spectrum{};
+    return std::nullopt;
 }
 
-std::optional<Camera> loadCamera(xmlNodePtr cameraNode, xmlXPathContextPtr context, const Schema &schema) {
-    xml2::xmlResource<xmlXPathObject> transform(
-        xmlXPathNodeEval(cameraNode, schema.transformExpression.xml_str(), context)
-    );
-    if (!transform || !xml2::xmlHoldsAlternative<XPATH_NODESET>(transform.get())) {
+std::optional<Emitter> loadEmitter(const xml2::xpath::Node &emitterNode, const Schema &schema) {
+    xml2::xmlString emitterType = emitterNode.property(schema.typeName);
+    if (!emitterType) {
+        CoLogError("Emitter node missing attribute 'type'");
+        return std::nullopt;
+    }
+
+    if (emitterType == schema.environmentMapName) {
+        std::unique_ptr<xml2::xmlString> fileName = emitterNode.eval<xml2::xmlString>(schema.fileName);
+        if (!fileName) {
+            CoLogError("Missing Filename string");
+            return std::nullopt;
+        }
+
+        return Emitter {
+            .radiance = {},
+            .emissionMap = {
+                .fileName = fileName->c_str(),
+                .fileExtension = cobalt::core::fileExtension(fileName->c_str()),
+            },
+        };
+    } else if (emitterType == schema.areaTypeName) {
+        std::unique_ptr<xml2::xpath::Node> spectrumNode = emitterNode.eval<xml2::xpath::Node>(schema.spectrumName);
+        if (!spectrumNode) {
+            CoLogError("Missing 'rgb' attribute");
+            return std::nullopt;
+        }
+
+        std::optional<Spectrum> spectrum = loadSpectrum(*spectrumNode, schema);
+        if (!spectrum) {
+            return std::nullopt;
+        }
+
+        return Emitter {
+            .radiance = *spectrum,
+        }; 
+    }
+
+    CoLogError("Unsupported");
+    return std::nullopt;
+}
+
+std::optional<Camera> loadCamera(const xml2::xpath::Node &cameraNode, const Schema &schema) {
+    std::unique_ptr<xml2::xpath::Node> transform = cameraNode.eval<xml2::xpath::Node>(schema.transformExpression);
+    if (!transform) {
         CoLogError("Missing transform for Camera");
         return std::nullopt;
     }
 
-    const mat4f cameraTransform = loadTransform(*transform->nodesetval->nodeTab, schema);
+    std::optional<mat4f> cameraTransform = loadTransform(*transform, schema);
+    if (!cameraTransform) {
+        return std::nullopt;
+    }
 
-    xml2::xmlResource<xmlXPathObject> fovPath(xmlXPathNodeEval(cameraNode, schema.fovName.xml_str(), context));
-    if (!fovPath || !xml2::xmlHoldsAlternative<XPATH_NODESET>(fovPath.get())) {
+    std::unique_ptr<float> fov = cameraNode.eval<float>(schema.fovName); 
+    if (!fov) {
         CoLogError("Missing Field of View for camera");
         return std::nullopt;
     }
 
-    std::optional<float> fovValue = loadFloat(*fovPath->nodesetval->nodeTab, schema);
-    if (!fovValue) {
-        return std::nullopt;
-    }
-
-    const float cameraFov = cobalt::utils::toRadians(*fovValue);
+    const float cameraFov = cobalt::utils::toRadians(*fov);
     return Camera{
         .fov = cameraFov,
-        .transform = cameraTransform,
+        .transform = *cameraTransform,
     };
 }
 
-std::optional<Sphere> loadSphere(xmlNodePtr sphereNode, xmlXPathContextPtr context, const Schema &schema) {
-    xml2::xmlResource<xmlXPathObject> radius = xmlXPathNodeEval(sphereNode, schema.radiusName.xml_str(), context);
-    xml2::xmlResource<xmlXPathObject> center = xmlXPathNodeEval(sphereNode, schema.centerName.xml_str(), context);
-
-    static constexpr float kDefaultRadius = 1.f;
+std::optional<Sphere> loadSphere(const xml2::xpath::Node &sphereNode, const Schema &schema) {
     static constexpr vec3f kDefaultCenter = {0.f, 0.f, 0.f};
+    static constexpr float kDefaultRadius = 1.f;
 
-    float sphereRadius = kDefaultRadius;
+    std::unique_ptr<float> radius = sphereNode.eval<float>(schema.radiusName);
+    std::unique_ptr<xml2::xpath::Node> center = sphereNode.eval<xml2::xpath::Node>(schema.centerName);
+
+    const float sphereRadius = radius ? *radius : kDefaultRadius;
     vec3f sphereCenter = kDefaultCenter;
 
-    if (radius && xml2::xmlHoldsAlternative<XPATH_NODESET>(radius.get())) {
-        sphereRadius = loadFloat(*radius->nodesetval->nodeTab, schema).value_or(kDefaultRadius);
-    }
-
-    if (center && xml2::xmlHoldsAlternative<XPATH_NODESET>(center.get())) {
-        const xml2::xmlString valueProperty = xmlGetProp(*center->nodesetval->nodeTab, schema.valueName.xml_str());
+    if (center) {
+        const xml2::xmlString valueProperty = center->property(schema.valueName);
         const std::vector<float> centerValues = core::split<float>(valueProperty.c_str(), ' ');
         if (centerValues.size() != 3) {
             CoLogError("Invalid value '%s' for attribute 'point'", valueProperty.c_str());
@@ -260,60 +341,75 @@ std::optional<Sphere> loadSphere(xmlNodePtr sphereNode, xmlXPathContextPtr conte
     };
 }
 
-std::optional<Mesh> loadMesh(xmlNodePtr meshNode, xmlXPathContextPtr context, const Schema &schema) {
-    xml2::xmlString meshType = xmlGetProp(meshNode, schema.typeName.xml_str());
+std::optional<Mesh> loadMesh(const xml2::xpath::Node &meshNode, const Schema &schema) {
+    xml2::xmlString meshType = meshNode.property(schema.typeName);
     if (!meshType || meshType != schema.objTypeName) {
         CoLogError("Unsupported Mesh type '%s'", meshType.c_str());
         return std::nullopt;
     }
 
-    xml2::xmlResource<xmlXPathObject> fileNode(xmlXPathNodeEval(meshNode, schema.fileName.xml_str(), context));
-    xmlChar *fileNameString(xmlXPathCastToString(fileNode.get()));
-    if (!fileNameString) {
+    std::unique_ptr<xml2::xmlString> fileName = meshNode.eval<xml2::xmlString>(schema.fileName);
+    if (!fileName) {
         CoLogError("Missing Filename for mesh");
         return std::nullopt;
     }
 
-    std::string meshFileName = reinterpret_cast<char *>(fileNameString);
     return Mesh{
-        .fileName = meshFileName,
+        .fileName = fileName->c_str(),
         .fileExtension = meshType.c_str(),
     };
 }
 
 template<typename ShapeType, typename LoadShapeFunctor>
 std::optional<Shape<ShapeType>> loadTypedShape(
-    xmlNodePtr shapeNode,
-    xmlXPathContextPtr context,
+    const xml2::xpath::Node &shapeNode,
     const Schema &schema,
     LoadShapeFunctor functor
 ) {
     mat4f shapeToWorld(1.f);
     Spectrum spectrum;
 
-    xml2::xmlResource<xmlXPathObject> transform =
-        xmlXPathNodeEval(shapeNode, schema.transformExpression.xml_str(), context);
+    std::unique_ptr<xml2::xpath::Node> transformNode = shapeNode.eval<xml2::xpath::Node>(schema.transformExpression);
 
-    if (xml2::xmlHoldsAlternative<XPATH_NODESET>(transform.get())) {
-        xmlNodeSetPtr transformNode = transform->nodesetval;
-        shapeToWorld = loadTransform(*transformNode->nodeTab, schema);
+    if (transformNode) {
+        std::optional<mat4f> shapeTransform = loadTransform(*transformNode, schema);
+        if (!shapeTransform) {
+            return std::nullopt;
+        }
+
+        shapeToWorld = *shapeTransform;
     }
 
-    xml2::xmlResource<xmlXPathObject> bsdf = xmlXPathNodeEval(shapeNode, schema.bsdfType.xml_str(), context);
-    if (xml2::xmlHoldsAlternative<XPATH_NODESET>(bsdf.get())) {
-        xmlNodeSetPtr bsdfNode = bsdf->nodesetval;
-        spectrum = loadBSDF(*bsdfNode->nodeTab, context, schema);
+    std::unique_ptr<xml2::xpath::Node> bsdfNode = shapeNode.eval<xml2::xpath::Node>(schema.bsdfType);
+
+    if (bsdfNode) {
+        std::optional<Spectrum> shapeSpectrum = loadBSDF(*bsdfNode, schema);
+        if (!shapeSpectrum) {
+            return std::nullopt;
+        }
+
+        spectrum = *shapeSpectrum;
     }
 
-    std::optional<ShapeType> shape = functor(shapeNode, context, schema);
+    std::unique_ptr<xml2::xpath::Node> emitterNode = shapeNode.eval<xml2::xpath::Node>(schema.emitterType);
+    if (emitterNode) {
+        std::optional<Emitter> emitterSpectrum = loadEmitter(*emitterNode, schema);
+        if (!emitterNode) {
+            return std::nullopt;
+        }
+
+        spectrum = emitterSpectrum->radiance;
+    }
+
+    std::optional<ShapeType> shape = functor(shapeNode, schema);
     if (!shape) {
         return std::nullopt;
     }
 
     return Shape<ShapeType>{
         .shape = std::move(*shape),
-        .transform = shapeToWorld,
         .spectrum = spectrum,
+        .transform = shapeToWorld,
     };
 }
 
@@ -344,7 +440,10 @@ bool read(const std::string_view fileName, std::shared_ptr<FileReaderDelegate> d
 
                 xml2::xmlResource<xmlXPathContext> xpathContext = xmlXPathNewContext(cameraNode->doc);
 
-                const std::optional<Camera> camera = loadCamera(cameraNode, xpathContext.get(), schema);
+                xml2::xpath::Node node(cameraNode, xpathContext.get());
+
+                const std::optional<Camera> camera = loadCamera(node, schema);
+
                 if (!camera || !delegate->readSensor(*camera)) {
                     return false;
                 }
@@ -353,42 +452,29 @@ bool read(const std::string_view fileName, std::shared_ptr<FileReaderDelegate> d
 
                 xml2::xmlResource<xmlXPathContext> xpathContext = xmlXPathNewContext(emitterNode->doc);
 
-                xml2::xmlString emitterType = xmlGetProp(emitterNode, schema.typeName.xml_str());
-                if (emitterType && emitterType == schema.environmentMapName) {
-                    xmlXPathObjectPtr fileNameNode =
-                        xmlXPathNodeEval(emitterNode, schema.fileName.xml_str(), xpathContext.get());
-                    xml2::xmlString fileName = xmlXPathCastToString(fileNameNode);
-                    if (!fileName) {
-                        CoLogError("Missing Filename string");
-                        return false;
-                    }
+                xml2::xpath::Node node(emitterNode, xpathContext.get());
 
-                    const Emitter emitter = {
-                        .emissionMap = {
-                                        .fileName = fileName.c_str(),
-                                        .fileExtension = cobalt::core::fileExtension(fileName.c_str()),
-                                        },
-                    };
+                const std::optional<Emitter> emitter = loadEmitter(node, schema);
 
-                    if (!delegate->readEmitter(emitter)) {
-                        return false;
-                    }
+                if (!emitter || !delegate->readEmitter(*emitter)) {
+                    return false;
                 }
             } else if (name == schema.shapeType) {
                 xmlNodePtr shapeNode = xmlTextReaderExpand(mitsubaReader.get());
 
                 xml2::xmlResource<xmlXPathContext> xpathContext = xmlXPathNewContext(shapeNode->doc);
                 const xml2::xmlString typeProperty = xmlGetProp(shapeNode, schema.typeName.xml_str());
+
+                xml2::xpath::Node node(shapeNode, xpathContext.get());
+
                 if (typeProperty == schema.objTypeName) {
-                    const std::optional<Shape<Mesh>> mesh =
-                        loadTypedShape<Mesh>(shapeNode, xpathContext.get(), schema, loadMesh);
+                    const std::optional<Shape<Mesh>> mesh = loadTypedShape<Mesh>(node, schema, loadMesh);
 
                     if (!mesh || !delegate->readMesh(*mesh)) {
                         return false;
                     }
                 } else if (typeProperty == schema.sphereName) {
-                    const std::optional<Shape<Sphere>> sphere =
-                        loadTypedShape<Sphere>(shapeNode, xpathContext.get(), schema, loadSphere);
+                    const std::optional<Shape<Sphere>> sphere = loadTypedShape<Sphere>(node, schema, loadSphere);
 
                     if (!sphere || !delegate->readSphere(*sphere)) {
                         return false;
